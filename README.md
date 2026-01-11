@@ -75,6 +75,7 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks:
 ### Run everything
 ```bash
 docker compose up --build
+```
 
 ### Apply migrations (if not automated)
 # Example; adjust to your migration tool (e.g., Alembic)
@@ -140,7 +141,7 @@ Please open an issue first for non-trivial changes.
 
 MIT (see LICENSE).
 
-Disclaimer
+### Disclaimer
 
 Governance OS is decision-support tooling. It does not provide financial, investment, tax, or legal advice.
 
