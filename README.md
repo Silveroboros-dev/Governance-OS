@@ -1,2 +1,52 @@
-# Governance-OS
-Governance OS: a policy-driven coordination layer for Treasury &amp; Wealth. Converts signals into deterministic policy evaluations, raises exceptions for human judgment, logs decisions with rationale, and exports audit-grade evidence packs. Replayable on historical data to tune precision and reduce coordination overhead.
+# Governance OS
+
+Governance OS is a policy-driven coordination layer for high-stakes professional work (starting with **Corporate Treasury** and **Wealth Management**).
+
+It converts continuous signals into deterministic policy evaluations, raises exceptions only when **human judgment** is required, captures accountable decisions (with rationale and assumptions), and produces audit-grade evidence packs. The core is **replayable** on historical data to tune precision and reduce coordination overhead.
+
+**Core loop:** Signal → Policy Evaluation → Exception → Decision → Evidence/Outcome
+
+---
+
+## Why this exists
+
+Modern exec workflows are continuous, but decision-making is episodic (meetings, decks, month-end rituals). That creates:
+- late detection of risk/regime shifts
+- false certainty from dashboards
+- brittle automation without accountability
+- loss of institutional memory
+
+Governance OS is built as a **control-plane**: autonomous where safe, interruption-driven where judgment is required.
+
+---
+
+## What this is (and is not)
+
+### This is
+- A **governance kernel**: policies, evaluations, exceptions, decisions, audit trail
+- A **one-screen decision surface** (no chat, no “AI recommends”)
+- A **system of record for judgment** with deterministic evidence packs
+- A **replay harness** for tuning policies without production risk
+
+### This is not
+- A BI dashboard
+- A copilot/chat-first experience
+- RPA that executes without explicit boundaries
+- A model showcase
+
+---
+
+## Key concepts
+
+- **Policy / PolicyVersion**: explicit, versioned rules with change control
+- **Signal**: timestamped facts with provenance (source, reliability)
+- **Evaluation**: deterministic result of applying policy to signals
+- **Exception**: interruption when judgment is required (deduped, severity-tagged)
+- **Decision**: immutable commitment with rationale + assumptions
+- **AuditEvent**: append-only trail of meaningful state changes
+- **Evidence Pack**: deterministic bundle answering “why did we do this?”
+
+---
+
+## Repo layout
+
