@@ -78,13 +78,16 @@ docker compose up --build
 ```
 
 ### Apply migrations (if not automated)
+
+```bash
 # Example; adjust to your migration tool (e.g., Alembic)
 docker compose exec core bash -lc "alembic upgrade head"
-
+``` 
 ### Load fixtures (Treasury + Wealth)
+```bash
 # Example command; implement a real seed entrypoint in /core or /replay
 docker compose exec core bash -lc "python -m replay.seed_fixtures"
-
+``` 
 
 ### Then open:
 
@@ -106,9 +109,10 @@ tune thresholds and compare before/after
 
 export evidence packs for decisions
 
+```bash
 # Example; implement in /replay
 docker compose exec core bash -lc "python -m replay.run --pack treasury --from 2025-01-01 --to 2025-03-31"
-
+``` 
 ### Product doctrine (non-negotiable)
 
 Deterministic core: policy evaluation, exceptioning, and evidence packs are code, testable, replayable.
