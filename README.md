@@ -103,17 +103,18 @@ Not allowed:
 ---
 
 ## Repo layout
-
+```bash
   /core FastAPI backend (deterministic governance kernel)
   /ui Next.js frontend (one-screen exception UI + supporting views)
   /db Migrations, schema, seed hooks
   /packs Domain packs (treasury, wealth): templates + fixtures + vocabulary
   /replay Replay harness: CSV import + scenario runner
 
-  ### AI engineering layer
+  # AI engineering layer
   /mcp         MCP server exposing kernel tools (read-only v0, gated writes later)
   /coprocessor Agents + tools + prompts + schemas + traces
   /evals       Datasets + goldens + eval runner (CI-gated)
+```
 
 ### Domain packs (Treasury + Wealth)
 Treasury and Wealth are implemented as **packs** (configuration), not forks:
