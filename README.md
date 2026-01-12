@@ -11,12 +11,36 @@ It converts continuous signals into deterministic policy evaluations, raises exc
 ## Why this exists
 
 Modern exec workflows are continuous, but decision-making is episodic (meetings, decks, month-end rituals). That creates:
-- late detection of risk/regime shifts
-- false certainty from dashboards
-- brittle automation without accountability
-- loss of institutional memory
+- late detection of risk/regime shifts  
+- false certainty from dashboards  
+- brittle automation without accountability  
+- loss of institutional memory  
 
 Governance OS is built as a **control-plane**: autonomous where safe, interruption-driven where judgment is required.
+
+---
+
+## AI Engineering Proof (verifiable, not vibes)
+
+This repo is designed to demonstrate **responsible agentic engineering**: tool contracts, schema discipline, eval gates, and traces.
+
+### Implemented (Sprint 1–2 focus)
+- Deterministic governance kernel (policy → evaluation → exception → decision)
+- Replay-first workflow (same inputs → same outputs)
+- Evidence packs for defensibility and learning
+
+### Planned (Sprint 2 thin-slice)
+- **MCP server (read-only tools)** exposing kernel state safely  
+- **NarrativeAgent v0**: drafts memos strictly grounded to evidence IDs  
+- **Evals v0**: CI fails on unsupported claims (anti-hallucination gate)
+
+### Planned (Sprint 4: portfolio-grade AI layer)
+- MCP write tools with approval gates + audit events  
+- IntakeAgent (unstructured → candidate signals w/ provenance + confidence + source spans)  
+- Agent tracing viewer (runs → tool calls → audit events)  
+- Expanded eval suites (extraction accuracy + faithfulness + kernel regression)
+
+**Non-negotiable boundary:** the kernel stays deterministic. LLMs are optional coprocessors and never the source of truth for policy evaluation, escalation, or evidence.
 
 ---
 
@@ -49,10 +73,11 @@ Governance OS is built as a **control-plane**: autonomous where safe, interrupti
 ---
 
 ## Repo layout
-/core FastAPI backend (kernel services)
+
+/core FastAPI backend (deterministic governance kernel)
 /ui Next.js frontend (one-screen exception UI + supporting views)
 /db Migrations, schema, seed hooks
-/packs Domain packs (treasury, wealth): templates + fixtures + vocab
+/packs Domain packs (treasury, wealth): templates + fixtures + vocabulary
 /replay Replay harness: CSV import + scenario runner
 
 ### Domain packs (Treasury + Wealth)
@@ -125,7 +150,48 @@ Uncertainty is visible: confidence gaps and unknowns are first-class.
 
 Memory is not logging: decisions link to evidence and outcomes; the graph compounds.
 
+### Roadmap (high level)
+#### Sprint 1: Kernel vertical slice (end-to-end loop)
 
+policy versioning
+
+signal ingestion
+
+deterministic evaluator
+
+exception engine + dedupe
+
+one-screen exception UI
+
+immutable decision log
+
+evidence pack export
+
+#### Sprint 2: Packs + replay (pilot-grade) + AI thin-slice
+
+treasury + wealth packs
+
+CSV ingestion + provenance
+
+replay namespace + comparisons
+
+exception budgets + metrics
+
+MCP v0 (read-only tools)
+
+NarrativeAgent v0 (grounded memos)
+
+Evals v0 (fail on unsupported claims)
+
+#### Sprint 3: Agentic coprocessor (portfolio-grade AI engineering)
+
+MCP write tools with approval gates + audit events
+
+IntakeAgent (unstructured → candidate signals with provenance + source spans)
+
+tracing viewer (agent runs → tool calls → audit events)
+
+expanded eval suites + CI gates
 
 ### Contributing
 
