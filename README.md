@@ -24,7 +24,23 @@ Governance OS is built as a **control-plane**: autonomous where safe, interrupti
 
 This repo is designed to demonstrate **responsible agentic engineering**: tool contracts, schema discipline, eval gates, and traces.
 
-### Implemented (Sprint 1–2 focus)
+### 1) Deterministic governance kernel (shipped first)
+- Replayable policy evaluation (same inputs → same outputs)
+- Exception → decision → audit trail
+- Deterministic evidence packs (“why did we do this?”)
+
+### 2) Agentic coprocessor (LLM layer; gated, traced, eval-tested)
+- Agents operate only through **tool contracts** (MCP)
+- Agent outputs are **schema-validated**
+- Narrative outputs must be **grounded to evidence IDs** (eval-gated)
+
+### 3) Evals (fail CI on hallucinations)
+- Narrative faithfulness: zero unsupported claims
+- Kernel regression: replay determinism
+
+
+
+### Planned (Sprint 1–2 focus)
 - Deterministic governance kernel (policy → evaluation → exception → decision)
 - Replay-first workflow (same inputs → same outputs)
 - Evidence packs for defensibility and learning
@@ -34,13 +50,27 @@ This repo is designed to demonstrate **responsible agentic engineering**: tool c
 - **NarrativeAgent v0**: drafts memos strictly grounded to evidence IDs  
 - **Evals v0**: CI fails on unsupported claims (anti-hallucination gate)
 
-### Planned (Sprint 4: portfolio-grade AI layer)
+### Planned (Sprint 3: portfolio-grade AI layer)
 - MCP write tools with approval gates + audit events  
 - IntakeAgent (unstructured → candidate signals w/ provenance + confidence + source spans)  
 - Agent tracing viewer (runs → tool calls → audit events)  
 - Expanded eval suites (extraction accuracy + faithfulness + kernel regression)
 
-**Non-negotiable boundary:** the kernel stays deterministic. LLMs are optional coprocessors and never the source of truth for policy evaluation, escalation, or evidence.
+## AI safety boundaries (non-negotiable)
+
+The kernel is deterministic. LLMs are optional coprocessors and never the source of truth for policy evaluation, escalation, or evidence.
+
+Allowed:
+- unstructured → candidate signals (with provenance + confidence + source spans)
+- memo drafts grounded to evidence IDs
+- policy draft generation (never auto-publish)
+
+Not allowed:
+- policy evaluation
+- severity/escalation decisions
+- “recommended option” in the commitment UI
+- silent writes without approvals/audit events
+
 
 ---
 
@@ -74,11 +104,16 @@ This repo is designed to demonstrate **responsible agentic engineering**: tool c
 
 ## Repo layout
 
-/core FastAPI backend (deterministic governance kernel)
-/ui Next.js frontend (one-screen exception UI + supporting views)
-/db Migrations, schema, seed hooks
-/packs Domain packs (treasury, wealth): templates + fixtures + vocabulary
-/replay Replay harness: CSV import + scenario runner
+  /core FastAPI backend (deterministic governance kernel)
+  /ui Next.js frontend (one-screen exception UI + supporting views)
+  /db Migrations, schema, seed hooks
+  /packs Domain packs (treasury, wealth): templates + fixtures + vocabulary
+  /replay Replay harness: CSV import + scenario runner
+
+  ### AI engineering layer
+  /mcp         MCP server exposing kernel tools (read-only v0, gated writes later)
+  /coprocessor Agents + tools + prompts + schemas + traces
+  /evals       Datasets + goldens + eval runner (CI-gated)
 
 ### Domain packs (Treasury + Wealth)
 Treasury and Wealth are implemented as **packs** (configuration), not forks:
@@ -100,6 +135,18 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks:
 ### Run everything
 ```bash
 docker compose up --build
+
+# Kernel demo (fixtures -> exception -> decision -> evidence pack)
+make demo-kernel
+
+# MCP server (read-only tools initially)
+make mcp
+
+# Narrative agent (exception -> grounded memo draft)
+make narrative EXCEPTION_ID=<id>
+
+# Evals (must pass)
+make evals
 ```
 
 ### Apply migrations (if not automated)
