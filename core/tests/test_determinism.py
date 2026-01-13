@@ -116,22 +116,37 @@ class TestEvaluatorDeterminism:
         """
         evaluator = Evaluator(db_session)
 
+        # Store IDs before evaluation
+        policy_version_id = sample_policy.id
+        signal_ids = [s.id for s in sample_signals]
+
         # Run evaluation #1
         eval1 = evaluator.evaluate(sample_policy, sample_signals)
+
+        # Store eval1 values before expunging (since it will be detached)
+        eval1_id = eval1.id
+        eval1_input_hash = eval1.input_hash
+        eval1_result = eval1.result
+        eval1_details = eval1.details
 
         # Clear session to simulate fresh evaluation
         db_session.expunge_all()
 
-        # Run evaluation #2 with same inputs
-        eval2 = evaluator.evaluate(sample_policy, sample_signals)
+        # Re-fetch objects from database (simulates fresh context)
+        from core.models import PolicyVersion, Signal
+        fresh_policy = db_session.get(PolicyVersion, policy_version_id)
+        fresh_signals = db_session.query(Signal).filter(Signal.id.in_(signal_ids)).all()
+
+        # Run evaluation #2 with fresh objects
+        eval2 = evaluator.evaluate(fresh_policy, fresh_signals)
 
         # MUST be identical
-        assert eval1.input_hash == eval2.input_hash
-        assert eval1.result == eval2.result
-        assert eval1.details == eval2.details
+        assert eval1_input_hash == eval2.input_hash
+        assert eval1_result == eval2.result
+        assert eval1_details == eval2.details
 
         # Should return same evaluation object (idempotency)
-        assert eval1.id == eval2.id
+        assert eval1_id == eval2.id
 
     def test_evaluation_idempotency(self, db_session, sample_policy, sample_signals):
         """

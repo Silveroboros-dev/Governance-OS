@@ -158,6 +158,7 @@ class EvidenceGenerator:
         )
 
         self.db.add(evidence_pack)
+        self.db.flush()  # Flush to generate evidence_pack.id before using it
 
         # Update decision with evidence pack link
         decision.evidence_pack_id = evidence_pack.id

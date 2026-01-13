@@ -6,7 +6,7 @@ Provides test database setup and common fixtures.
 
 import pytest
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from core.database import Base
@@ -29,8 +29,11 @@ def db_engine():
 
     yield engine
 
-    # Drop all tables after test
-    Base.metadata.drop_all(bind=engine)
+    # Drop all tables after test - handle circular dependencies with CASCADE
+    with engine.connect() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+        conn.commit()
     engine.dispose()
 
 

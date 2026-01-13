@@ -162,7 +162,7 @@ class TestDecisionRecorder:
 
         if exception:
             # Try to record decision without rationale
-            with pytest.raises(ValueError, match="rationale"):
+            with pytest.raises(ValueError, match="(?i)rationale"):
                 decision_recorder.record_decision(
                     exception_id=exception.id,
                     chosen_option_id=exception.options[0]["id"],
