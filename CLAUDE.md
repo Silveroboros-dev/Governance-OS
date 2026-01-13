@@ -277,3 +277,36 @@ COPY core/ /app/core/
 COPY packs/ /app/packs/
 COPY db/ /app/db/
 ```
+
+### Frontend can't reach backend API in Docker
+
+**Problem:** Frontend running in Docker can't reach backend API. Browser shows network errors, CORS issues, or "Failed to fetch".
+
+**Cause:** Confusion between **server-side** and **client-side** network contexts in containerized frontends.
+
+**Key principle:** Frontend containers serve static assets to the browser. The **browser** then makes API calls from the user's machine - NOT from inside Docker. Docker internal hostnames (like `backend`, `api`, service names) are only resolvable within the Docker network, not from the browser.
+
+**Common mistakes:**
+```dockerfile
+# WRONG - browser can't resolve Docker service names:
+ENV NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
+ENV REACT_APP_API_URL=http://api-service:3000
+
+# CORRECT - browser accesses via exposed ports on localhost:
+ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+ENV REACT_APP_API_URL=http://localhost:3000
+```
+
+**Framework-specific notes:**
+- Next.js `NEXT_PUBLIC_*` vars are embedded at build time
+- React/Vite `VITE_*` or `REACT_APP_*` vars are also build-time
+- These run in the browser, so must use browser-accessible URLs
+
+**When to use Docker hostnames:**
+- Server-side API routes (Next.js API routes, SSR data fetching)
+- Backend-to-backend communication
+- Database connections from backend
+
+**When to use localhost:**
+- Any URL that ends up in browser JavaScript
+- Environment variables with `PUBLIC`, `NEXT_PUBLIC_`, `VITE_`, `REACT_APP_` prefixes

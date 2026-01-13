@@ -20,7 +20,8 @@ COPY . .
 
 # Set build-time environment variables
 ENV NEXT_TELEMETRY_DISABLED 1
-ENV NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
+# Use localhost since the browser (not Docker) makes API calls
+ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 
 # Build Next.js
 RUN npm run build
