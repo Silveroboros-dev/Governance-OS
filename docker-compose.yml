@@ -50,24 +50,20 @@ services:
         uvicorn core.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
-  # Frontend placeholder (Sprint 1 - will implement later)
-  # frontend:
-  #   build:
-  #     context: ./ui
-  #     dockerfile: Dockerfile
-  #   container_name: govos_frontend
-  #   environment:
-  #     NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - backend
-  #   volumes:
-  #     - ./ui:/app
-  #     - /app/node_modules
-  #     - /app/.next
-  #   networks:
-  #     - govos_network
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: govos_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - govos_network
 
 volumes:
   postgres_data:
