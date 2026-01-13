@@ -23,7 +23,7 @@ class PolicyStatus(str, PyEnum):
     """Policy version status."""
     DRAFT = "draft"
     ACTIVE = "active"
-    DEPRECATED = "deprecated"
+    ARCHIVED = "archived"  # Changed from DEPRECATED to match database
 
 
 class Policy(Base):
@@ -40,6 +40,7 @@ class Policy(Base):
     pack = Column(String(50), nullable=False)  # 'treasury', 'wealth', etc.
     description = Column(Text)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(String(255), nullable=False)
 
     # Relationships
@@ -65,7 +66,7 @@ class PolicyVersion(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     policy_id = Column(UUID(as_uuid=True), ForeignKey("policies.id"), nullable=False)
     version_number = Column(Integer, nullable=False)
-    status = Column(SQLEnum(PolicyStatus, name="policy_status"), nullable=False, default=PolicyStatus.DRAFT)
+    status = Column(SQLEnum(PolicyStatus, name="policy_status", values_callable=lambda x: [e.value for e in x]), nullable=False, default=PolicyStatus.DRAFT)
 
     # Policy logic stored as JSON (deterministic evaluation rules)
     rule_definition = Column(JSONB, nullable=False)

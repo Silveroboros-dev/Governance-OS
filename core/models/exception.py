@@ -53,8 +53,8 @@ class Exception(Base):
     # SHA256 of (policy + exception type + key dimensions)
     fingerprint = Column(String(64), nullable=False)
 
-    severity = Column(SQLEnum(ExceptionSeverity, name="exception_severity"), nullable=False)
-    status = Column(SQLEnum(ExceptionStatus, name="exception_status"), nullable=False, default=ExceptionStatus.OPEN)
+    severity = Column(SQLEnum(ExceptionSeverity, name="exception_severity", values_callable=lambda x: [e.value for e in x]), nullable=False)
+    status = Column(SQLEnum(ExceptionStatus, name="exception_status", values_callable=lambda x: [e.value for e in x]), nullable=False, default=ExceptionStatus.OPEN)
 
     # Human-readable context
     title = Column(String(500), nullable=False)

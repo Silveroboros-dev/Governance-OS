@@ -42,7 +42,7 @@ class EvidencePack(Base):
     generated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
     # Relationships
-    decision = relationship("Decision", back_populates="evidence_pack")
+    decision = relationship("Decision", foreign_keys="[EvidencePack.decision_id]")
 
     __table_args__ = (
         UniqueConstraint("decision_id", name="uq_evidence_pack_decision"),

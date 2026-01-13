@@ -43,7 +43,7 @@ class Signal(Base):
 
     # Provenance
     source = Column(String(255), nullable=False)  # e.g., 'bloomberg_api', 'internal_system'
-    reliability = Column(SQLEnum(SignalReliability, name="signal_reliability"), nullable=False)
+    reliability = Column(SQLEnum(SignalReliability, name="signal_reliability", values_callable=lambda x: [e.value for e in x]), nullable=False)
     observed_at = Column(DateTime(timezone=True), nullable=False)  # When signal was observed
     ingested_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)  # When we received it
 

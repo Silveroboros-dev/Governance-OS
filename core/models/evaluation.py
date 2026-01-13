@@ -41,7 +41,7 @@ class Evaluation(Base):
     signal_ids = Column(ARRAY(UUID(as_uuid=True)), nullable=False)
 
     # Result
-    result = Column(SQLEnum(EvaluationResult, name="evaluation_result"), nullable=False)
+    result = Column(SQLEnum(EvaluationResult, name="evaluation_result", values_callable=lambda x: [e.value for e in x]), nullable=False)
     details = Column(JSONB, nullable=False)  # Structured explanation of evaluation
 
     # Determinism guarantee: hash of inputs

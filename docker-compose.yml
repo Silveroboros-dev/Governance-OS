@@ -22,12 +22,12 @@ services:
 
   backend:
     build:
-      context: ./core
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: core/Dockerfile
     container_name: govos_backend
     environment:
       DATABASE_URL: postgresql://govos:local_dev_password@postgres:5432/governance_os
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: '["http://localhost:3000"]'
       LOG_LEVEL: INFO
     ports:
       - "8000:8000"

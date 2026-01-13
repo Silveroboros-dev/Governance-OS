@@ -43,7 +43,8 @@ class Decision(Base):
 
     # Relationships
     exception = relationship("Exception", back_populates="decisions")
-    evidence_pack = relationship("EvidencePack", back_populates="decision", uselist=False)
+    # Note: evidence_pack relationship is accessed via EvidencePack.decision relationship
+    # to avoid circular dependency issues with bidirectional foreign keys
 
     __table_args__ = (
         Index("idx_decisions_exception", "exception_id"),
