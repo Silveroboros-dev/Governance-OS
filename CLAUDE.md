@@ -71,13 +71,37 @@ docker compose up --build
 ```
 
 ### Tests
-```bash
-# Backend (when implemented)
-pytest
 
-# Frontend (when implemented)
+**IMPORTANT: Test Database Configuration**
+
+Tests are configured to run **locally on the host machine**, NOT inside Docker containers. This is intentional:
+
+- **Test database**: `postgresql://govos:local_dev_password@localhost:5432/governance_os_test`
+- **Why**: Tests need fast setup/teardown with database fixtures, which is easier outside containers
+- **Consequence**: You MUST have PostgreSQL accessible at `localhost:5432` (the docker-compose postgres container exposes this port)
+
+**Running tests:**
+
+```bash
+# 1. Ensure docker-compose postgres is running (provides localhost:5432)
+docker compose up -d postgres
+
+# 2. Install Python dependencies locally (if not already done)
+pip install -r core/requirements.txt
+
+# 3. Run tests from host machine (NOT inside Docker)
+pytest core/tests/ -v
+
+# 4. Run only critical determinism tests
+pytest core/tests/test_determinism.py -v -m critical
+
+# Frontend tests (when implemented)
 npm test
 ```
+
+**Common mistake to avoid:**
+- ❌ Running `docker compose exec backend pytest` will FAIL because the backend container tries to connect to `localhost` which is its own container, not the postgres container
+- ✅ Run `pytest core/tests/` from your host machine with postgres container running
 
 ### Kernel demo (when implemented)
 ```bash
@@ -160,3 +184,96 @@ This is an early-stage repository. The planned implementation follows this roadm
 **Sprint 2:** Domain packs + replay harness + thin-slice AI layer (MCP read-only, NarrativeAgent v0, Evals v0)
 
 **Sprint 3:** Full agentic coprocessor (MCP write tools, IntakeAgent, tracing viewer, expanded evals)
+
+## Troubleshooting
+
+### Tests failing with "connection refused" to localhost:5432
+
+**Problem:** Tests are trying to connect to localhost but getting connection refused.
+
+**Cause:** Tests are configured to run on the host machine (NOT inside Docker), and they expect PostgreSQL at `localhost:5432`.
+
+**Solution:**
+```bash
+# 1. Ensure postgres container is running
+docker compose up -d postgres
+
+# 2. Verify postgres is accessible
+docker compose ps | grep postgres
+
+# 3. Run tests from HOST machine (not inside container)
+pytest core/tests/ -v
+
+# DON'T DO THIS (will fail):
+docker compose exec backend pytest  # ❌ Wrong: tries to connect from inside container
+```
+
+### SQLAlchemy enum errors: "invalid input value for enum"
+
+**Problem:** Database rejects enum values like "ACTIVE" instead of "active".
+
+**Cause:** Python enum values are uppercase (e.g., `PolicyStatus.ACTIVE = "active"`), but SQLAlchemy was sending the enum name instead of the value.
+
+**Solution:** All SQLAlchemy enum columns must use `values_callable`:
+```python
+# Correct:
+status = Column(SQLEnum(PolicyStatus, name="policy_status",
+                       values_callable=lambda x: [e.value for e in x]),
+               nullable=False)
+
+# Wrong (sends "ACTIVE" instead of "active"):
+status = Column(SQLEnum(PolicyStatus, name="policy_status"), nullable=False)
+```
+
+### Alembic migration fails with "type already exists"
+
+**Problem:** Migration creates enum types manually, then SQLAlchemy tries to create them again.
+
+**Cause:** Manual `CREATE TYPE` statements in migration + SQLAlchemy auto-creating types.
+
+**Solution:** Use `create_type=False` in migration enum references:
+```python
+# In migration file:
+# 1. Create enums manually first
+op.execute("CREATE TYPE policy_status AS ENUM ('draft', 'active', 'archived');")
+
+# 2. Then reference with create_type=False
+sa.Column('status',
+         postgresql.ENUM('draft', 'active', 'archived',
+                        name='policy_status', create_type=False),
+         nullable=False)
+```
+
+### Circular foreign key relationship errors
+
+**Problem:** SQLAlchemy complains about ambiguous foreign keys between `Decision` and `EvidencePack`.
+
+**Cause:** Both tables reference each other creating a circular dependency.
+
+**Solution:** Use unidirectional relationships only:
+```python
+# In EvidencePack model:
+decision = relationship("Decision", foreign_keys="[EvidencePack.decision_id]")
+
+# In Decision model:
+# Don't add back-reference - access via EvidencePack.decision instead
+```
+
+### Docker build fails with "COPY path not found"
+
+**Problem:** Dockerfile can't find files to copy (e.g., `../packs not found`).
+
+**Cause:** Docker build context is wrong - using relative paths outside context.
+
+**Solution:** Set build context to project root in docker-compose.yml:
+```yaml
+backend:
+  build:
+    context: .              # Root directory
+    dockerfile: core/Dockerfile
+
+# In Dockerfile, use paths relative to context root:
+COPY core/ /app/core/
+COPY packs/ /app/packs/
+COPY db/ /app/db/
+```
