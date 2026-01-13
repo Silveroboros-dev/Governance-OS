@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 
 from core.database import get_db
 from core.models import Policy, PolicyVersion, PolicyStatus
@@ -39,7 +39,7 @@ def list_policies(
 
     # Build response with active version
     result = []
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     for policy in policies:
         # Find the active version (status=active and valid at current time)
@@ -96,7 +96,7 @@ def get_policy(
         raise HTTPException(status_code=404, detail="Policy not found")
 
     # Find active version
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     active_version = None
     for version in policy.versions:
         if version.status == PolicyStatus.ACTIVE:
