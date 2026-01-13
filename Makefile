@@ -37,10 +37,10 @@ migrate:
 	docker compose exec backend alembic upgrade head
 
 seed:
-	docker compose exec backend python -m scripts.seed_fixtures
+	docker compose exec backend python -m core.scripts.seed_fixtures
 
 demo-kernel:
-	docker compose exec backend python -m scripts.demo_kernel
+	docker compose exec backend python -m core.scripts.demo_kernel
 
 test:
 	docker compose exec backend pytest -v

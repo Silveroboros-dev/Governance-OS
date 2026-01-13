@@ -112,6 +112,7 @@ class DecisionRecorder:
         )
 
         self.db.add(decision)
+        self.db.flush()  # Flush to generate decision.id before using it in audit event
 
         # Step 5: Mark exception as resolved
         exception.status = ExceptionStatus.RESOLVED
