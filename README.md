@@ -40,10 +40,12 @@ This repo is designed to demonstrate **responsible agentic engineering**: tool c
 
 
 
-### Planned (Sprint 1–2 focus)
+### ✅ Implemented (Sprint 1)
 - Deterministic governance kernel (policy → evaluation → exception → decision)
-- Replay-first workflow (same inputs → same outputs)
-- Evidence packs for defensibility and learning
+- Immutable decision recording with rationale and assumptions
+- Evidence packs for defensibility and audit
+- One-screen decision UI (no recommendations, symmetric options)
+- Treasury pack with sample policies and fixtures
 
 ### Planned (Sprint 2 thin-slice)
 - **MCP server (read-only tools)** exposing kernel state safely  
@@ -135,21 +137,34 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks:
 ### Run the system
 
 ```bash
-# 1. Start services (postgres + backend)
-make up
+# Start all services (postgres + backend + frontend)
+docker compose up -d
 
-# 2. Load treasury fixtures (policies + sample signals)
-make seed
-
-# 3. Run kernel demo (full loop: signal → decision → evidence)
-make demo-kernel
+# View logs
+docker compose logs -f
 ```
 
-### Access the API
+The system will automatically:
+- Start PostgreSQL database
+- Run Alembic migrations
+- Seed treasury fixtures (policies)
+- Start the FastAPI backend
+- Start the Next.js frontend
 
+### Access the application
+
+- **Frontend UI:** http://localhost:3000
 - **API Documentation:** http://localhost:8000/docs
 - **API Base URL:** http://localhost:8000/api/v1
 - **Health Check:** http://localhost:8000/health
+
+### Frontend pages
+
+- `/exceptions` - View open exceptions requiring decisions
+- `/exceptions/[id]` - One-screen decision UI (no recommendations)
+- `/decisions` - Decision history with audit trail
+- `/decisions/[id]` - Evidence viewer with export
+- `/policies` - Policy list (read-only)
 
 ### Common commands
 
@@ -211,21 +226,17 @@ Uncertainty is visible: confidence gaps and unknowns are first-class.
 Memory is not logging: decisions link to evidence and outcomes; the graph compounds.
 
 ### Roadmap (high level)
-#### Sprint 1: Kernel vertical slice (end-to-end loop)
+#### ✅ Sprint 1: Kernel vertical slice (end-to-end loop) — COMPLETE
 
-policy versioning
-
-signal ingestion
-
-deterministic evaluator
-
-exception engine + dedupe
-
-one-screen exception UI
-
-immutable decision log
-
-evidence pack export
+- ✅ Policy versioning with temporal validity
+- ✅ Signal ingestion with provenance
+- ✅ Deterministic evaluator with input hashing
+- ✅ Exception engine with fingerprint deduplication
+- ✅ One-screen decision UI (symmetric options, no recommendations)
+- ✅ Immutable decision log with rationale/assumptions
+- ✅ Evidence pack generation and export
+- ✅ Treasury pack with sample policies
+- ✅ Full Docker Compose setup (postgres + backend + frontend)
 
 #### Sprint 2: Packs + replay (pilot-grade) + AI thin-slice
 
