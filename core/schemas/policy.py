@@ -24,6 +24,7 @@ class PolicyResponse(BaseModel):
     pack: str
     description: Optional[str] = None
     created_at: datetime
+    updated_at: datetime
     created_by: str
 
     class Config:
@@ -53,6 +54,14 @@ class PolicyVersionResponse(BaseModel):
     changelog: Optional[str] = None
     created_at: datetime
     created_by: str
+
+    class Config:
+        from_attributes = True
+
+
+class PolicyWithVersion(PolicyResponse):
+    """Schema for policy with its active version."""
+    active_version: Optional[PolicyVersionResponse] = None
 
     class Config:
         from_attributes = True
