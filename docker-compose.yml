@@ -1,0 +1,77 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: govos_postgres
+    environment:
+      POSTGRES_DB: governance_os
+      POSTGRES_USER: govos
+      POSTGRES_PASSWORD: local_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U govos -d governance_os"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - govos_network
+
+  backend:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    container_name: govos_backend
+    environment:
+      DATABASE_URL: postgresql://govos:local_dev_password@postgres:5432/governance_os
+      CORS_ORIGINS: http://localhost:3000
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./core:/app/core
+      - ./packs:/app/packs
+      - ./db:/app/db
+    networks:
+      - govos_network
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 2 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting API server...' &&
+        uvicorn core.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # Frontend placeholder (Sprint 1 - will implement later)
+  # frontend:
+  #   build:
+  #     context: ./ui
+  #     dockerfile: Dockerfile
+  #   container_name: govos_frontend
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+  #   volumes:
+  #     - ./ui:/app
+  #     - /app/node_modules
+  #     - /app/.next
+  #   networks:
+  #     - govos_network
+
+volumes:
+  postgres_data:
+
+networks:
+  govos_network:
+    driver: bridge

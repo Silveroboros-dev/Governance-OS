@@ -6,7 +6,7 @@ Thumbs.db
 *.swp
 *.swo
 .idea/
-.vscode/
+# .vscode/  # Kept for shared settings
 *.code-workspace
 
 # =========================

@@ -129,44 +129,56 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks:
 ## Quick start (local)
 
 ### Prerequisites
-- Docker + Docker Compose
-- Node.js (if running UI outside Docker)
-- Python 3.11+ (if running core outside Docker)
+- Docker + Docker Compose (required)
+- Python 3.11+ (optional, for local development)
 
-### Run everything
+### Run the system
+
 ```bash
-docker compose up --build
+# 1. Start services (postgres + backend)
+make up
 
-# Kernel demo (fixtures -> exception -> decision -> evidence pack)
+# 2. Load treasury fixtures (policies + sample signals)
+make seed
+
+# 3. Run kernel demo (full loop: signal → decision → evidence)
 make demo-kernel
-
-# MCP server (read-only tools initially)
-make mcp
-
-# Narrative agent (exception -> grounded memo draft)
-make narrative EXCEPTION_ID=<id>
-
-# Evals (must pass)
-make evals
 ```
 
-### Apply migrations (if not automated)
+### Access the API
+
+- **API Documentation:** http://localhost:8000/docs
+- **API Base URL:** http://localhost:8000/api/v1
+- **Health Check:** http://localhost:8000/health
+
+### Common commands
 
 ```bash
-# Example; adjust to your migration tool (e.g., Alembic)
-docker compose exec core bash -lc "alembic upgrade head"
-``` 
-### Load fixtures (Treasury + Wealth)
+make up           # Start all services
+make down         # Stop all services
+make logs         # View logs
+make shell        # Open backend shell
+make db           # Open postgres shell
+make clean        # Remove all containers and volumes
+```
+
+### Manual workflow
+
+If you prefer to run steps manually:
+
 ```bash
-# Example command; implement a real seed entrypoint in /core or /replay
-docker compose exec core bash -lc "python -m replay.seed_fixtures"
-``` 
+# Start services
+docker compose up -d
 
-### Then open:
+# Apply migrations
+docker compose exec backend alembic upgrade head
 
-UI: http://localhost:3000
+# Load fixtures
+docker compose exec backend python -m scripts.seed_fixtures
 
-API: http://localhost:8000/docs
+# Run demo
+docker compose exec backend python -m scripts.demo_kernel
+```
 
 ### Replay (policy tuning without production risk)
 

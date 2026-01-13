@@ -1,0 +1,178 @@
+"""
+Decision Recorder Service.
+
+Records immutable decisions for exceptions.
+Once recorded, decisions CANNOT be modified.
+"""
+
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
+from core.models import Decision, Exception, ExceptionStatus, AuditEvent, AuditEventType
+
+
+class DecisionRecorder:
+    """
+    Decision recording service.
+
+    CRITICAL: Decisions are IMMUTABLE.
+    - No UPDATE operations allowed
+    - Enforced at application level
+    """
+
+    def __init__(self, db: Session):
+        """
+        Initialize decision recorder.
+
+        Args:
+            db: SQLAlchemy database session
+        """
+        self.db = db
+
+    def record_decision(
+        self,
+        exception_id: UUID,
+        chosen_option_id: str,
+        rationale: str,
+        decided_by: str,
+        assumptions: Optional[str] = None
+    ) -> Decision:
+        """
+        Record immutable decision.
+
+        Validates:
+        1. Exception exists and is open
+        2. Chosen option is valid (exists in exception.options)
+        3. Rationale is provided (required!)
+
+        Side effects:
+        1. Creates Decision record
+        2. Marks Exception as resolved
+        3. Creates audit event
+        4. Triggers async evidence pack generation (future)
+
+        Args:
+            exception_id: UUID of the exception
+            chosen_option_id: ID of chosen option from exception.options
+            rationale: Human explanation of decision (REQUIRED)
+            decided_by: User/role who made the decision
+            assumptions: Explicit assumptions (optional)
+
+        Returns:
+            Decision object
+
+        Raises:
+            ValueError: If validation fails
+            IntegrityError: If decision already exists for this exception
+
+        Example:
+            >>> recorder = DecisionRecorder(db)
+            >>> decision = recorder.record_decision(
+            ...     exception_id=exc_id,
+            ...     chosen_option_id="approve_temporary_increase",
+            ...     rationale="Market conditions justify temporary position increase",
+            ...     decided_by="treasury_manager",
+            ...     assumptions="Volatility will normalize within 24 hours"
+            ... )
+            >>> decision.id
+            UUID('...')
+        """
+        # Step 1: Validate exception exists and is open
+        exception = self.db.query(Exception).filter(Exception.id == exception_id).first()
+
+        if not exception:
+            raise ValueError(f"Exception {exception_id} not found")
+
+        if exception.status != ExceptionStatus.OPEN:
+            raise ValueError(f"Exception {exception_id} is not open (status: {exception.status})")
+
+        # Step 2: Validate chosen option
+        valid_option_ids = [opt["id"] for opt in exception.options]
+
+        if chosen_option_id not in valid_option_ids:
+            raise ValueError(
+                f"Invalid option '{chosen_option_id}'. "
+                f"Valid options: {', '.join(valid_option_ids)}"
+            )
+
+        # Step 3: Validate rationale
+        if not rationale or not rationale.strip():
+            raise ValueError("Rationale is required and cannot be empty")
+
+        # Step 4: Create decision record (IMMUTABLE)
+        decision = Decision(
+            exception_id=exception_id,
+            chosen_option_id=chosen_option_id,
+            rationale=rationale.strip(),
+            assumptions=assumptions.strip() if assumptions else None,
+            decided_by=decided_by
+        )
+
+        self.db.add(decision)
+
+        # Step 5: Mark exception as resolved
+        exception.status = ExceptionStatus.RESOLVED
+        exception.resolved_at = decision.decided_at
+
+        # Step 6: Create audit event
+        audit_event = AuditEvent(
+            event_type=AuditEventType.DECISION_RECORDED,
+            aggregate_type="decision",
+            aggregate_id=decision.id,
+            event_data={
+                "exception_id": str(exception_id),
+                "chosen_option_id": chosen_option_id,
+                "decided_by": decided_by,
+                "rationale_length": len(rationale)
+            },
+            actor=decided_by
+        )
+
+        self.db.add(audit_event)
+
+        # Step 7: Commit (make immutable!)
+        try:
+            self.db.commit()
+        except IntegrityError as e:
+            self.db.rollback()
+            raise ValueError(f"Failed to record decision: {str(e)}")
+
+        # Step 8: Trigger evidence pack generation (would be async in production)
+        # For Sprint 1, we'll generate synchronously
+        # In Sprint 2+, this would be a background task
+
+        return decision
+
+    def get_decision(self, decision_id: UUID) -> Optional[Decision]:
+        """
+        Get decision by ID.
+
+        Args:
+            decision_id: UUID of the decision
+
+        Returns:
+            Decision object or None
+        """
+        return self.db.query(Decision).filter(Decision.id == decision_id).first()
+
+    def get_decisions_for_exception(self, exception_id: UUID) -> list[Decision]:
+        """
+        Get all decisions for an exception.
+
+        Typically there should be only one, but this handles edge cases.
+
+        Args:
+            exception_id: UUID of the exception
+
+        Returns:
+            List of Decision objects
+        """
+        return (
+            self.db.query(Decision)
+            .filter(Decision.exception_id == exception_id)
+            .order_by(Decision.decided_at)
+            .all()
+        )
