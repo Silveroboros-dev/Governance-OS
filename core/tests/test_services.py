@@ -189,6 +189,65 @@ class TestDecisionRecorder:
                     decided_by="test_suite"
                 )
 
+    def test_hard_override_requires_approval(self, db_session, sample_policy, sample_signals):
+        """
+        CRITICAL: Hard overrides MUST have approved_by.
+
+        This is a governance enforcement requirement (#28).
+        """
+        evaluator = Evaluator(db_session)
+        exception_engine = ExceptionEngine(db_session)
+        decision_recorder = DecisionRecorder(db_session)
+
+        evaluation = evaluator.evaluate(sample_policy, sample_signals)
+        exception = exception_engine.generate_exception(evaluation, sample_policy)
+
+        if exception:
+            # Try to record hard override without approval
+            with pytest.raises(ValueError, match="(?i)approved_by|approval"):
+                decision_recorder.record_decision(
+                    exception_id=exception.id,
+                    chosen_option_id=exception.options[0]["id"],
+                    rationale="Override rationale",
+                    decided_by="test_suite",
+                    is_hard_override=True,  # Hard override!
+                    approved_by=None  # Missing approval!
+                )
+
+    def test_hard_override_with_approval_succeeds(self, db_session, sample_policy, sample_signals):
+        """
+        Hard override with proper approval should succeed.
+
+        Validates full hard override flow (#28).
+        """
+        from core.models import DecisionType
+
+        evaluator = Evaluator(db_session)
+        exception_engine = ExceptionEngine(db_session)
+        decision_recorder = DecisionRecorder(db_session)
+
+        evaluation = evaluator.evaluate(sample_policy, sample_signals)
+        exception = exception_engine.generate_exception(evaluation, sample_policy)
+
+        if exception:
+            # Record hard override with approval
+            decision = decision_recorder.record_decision(
+                exception_id=exception.id,
+                chosen_option_id=exception.options[0]["id"],
+                rationale="Override rationale with proper justification",
+                decided_by="decider_user",
+                is_hard_override=True,
+                approved_by="approver_user",
+                approval_notes="Approved due to exceptional circumstances"
+            )
+
+            assert decision is not None
+            assert decision.is_hard_override is True
+            assert decision.decision_type == DecisionType.HARD_OVERRIDE
+            assert decision.approved_by == "approver_user"
+            assert decision.approved_at is not None
+            assert decision.approval_notes == "Approved due to exceptional circumstances"
+
 
 class TestEvidenceGenerator:
     """Test evidence generator service."""
