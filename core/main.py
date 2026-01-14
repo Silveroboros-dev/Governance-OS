@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.database import engine, Base
-from core.api import signals, evaluations, exceptions, decisions, evidence, policies
+from core.api import signals, evaluations, exceptions, decisions, evidence, policies, stats
 
 # Create FastAPI app
 app = FastAPI(
@@ -36,6 +36,7 @@ app.include_router(exceptions.router, prefix=settings.api_v1_prefix)
 app.include_router(decisions.router, prefix=settings.api_v1_prefix)
 app.include_router(evidence.router, prefix=settings.api_v1_prefix)
 app.include_router(policies.router, prefix=settings.api_v1_prefix)
+app.include_router(stats.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/")

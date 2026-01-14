@@ -24,6 +24,9 @@ export function Header() {
             <Link href="/policies" className="hover:underline">
               Policies
             </Link>
+            <Link href="/signals" className="hover:underline">
+              Signals
+            </Link>
           </div>
         </nav>
       </div>

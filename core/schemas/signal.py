@@ -34,11 +34,16 @@ class SignalResponse(BaseModel):
     reliability: str
     observed_at: datetime
     ingested_at: datetime
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = Field(
+        None,
+        validation_alias="signal_metadata",
+        serialization_alias="metadata"
+    )
     content_hash: Optional[str] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class SignalCreateResponse(SignalResponse):

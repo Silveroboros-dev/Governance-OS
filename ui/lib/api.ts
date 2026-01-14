@@ -16,6 +16,7 @@ import type {
   Evaluation,
   TriggerEvaluationRequest,
   EvidencePack,
+  DashboardStats,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
@@ -113,6 +114,16 @@ export const policyApi = {
 
 // Signal API
 export const signalApi = {
+  list: async (params?: { pack?: string; signal_type?: string; limit?: number }): Promise<Signal[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.pack) searchParams.append('pack', params.pack)
+    if (params?.signal_type) searchParams.append('signal_type', params.signal_type)
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return fetchApi<Signal[]>(`/signals${query ? `?${query}` : ''}`)
+  },
+
   create: async (data: CreateSignalRequest): Promise<Signal> => {
     return fetchApi<Signal>('/signals', {
       method: 'POST',
@@ -148,6 +159,14 @@ export const evidenceApi = {
   },
 }
 
+// Stats API
+export const statsApi = {
+  get: async (pack?: string): Promise<DashboardStats> => {
+    const query = pack ? `?pack=${pack}` : ''
+    return fetchApi<DashboardStats>(`/stats${query}`)
+  },
+}
+
 // Combined API object
 export const api = {
   exceptions: exceptionApi,
@@ -156,6 +175,7 @@ export const api = {
   signals: signalApi,
   evaluations: evaluationApi,
   evidence: evidenceApi,
+  stats: statsApi,
 }
 
 export { ApiError }

@@ -166,3 +166,29 @@ export interface PolicyListParams {
   pack?: string
   status?: PolicyStatus
 }
+
+// Stats Types
+export interface DashboardStats {
+  pack: string
+  exceptions: {
+    open: number
+    by_severity: {
+      critical: number
+      high: number
+      medium: number
+      low: number
+    }
+  }
+  decisions: {
+    total: number
+    last_24h: number
+  }
+  signals: {
+    total: number
+    last_24h: number
+  }
+  policies: {
+    total: number
+    active: number
+  }
+}
