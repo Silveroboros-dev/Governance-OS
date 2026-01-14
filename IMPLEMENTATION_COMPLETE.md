@@ -1,8 +1,8 @@
 # Implementation Complete: Backend & Core Kernel
 
-**Date:** 2026-01-13
-**Status:** ✅ Backend fully functional and runnable
-**Remaining:** Frontend UI + comprehensive tests
+**Date:** 2026-01-13 (Updated: 2026-01-14)
+**Status:** ✅ Backend + Frontend fully functional
+**Architecture Review:** Completed - see Known Issues section
 
 ---
 
@@ -105,54 +105,88 @@ From the Sprint 1 plan, we've achieved:
 
 ---
 
+## ✅ Completed Since Initial Release
+
+### Frontend (Completed 2026-01-14)
+- ✅ Next.js application with Tailwind CSS
+- ✅ **One-screen decision UI** (symmetric options, no scrolling)
+- ✅ Dashboard with stats (signals, evaluations, exceptions, decisions)
+- ✅ Signals page with filtering
+- ✅ Exceptions page with status/severity filters
+- ✅ Policies page
+- ✅ Pack selector (Treasury / Wealth)
+- ✅ Pack context for multi-tenant support
+
+### Wealth Pack (Completed 2026-01-14)
+- ✅ 4 wealth-specific signal types
+- ✅ Seed data for wealth scenarios
+- ✅ Pack switcher in UI
+
+### Testing
+- ✅ Determinism tests (`test_determinism.py`)
+- ✅ Core service tests
+- Remaining: Integration tests, 70%+ coverage
+
+---
+
+## 🚨 Known Issues (From Architecture Review)
+
+### High Priority - Tracked in GitHub Issues
+
+| Issue | Description | Status |
+|-------|-------------|--------|
+| [#42](https://github.com/Silveroboros-dev/Governance-OS/issues/42) | Approval fallback allows missing users | Open |
+| [#43](https://github.com/Silveroboros-dev/Governance-OS/issues/43) | No signal schema validation against pack types | Open |
+| [#44](https://github.com/Silveroboros-dev/Governance-OS/issues/44) | DB immutability only enforced in Python | Open |
+| [#45](https://github.com/Silveroboros-dev/Governance-OS/issues/45) | Pack isolation not enforced at API layer | Open |
+
+### Medium Priority - For Sprint 2
+
+- Synchronous evidence generation blocks API (should be async)
+- Option generation hardcoded in ExceptionEngine (should load from pack templates)
+- Exception fingerprinting too generic (needs pack-specific extractors)
+- Exception sorting in Python instead of SQL
+
+---
+
 ## 🚧 What's Remaining
 
-### Phase 5: Frontend (3-4 days)
-- Next.js application setup
-- **One-screen decision UI** (CRITICAL - symmetric options, no scrolling)
-- Exception list view
-- Decision history view
-- Evidence viewer
-- Policy list (read-only)
+### Sprint 2: Production Hardening
+- Address all 4 high-priority issues above
+- Async evidence generation with background tasks
+- Pack-specific option templates
+- Rate limiting on signal ingestion
 
-### Phase 7: Testing (2-3 days)
-- **Determinism tests** (CRITICAL - same inputs → same outputs)
-- Integration tests (full loop)
-- Unit tests (70%+ coverage goal)
-- Performance tests (evaluation latency < 100ms)
-
-### Phase 2: Migrations
-- Generate Alembic migration from models (requires running DB)
-- Test migration rollback
+### Sprint 2+: AI Layer
+- MCP server for agent tool contracts
+- NarrativeAgent for evidence summaries
+- Evaluation framework for faithfulness
 
 ---
 
 ## 🎯 Next Steps
 
-To complete Sprint 1:
+To continue development:
 
-1. **Generate database migration:**
-   ```bash
-   make up  # Start postgres
-   docker compose exec backend alembic revision --autogenerate -m "Initial schema"
-   docker compose exec backend alembic upgrade head
-   ```
+1. **Address high-priority issues:**
+   - Review and fix issues #42-#45
+   - Run `gh issue list` to see all open issues
 
 2. **Test the full system:**
    ```bash
-   make seed
-   make demo-kernel
+   docker compose up --build
+   # Visit http://localhost:3000
    ```
 
-3. **Build frontend** (Phase 5)
-   - Set up Next.js with Tailwind
-   - Implement one-screen decision UI
-   - Connect to backend API
+3. **Run tests:**
+   ```bash
+   docker compose up -d postgres
+   pytest core/tests/ -v
+   ```
 
-4. **Write tests** (Phase 7)
-   - Determinism tests (MUST PASS!)
-   - Integration tests
-   - Unit tests
+4. **Sprint 2 planning:**
+   - AI layer implementation (MCP, agents, evals)
+   - Production hardening fixes
 
 ---
 
