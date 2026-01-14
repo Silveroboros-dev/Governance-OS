@@ -5,17 +5,10 @@ import { Activity, Clock, Database, Filter } from 'lucide-react'
 import { api } from '@/lib/api'
 import { usePack } from '@/lib/pack-context'
 import type { Signal } from '@/lib/types'
-import { formatDate, cn } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 function getReliabilityColor(reliability: string): string {
   switch (reliability) {
@@ -39,8 +32,8 @@ export default function SignalsPage() {
   const [error, setError] = useState<string | null>(null)
   const [signalTypeFilter, setSignalTypeFilter] = useState<string>('all')
 
-  // Get unique signal types for filter dropdown
-  const signalTypes = [...new Set(signals.map(s => s.signal_type))].sort()
+  // Get unique signal types for filter
+  const signalTypes = Array.from(new Set(signals.map(s => s.signal_type))).sort()
 
   useEffect(() => {
     async function fetchSignals() {
@@ -49,6 +42,7 @@ export default function SignalsPage() {
         setError(null)
         const data = await api.signals.list({ pack, limit: 100 })
         setSignals(data)
+        setSignalTypeFilter('all') // Reset filter when pack changes
       } catch (err) {
         setError('Failed to load signals')
         console.error(err)
@@ -110,27 +104,31 @@ export default function SignalsPage() {
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 mr-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Filter by type:</span>
+                <span className="text-sm text-muted-foreground">Filter:</span>
               </div>
-              <Select value={signalTypeFilter} onValueChange={setSignalTypeFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="All types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All types</SelectItem>
-                  {signalTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      {type.replace(/_/g, ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-sm text-muted-foreground">
-                Showing {filteredSignals.length} of {signals.length}
-              </span>
+              <Button
+                variant={signalTypeFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSignalTypeFilter('all')}
+              >
+                All ({signals.length})
+              </Button>
+              {signalTypes.map(type => {
+                const count = signals.filter(s => s.signal_type === type).length
+                return (
+                  <Button
+                    key={type}
+                    variant={signalTypeFilter === type ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSignalTypeFilter(type)}
+                  >
+                    {type.replace(/_/g, ' ')} ({count})
+                  </Button>
+                )
+              })}
             </div>
           </CardContent>
         </Card>

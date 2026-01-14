@@ -36,15 +36,15 @@ export function formatRelativeTime(dateString: string): string {
 export function getSeverityColor(severity: string): string {
   switch (severity) {
     case 'critical':
-      return 'bg-red-100 text-red-800 border-red-200'
+      return 'bg-red-500 text-white hover:bg-red-600'
     case 'high':
-      return 'bg-orange-100 text-orange-800 border-orange-200'
+      return 'bg-orange-500 text-white hover:bg-orange-600'
     case 'medium':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      return 'bg-yellow-500 text-black hover:bg-yellow-600'
     case 'low':
-      return 'bg-blue-100 text-blue-800 border-blue-200'
+      return 'bg-blue-500 text-white hover:bg-blue-600'
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200'
+      return 'bg-gray-500 text-white hover:bg-gray-600'
   }
 }
 
@@ -52,12 +52,12 @@ export function getSeverityColor(severity: string): string {
 export function getStatusColor(status: string): string {
   switch (status) {
     case 'open':
-      return 'bg-green-100 text-green-800 border-green-200'
+      return 'bg-green-500 text-white hover:bg-green-600'
     case 'resolved':
-      return 'bg-gray-100 text-gray-800 border-gray-200'
+      return 'bg-gray-500 text-white hover:bg-gray-600'
     case 'dismissed':
-      return 'bg-gray-100 text-gray-600 border-gray-200'
+      return 'bg-gray-400 text-white hover:bg-gray-500'
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200'
+      return 'bg-gray-500 text-white hover:bg-gray-600'
   }
 }
