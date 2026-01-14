@@ -5,18 +5,39 @@ Handles recording decisions and viewing decision history.
 Includes hard override approval workflow.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
-from core.database import get_db
+from core.database import get_db, SessionLocal
 from core.models import Decision, User, UserRole, DecisionType
 from core.services import DecisionRecorder, EvidenceGenerator
 from core.schemas.decision import DecisionCreate, DecisionResponse, DecisionListItem, ApprovalCheck
 
 router = APIRouter(prefix="/decisions", tags=["decisions"])
+
+
+def generate_evidence_pack_background(decision_id: UUID) -> None:
+    """
+    Background task to generate evidence pack.
+
+    Uses a new database session since background tasks run after response.
+    This is the async evidence generation to avoid blocking the API response.
+    """
+    db = SessionLocal()
+    try:
+        decision = db.query(Decision).filter(Decision.id == decision_id).first()
+        if decision:
+            evidence_gen = EvidenceGenerator(db)
+            evidence_gen.generate_pack(decision)
+    except Exception as e:
+        # Log error but don't fail - decision is already recorded
+        import logging
+        logging.error(f"Background evidence pack generation failed for decision {decision_id}: {e}")
+    finally:
+        db.close()
 
 
 def validate_approver(db: Session, approved_by: str) -> bool:
@@ -33,12 +54,14 @@ def validate_approver(db: Session, approved_by: str) -> bool:
 @router.post("", response_model=DecisionResponse, status_code=201)
 def create_decision(
     decision_data: DecisionCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """
     Record an immutable decision.
 
-    This resolves an exception and triggers evidence pack generation.
+    This resolves an exception and triggers evidence pack generation
+    asynchronously in a background task (non-blocking).
 
     For hard overrides (is_hard_override=True):
     - approved_by is required
@@ -74,14 +97,8 @@ def create_decision(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Generate evidence pack synchronously (would be async in production)
-    evidence_gen = EvidenceGenerator(db)
-    try:
-        evidence_pack = evidence_gen.generate_pack(decision)
-        db.refresh(decision)  # Refresh to get evidence_pack_id
-    except Exception as e:
-        # Decision is already recorded, just log error
-        print(f"Failed to generate evidence pack: {e}")
+    # Generate evidence pack asynchronously (non-blocking)
+    background_tasks.add_task(generate_evidence_pack_background, decision.id)
 
     return decision
 

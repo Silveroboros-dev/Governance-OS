@@ -131,36 +131,46 @@ From the Sprint 1 plan, we've achieved:
 
 ## 🚨 Known Issues (From Architecture Review)
 
-### High Priority - Tracked in GitHub Issues
+### High Priority - All Resolved ✅
 
-| Issue | Description | Status |
-|-------|-------------|--------|
-| [#42](https://github.com/Silveroboros-dev/Governance-OS/issues/42) | Approval fallback allows missing users | Open |
-| [#43](https://github.com/Silveroboros-dev/Governance-OS/issues/43) | No signal schema validation against pack types | Open |
-| [#44](https://github.com/Silveroboros-dev/Governance-OS/issues/44) | DB immutability only enforced in Python | Open |
-| [#45](https://github.com/Silveroboros-dev/Governance-OS/issues/45) | Pack isolation not enforced at API layer | Open |
+| Issue | Description | Status | Fix |
+|-------|-------------|--------|-----|
+| [#42](https://github.com/Silveroboros-dev/Governance-OS/issues/42) | Approval fallback allows missing users | ✅ Closed | Unknown users now rejected |
+| [#43](https://github.com/Silveroboros-dev/Governance-OS/issues/43) | No signal schema validation against pack types | ✅ Closed | `SignalValidator` validates pack/type/payload |
+| [#44](https://github.com/Silveroboros-dev/Governance-OS/issues/44) | DB immutability only enforced in Python | ✅ Closed | PostgreSQL triggers block UPDATE/DELETE |
+| [#45](https://github.com/Silveroboros-dev/Governance-OS/issues/45) | Pack isolation not enforced at API layer | ✅ Closed | `pack` param required on list endpoints |
 
-### Medium Priority - For Sprint 2
+### Medium Priority - All Resolved ✅
 
-- Synchronous evidence generation blocks API (should be async)
-- Option generation hardcoded in ExceptionEngine (should load from pack templates)
-- Exception fingerprinting too generic (needs pack-specific extractors)
-- Exception sorting in Python instead of SQL
+| Item | Fix |
+|------|-----|
+| Synchronous evidence generation blocks API | ✅ Now async via FastAPI `BackgroundTasks` |
+| Option generation hardcoded in ExceptionEngine | ✅ Loads from pack templates (`packs/*/option_templates.py`) |
+| Exception fingerprinting too generic | ✅ Pack-specific extractors (`packs/*/fingerprint_extractors.py`) |
+| Exception sorting in Python instead of SQL | ✅ SQL CASE expression for severity ordering |
 
 ---
 
 ## 🚧 What's Remaining
 
-### Sprint 2: Production Hardening
-- Address all 4 high-priority issues above
-- Async evidence generation with background tasks
-- Pack-specific option templates
-- Rate limiting on signal ingestion
+### Sprint 2: Production Hardening ✅ COMPLETE
+- ✅ All 4 high-priority security issues resolved
+- ✅ Async evidence generation with background tasks
+- ✅ Pack-specific option templates
+- ✅ Pack-specific fingerprint extractors
+- ✅ SQL-based exception sorting
+- ⏳ Rate limiting on signal ingestion (deferred)
 
-### Sprint 2+: AI Layer
-- MCP server for agent tool contracts
-- NarrativeAgent for evidence summaries
-- Evaluation framework for faithfulness
+### Sprint 2: AI Layer ✅ COMPLETE
+- ✅ MCP server for agent tool contracts
+- ✅ NarrativeAgent for evidence summaries
+- ✅ Evaluation framework for faithfulness
+
+### Sprint 3: Full Agentic Coprocessor
+- MCP write tools with approval gates
+- IntakeAgent (unstructured docs → candidate signals)
+- PolicyDraftAgent (policy text → draft PolicyVersion)
+- Tracing viewer for agent execution
 
 ---
 
