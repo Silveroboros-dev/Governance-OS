@@ -22,6 +22,23 @@ Governance OS is built as a **control-plane**: autonomous where safe, interrupti
 
 ---
 
+## Code-first proof points
+
+| Artifact | Path |
+|----------|------|
+| Eval runner (CI-gated) | [`evals/runner.py`](evals/runner.py) |
+| Agent prompts (versioned) | [`coprocessor/prompts/`](coprocessor/prompts/) |
+| Core determinism tests | [`core/tests/test_determinism.py`](core/tests/test_determinism.py) |
+| Structured logging | [`core/logging.py`](core/logging.py) |
+| Runbook | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) |
+
+**Planned:**
+- MCP tool contracts: `mcp/schemas/*.json`
+- Trace viewer: `coprocessor/traces/`
+- Demo scripts: `make demo-treasury`, `make demo-wealth`
+
+---
+
 ## AI Engineering Proof (verifiable, not vibes)
 
 This repo is designed to demonstrate **responsible agentic engineering**: tool contracts, schema discipline, eval gates, and traces.
