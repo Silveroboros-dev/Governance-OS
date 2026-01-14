@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AlertCircle, Shield } from 'lucide-react'
+import Link from 'next/link'
+import { AlertCircle, Shield, Settings2 } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { usePack } from '@/lib/pack-context'
 import type { PolicyWithVersion } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 export default function PoliciesPage() {
   const { pack } = usePack()
@@ -70,11 +72,19 @@ export default function PoliciesPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Governance Policies</h1>
-          <p className="text-muted-foreground mt-2">
-            Versioned rules with temporal validity (read-only)
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Governance Policies</h1>
+            <p className="text-muted-foreground mt-2">
+              Versioned rules with temporal validity
+            </p>
+          </div>
+          <Link href="/policies/tune">
+            <Button>
+              <Settings2 className="h-4 w-4 mr-2" />
+              Policy Tuning
+            </Button>
+          </Link>
         </div>
 
         {/* Stats */}
