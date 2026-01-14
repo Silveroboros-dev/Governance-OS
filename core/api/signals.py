@@ -4,7 +4,7 @@ Signals API Router.
 Handles signal ingestion with idempotency support.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -12,6 +12,7 @@ from core.database import get_db
 from core.models import Signal, SignalReliability, AuditEvent, AuditEventType
 from core.models.signal import compute_signal_content_hash
 from core.schemas.signal import SignalCreate, SignalResponse, SignalCreateResponse
+from core.validation import SignalValidator, ValidationError, get_signal_validator
 
 router = APIRouter(prefix="/signals", tags=["signals"])
 
@@ -30,7 +31,29 @@ def create_signal(
     Idempotency is determined by:
     1. Client-provided idempotency_key (if given)
     2. Content hash (pack + signal_type + payload + source + observed_at)
+
+    Validation:
+    - Pack must exist (treasury, wealth)
+    - Signal type must be valid for the pack
+    - Payload must match the signal type's schema
     """
+    # Validate signal against pack schema
+    validator = get_signal_validator()
+    try:
+        validator.validate_or_raise(
+            pack=signal_data.pack,
+            signal_type=signal_data.signal_type,
+            payload=signal_data.payload
+        )
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": str(e),
+                "errors": e.errors
+            }
+        )
+
     # Map reliability string to enum
     reliability_map = {
         "high": SignalReliability.HIGH,
@@ -145,3 +168,34 @@ def list_signals(
     signals = query.order_by(Signal.ingested_at.desc()).limit(limit).all()
 
     return signals
+
+
+@router.get("/types/{pack}")
+def get_signal_types(pack: str):
+    """
+    Get valid signal types for a pack.
+
+    Returns the list of valid signal types and their schemas.
+    Useful for API discovery and client-side validation.
+    """
+    validator = get_signal_validator()
+
+    if pack not in validator.get_valid_packs():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown pack '{pack}'. Valid packs: {', '.join(validator.get_valid_packs())}"
+        )
+
+    # Get signal types with their schemas
+    from packs.treasury.signal_types import TREASURY_SIGNAL_TYPES
+    from packs.wealth.signal_types import WEALTH_SIGNAL_TYPES
+
+    pack_schemas = {
+        "treasury": TREASURY_SIGNAL_TYPES,
+        "wealth": WEALTH_SIGNAL_TYPES
+    }
+
+    return {
+        "pack": pack,
+        "signal_types": pack_schemas.get(pack, {})
+    }
