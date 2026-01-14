@@ -10,9 +10,25 @@ jobs:
   backend:
     name: Backend (Python)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: govos
+          POSTGRES_PASSWORD: local_dev_password
+          POSTGRES_DB: governance_os_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: core
+    env:
+      DATABASE_URL: postgresql://govos:local_dev_password@localhost:5432/governance_os_test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
