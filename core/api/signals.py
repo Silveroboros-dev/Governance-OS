@@ -149,18 +149,23 @@ def create_signal(
 
 @router.get("", response_model=List[SignalResponse])
 def list_signals(
-    pack: str = None,
+    pack: str = Query(..., description="Pack name (treasury or wealth)"),
     signal_type: str = None,
     limit: int = 50,
     db: Session = Depends(get_db)
 ):
     """
-    List signals with optional filtering.
+    List signals with filtering.
+
+    Pack is required to enforce pack isolation.
     """
+    from core.api.dependencies import validate_pack
+    validate_pack(pack)
+
     query = db.query(Signal)
 
-    if pack:
-        query = query.filter(Signal.pack == pack)
+    # Filter by pack (required)
+    query = query.filter(Signal.pack == pack)
 
     if signal_type:
         query = query.filter(Signal.signal_type == signal_type)

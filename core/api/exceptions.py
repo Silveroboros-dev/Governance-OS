@@ -12,20 +12,22 @@ from uuid import UUID
 from core.database import get_db
 from core.models import Exception, ExceptionStatus
 from core.schemas.exception import ExceptionListItem, ExceptionDetail
+from core.api.dependencies import get_required_pack, validate_pack
 
 router = APIRouter(prefix="/exceptions", tags=["exceptions"])
 
 
 @router.get("", response_model=List[ExceptionListItem])
 def list_exceptions(
+    pack: str = Depends(get_required_pack),
     status: Optional[str] = Query(default="open", description="Filter by status: open, resolved, dismissed"),
-    pack: Optional[str] = Query(default=None, description="Filter by pack"),
     limit: int = Query(default=50, le=100),
     db: Session = Depends(get_db)
 ):
     """
     List exceptions with filtering.
 
+    Pack is required to enforce pack isolation.
     Returns exceptions sorted by severity (descending) then raised_at (descending).
     """
     query = db.query(Exception)
@@ -42,14 +44,13 @@ def list_exceptions(
             query = query.filter(Exception.status == status_enum)
 
     # Filter by pack (join through evaluation -> policy_version -> policy)
-    if pack:
-        from core.models import Evaluation, PolicyVersion, Policy
-        query = (
-            query.join(Exception.evaluation)
-            .join(Evaluation.policy_version)
-            .join(PolicyVersion.policy)
-            .filter(Policy.pack == pack)
-        )
+    from core.models import Evaluation, PolicyVersion, Policy
+    query = (
+        query.join(Exception.evaluation)
+        .join(Evaluation.policy_version)
+        .join(PolicyVersion.policy)
+        .filter(Policy.pack == pack)
+    )
 
     # Order by severity (critical > high > medium > low) then timestamp
     severity_order = {

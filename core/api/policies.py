@@ -13,13 +13,14 @@ from datetime import datetime, timezone
 from core.database import get_db
 from core.models import Policy, PolicyVersion, PolicyStatus
 from core.schemas.policy import PolicyWithVersion
+from core.api.dependencies import get_required_pack
 
 router = APIRouter(prefix="/policies", tags=["policies"])
 
 
 @router.get("", response_model=List[PolicyWithVersion])
 def list_policies(
-    pack: Optional[str] = Query(default=None, description="Filter by pack"),
+    pack: str = Depends(get_required_pack),
     status: Optional[str] = Query(default=None, description="Filter by status: draft, active, archived"),
     limit: int = Query(default=100, le=200),
     db: Session = Depends(get_db)
@@ -27,13 +28,13 @@ def list_policies(
     """
     List policies with their active versions.
 
+    Pack is required to enforce pack isolation.
     Returns policies with their currently active policy version based on temporal validity.
     """
     query = db.query(Policy).options(joinedload(Policy.versions))
 
-    # Filter by pack
-    if pack:
-        query = query.filter(Policy.pack == pack)
+    # Filter by pack (required)
+    query = query.filter(Policy.pack == pack)
 
     policies = query.limit(limit).all()
 
