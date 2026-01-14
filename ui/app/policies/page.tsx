@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react'
 import { AlertCircle, Shield } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
+import { usePack } from '@/lib/pack-context'
 import type { PolicyWithVersion } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
 export default function PoliciesPage() {
+  const { pack } = usePack()
   const [policies, setPolicies] = useState<PolicyWithVersion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +20,7 @@ export default function PoliciesPage() {
       try {
         setLoading(true)
         setError(null)
-        const data = await api.policies.list()
+        const data = await api.policies.list({ pack })
         setPolicies(data)
       } catch (err) {
         if (err instanceof ApiError) {
@@ -32,7 +34,7 @@ export default function PoliciesPage() {
     }
 
     fetchPolicies()
-  }, [])
+  }, [pack])
 
   if (loading) {
     return (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AlertCircle, ChevronRight, Filter } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
+import { usePack } from '@/lib/pack-context'
 import type { Exception, ExceptionStatus, ExceptionSeverity } from '@/lib/types'
 import { formatRelativeTime, getSeverityColor, getStatusColor } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
 export default function ExceptionsPage() {
+  const { pack } = usePack()
   const [exceptions, setExceptions] = useState<Exception[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +23,7 @@ export default function ExceptionsPage() {
       try {
         setLoading(true)
         setError(null)
-        const data = await api.exceptions.list({ status: statusFilter })
+        const data = await api.exceptions.list({ status: statusFilter, pack })
         setExceptions(data)
       } catch (err) {
         if (err instanceof ApiError) {
@@ -35,7 +37,7 @@ export default function ExceptionsPage() {
     }
 
     fetchExceptions()
-  }, [statusFilter])
+  }, [statusFilter, pack])
 
   if (loading) {
     return (

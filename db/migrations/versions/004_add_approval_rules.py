@@ -40,8 +40,8 @@ def upgrade() -> None:
         sa.Column('username', sa.String(100), nullable=False, unique=True),
         sa.Column('email', sa.String(255), nullable=True),
         sa.Column('display_name', sa.String(255), nullable=True),
-        sa.Column('role', sa.Enum('viewer', 'decider', 'approver', 'admin', name='user_role'), nullable=False, default='viewer'),
-        sa.Column('is_active', sa.Boolean(), nullable=False, default=True),
+        sa.Column('role', postgresql.ENUM('viewer', 'decider', 'approver', 'admin', name='user_role', create_type=False), nullable=False, server_default='viewer'),
+        sa.Column('is_active', sa.Boolean(), nullable=False, server_default='true'),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True),
     )
@@ -49,7 +49,7 @@ def upgrade() -> None:
     # Add new columns to decisions table
     op.add_column('decisions', sa.Column(
         'decision_type',
-        sa.Enum('standard', 'hard_override', name='decision_type'),
+        postgresql.ENUM('standard', 'hard_override', name='decision_type', create_type=False),
         nullable=True  # Nullable initially for existing data
     ))
     op.add_column('decisions', sa.Column('is_hard_override', sa.Boolean(), nullable=True))
