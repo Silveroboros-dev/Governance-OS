@@ -1,5 +1,7 @@
 # Governance OS
 
+> **Governance OS is a policy-driven exception/decision engine with a deterministic core and an integrated, evaluated agent layer.**
+
 Governance OS is a policy-driven coordination layer for high-stakes professional work (starting with **Corporate Treasury** and **Wealth Management**).
 
 It converts continuous signals into deterministic policy evaluations, raises exceptions only when **human judgment** is required, captures accountable decisions (with rationale and assumptions), and produces audit-grade evidence packs. The core is **replayable** on historical data to tune precision and reduce coordination overhead.
