@@ -213,7 +213,7 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {Object.entries(exception.context).map(([key, value]) => (
+                {exception.context && Object.entries(exception.context).map(([key, value]) => (
                   <div key={key} className="flex justify-between text-sm">
                     <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
                     <span className="font-medium">{String(value)}</span>

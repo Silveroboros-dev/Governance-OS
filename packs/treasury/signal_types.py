@@ -67,4 +67,78 @@ TREASURY_SIGNAL_TYPES = {
             "threshold": 0.20
         }
     },
+    "fx_exposure_breach": {
+        "description": "Foreign exchange exposure exceeds approved limit",
+        "payload_schema": {
+            "currency_pair": "string",
+            "current_exposure_usd": "number",
+            "limit_usd": "number",
+            "direction": "string",  # "long" or "short"
+        },
+        "reliability_default": "high",
+        "example": {
+            "currency_pair": "EUR/USD",
+            "current_exposure_usd": 12500000,
+            "limit_usd": 10000000,
+            "direction": "long"
+        }
+    },
+    "cash_forecast_variance": {
+        "description": "Actual cash position deviates significantly from forecast",
+        "payload_schema": {
+            "account": "string",
+            "forecast_balance_usd": "number",
+            "actual_balance_usd": "number",
+            "variance_percent": "number",
+            "forecast_date": "string",
+        },
+        "reliability_default": "high",
+        "example": {
+            "account": "Main Operating Account",
+            "forecast_balance_usd": 5000000,
+            "actual_balance_usd": 3200000,
+            "variance_percent": -36.0,
+            "forecast_date": "2026-01-15"
+        }
+    },
+    "covenant_breach": {
+        "description": "Financial covenant threshold breached or at risk",
+        "payload_schema": {
+            "covenant_name": "string",
+            "covenant_type": "string",  # "debt_service", "leverage", "liquidity"
+            "required_ratio": "number",
+            "actual_ratio": "number",
+            "lender": "string",
+            "facility": "string",
+        },
+        "reliability_default": "high",
+        "example": {
+            "covenant_name": "Debt Service Coverage Ratio",
+            "covenant_type": "debt_service",
+            "required_ratio": 1.25,
+            "actual_ratio": 1.18,
+            "lender": "Bank of America",
+            "facility": "Term Loan A"
+        }
+    },
+    "settlement_failure": {
+        "description": "Trade settlement failed or is at risk of failure",
+        "payload_schema": {
+            "trade_id": "string",
+            "asset": "string",
+            "counterparty": "string",
+            "settlement_date": "string",
+            "amount_usd": "number",
+            "failure_reason": "string",
+        },
+        "reliability_default": "high",
+        "example": {
+            "trade_id": "TRD-2026-0142",
+            "asset": "BTC",
+            "counterparty": "Prime Broker X",
+            "settlement_date": "2026-01-14",
+            "amount_usd": 2500000,
+            "failure_reason": "insufficient_funds"
+        }
+    },
 }

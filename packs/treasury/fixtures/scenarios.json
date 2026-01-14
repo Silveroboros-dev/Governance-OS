@@ -1,0 +1,234 @@
+{
+  "scenarios": [
+    {
+      "id": "btc_position_breach_critical",
+      "name": "Critical BTC Position Limit Breach",
+      "description": "BTC position exceeds limit by 25% for over 4 hours during market volatility",
+      "signals": [
+        {
+          "signal_type": "position_limit_breach",
+          "payload": {
+            "asset": "BTC",
+            "current_position": 125,
+            "limit": 100,
+            "duration_hours": 5
+          },
+          "source": "risk_monitoring_system",
+          "reliability": "high",
+          "metadata": {
+            "system": "risk_dashboard",
+            "alert_id": "BTC_CRIT_001",
+            "market_context": "Post-ETF approval rally"
+          }
+        }
+      ],
+      "expected_severity": "critical",
+      "expected_policy": "position_limit_policy",
+      "narrative": "Following the spot ETF approval, BTC surged 15% in 24 hours. Our trading desk increased position beyond approved limits to capture momentum. Position has been over limit for 5 hours."
+    },
+    {
+      "id": "eth_volatility_spike",
+      "name": "ETH Volatility Spike During Upgrade",
+      "description": "ETH volatility spikes during network upgrade event",
+      "signals": [
+        {
+          "signal_type": "market_volatility_spike",
+          "payload": {
+            "asset": "ETH",
+            "volatility": 0.52,
+            "threshold": 0.30,
+            "window_hours": 24
+          },
+          "source": "market_data_provider",
+          "reliability": "high",
+          "metadata": {
+            "provider": "bloomberg",
+            "confidence": 0.97,
+            "event": "Dencun Upgrade"
+          }
+        }
+      ],
+      "expected_severity": "high",
+      "expected_policy": "volatility_policy",
+      "narrative": "The Dencun network upgrade has triggered significant ETH price movement. 24-hour realized volatility has exceeded our 30% threshold by 73%."
+    },
+    {
+      "id": "exchange_downgrade",
+      "name": "Major Exchange Credit Downgrade",
+      "description": "Primary exchange counterparty downgraded from A to BBB",
+      "signals": [
+        {
+          "signal_type": "counterparty_credit_downgrade",
+          "payload": {
+            "counterparty": "CryptoExchange Global",
+            "previous_rating": "A",
+            "new_rating": "BBB",
+            "exposure_usd": 8500000
+          },
+          "source": "credit_rating_service",
+          "reliability": "high",
+          "metadata": {
+            "rating_agency": "Moody's",
+            "report_id": "CR-2026-0087",
+            "downgrade_reason": "Regulatory concerns"
+          }
+        }
+      ],
+      "expected_severity": "high",
+      "expected_policy": "credit_risk_policy",
+      "narrative": "Moody's downgraded CryptoExchange Global from A to BBB citing regulatory investigations and governance concerns. Our exposure is $8.5M across spot and derivatives."
+    },
+    {
+      "id": "eur_fx_breach",
+      "name": "EUR/USD Exposure Limit Breach",
+      "description": "EUR exposure exceeds limit due to client flow",
+      "signals": [
+        {
+          "signal_type": "fx_exposure_breach",
+          "payload": {
+            "currency_pair": "EUR/USD",
+            "current_exposure_usd": 14200000,
+            "limit_usd": 10000000,
+            "direction": "long"
+          },
+          "source": "treasury_management_system",
+          "reliability": "high",
+          "metadata": {
+            "system": "kyriba",
+            "breach_timestamp": "2026-01-14T09:30:00Z",
+            "trigger": "Large client EUR payment"
+          }
+        }
+      ],
+      "expected_severity": "high",
+      "expected_policy": "fx_exposure_policy",
+      "narrative": "A large EUR-denominated client payment pushed our EUR/USD exposure 42% over the approved limit. Treasury recommends immediate hedging action."
+    },
+    {
+      "id": "cash_shortfall",
+      "name": "Operating Account Cash Shortfall",
+      "description": "Main operating account 35% below forecast",
+      "signals": [
+        {
+          "signal_type": "cash_forecast_variance",
+          "payload": {
+            "account": "Main Operating Account - USD",
+            "forecast_balance_usd": 12000000,
+            "actual_balance_usd": 7800000,
+            "variance_percent": -35.0,
+            "forecast_date": "2026-01-15"
+          },
+          "source": "treasury_management_system",
+          "reliability": "high",
+          "metadata": {
+            "system": "kyriba",
+            "variance_drivers": ["Delayed client payment", "Accelerated vendor payments"],
+            "forecast_model": "13-week rolling"
+          }
+        }
+      ],
+      "expected_severity": "critical",
+      "expected_policy": "cash_management_policy",
+      "narrative": "Main operating account is $4.2M (35%) below forecast due to delayed client receivables and accelerated vendor payments. Payroll is in 3 days."
+    },
+    {
+      "id": "covenant_dscr_breach",
+      "name": "Debt Service Coverage Ratio Breach",
+      "description": "DSCR falls below covenant requirement",
+      "signals": [
+        {
+          "signal_type": "covenant_breach",
+          "payload": {
+            "covenant_name": "Debt Service Coverage Ratio",
+            "covenant_type": "debt_service",
+            "required_ratio": 1.25,
+            "actual_ratio": 1.15,
+            "lender": "JPMorgan Chase",
+            "facility": "Revolving Credit Facility"
+          },
+          "source": "financial_reporting_system",
+          "reliability": "high",
+          "metadata": {
+            "system": "oracle_financials",
+            "measurement_period": "Q4 2025",
+            "cure_period_days": 30,
+            "waiver_history": "None in past 24 months"
+          }
+        }
+      ],
+      "expected_severity": "high",
+      "expected_policy": "covenant_monitoring_policy",
+      "narrative": "Q4 2025 DSCR calculation shows 1.15x vs required 1.25x. Revenue shortfall and timing of debt payments drove the breach. 30-day cure period applies."
+    },
+    {
+      "id": "settlement_fail_prime",
+      "name": "Prime Broker Settlement Failure",
+      "description": "$2M BTC trade fails to settle",
+      "signals": [
+        {
+          "signal_type": "settlement_failure",
+          "payload": {
+            "trade_id": "TRD-2026-0298",
+            "asset": "BTC",
+            "counterparty": "Prime Broker Alpha",
+            "settlement_date": "2026-01-14",
+            "amount_usd": 2100000,
+            "failure_reason": "collateral_shortfall"
+          },
+          "source": "settlement_system",
+          "reliability": "high",
+          "metadata": {
+            "system": "custody_provider",
+            "original_trade_date": "2026-01-12",
+            "retry_attempts": 2,
+            "counterparty_response": "Investigating internally"
+          }
+        }
+      ],
+      "expected_severity": "critical",
+      "expected_policy": "settlement_policy",
+      "narrative": "A $2.1M BTC purchase from Prime Broker Alpha has failed settlement twice due to collateral shortfall on their side. Our position remains undelivered."
+    }
+  ],
+  "demo_flow": {
+    "description": "Recommended order for demonstrating the system",
+    "steps": [
+      {
+        "order": 1,
+        "scenario_id": "btc_position_breach_critical",
+        "suggested_decision": "escalate_to_cfo",
+        "suggested_rationale": "Given the critical severity and 5-hour duration during unusual market conditions, this requires CFO review before any position changes."
+      },
+      {
+        "order": 2,
+        "scenario_id": "eth_volatility_spike",
+        "suggested_decision": "activate_hedges",
+        "suggested_rationale": "The Dencun upgrade creates asymmetric risk. Activating hedges protects downside while maintaining core position exposure."
+      },
+      {
+        "order": 3,
+        "scenario_id": "exchange_downgrade",
+        "suggested_decision": "reduce_exposure",
+        "suggested_rationale": "Regulatory concerns warrant reducing exposure. Maintain minimum required balance for operations while moving excess to higher-rated venues."
+      },
+      {
+        "order": 4,
+        "scenario_id": "cash_shortfall",
+        "suggested_decision": "initiate_cash_sweep",
+        "suggested_rationale": "Payroll priority requires immediate action. Sweep from money market accounts while investigating forecast variance root cause."
+      },
+      {
+        "order": 5,
+        "scenario_id": "covenant_dscr_breach",
+        "suggested_decision": "negotiate_waiver",
+        "suggested_rationale": "Strong banking relationship and no prior waivers supports negotiation. Prepare financial projections showing Q1 recovery."
+      }
+    ]
+  },
+  "metadata": {
+    "version": "1.0",
+    "pack": "treasury",
+    "created_by": "system",
+    "description": "Demo scenarios for Treasury Governance Pack"
+  }
+}

@@ -100,4 +100,164 @@ TREASURY_OPTION_TEMPLATES = {
             ]
         },
     ],
+    "liquidity_threshold_breach": [
+        {
+            "id": "liquidate_secondary_assets",
+            "label": "Liquidate Secondary Assets",
+            "description": "Sell less critical assets to restore liquidity",
+            "implications": [
+                "Immediate liquidity improvement",
+                "Potential loss on forced sales",
+                "Reduces overall portfolio"
+            ]
+        },
+        {
+            "id": "draw_credit_facility",
+            "label": "Draw on Credit Facility",
+            "description": "Access existing credit line for liquidity",
+            "implications": [
+                "Quick liquidity access",
+                "Increases debt obligations",
+                "May affect covenant ratios"
+            ]
+        },
+        {
+            "id": "request_temporary_waiver",
+            "label": "Request Policy Waiver",
+            "description": "Seek temporary waiver on liquidity requirements",
+            "implications": [
+                "No immediate action required",
+                "Requires board/committee approval",
+                "Time-limited relief"
+            ]
+        },
+    ],
+    "fx_exposure_breach": [
+        {
+            "id": "execute_spot_hedge",
+            "label": "Execute Spot Hedge",
+            "description": "Immediately hedge excess FX exposure",
+            "implications": [
+                "Immediate risk reduction",
+                "Transaction costs",
+                "Locks in current rates"
+            ]
+        },
+        {
+            "id": "forward_contract",
+            "label": "Enter Forward Contract",
+            "description": "Hedge exposure with forward contract",
+            "implications": [
+                "Deferred settlement",
+                "Rate certainty for future",
+                "Counterparty exposure"
+            ]
+        },
+        {
+            "id": "approve_temporary_limit",
+            "label": "Approve Temporary Limit Increase",
+            "description": "Temporarily increase FX exposure limit",
+            "implications": [
+                "Maintains flexibility",
+                "Continued currency risk",
+                "Requires limit reset date"
+            ]
+        },
+    ],
+    "cash_forecast_variance": [
+        {
+            "id": "investigate_variance",
+            "label": "Investigate Root Cause",
+            "description": "Conduct detailed analysis of variance drivers",
+            "implications": [
+                "Delays corrective action",
+                "Better informed decisions",
+                "Process improvement opportunity"
+            ]
+        },
+        {
+            "id": "adjust_forecast_model",
+            "label": "Adjust Forecast Model",
+            "description": "Update forecasting methodology based on variance",
+            "implications": [
+                "Improved future accuracy",
+                "May require system changes",
+                "Training needs"
+            ]
+        },
+        {
+            "id": "initiate_cash_sweep",
+            "label": "Initiate Emergency Cash Sweep",
+            "description": "Transfer funds from secondary accounts",
+            "implications": [
+                "Immediate cash improvement",
+                "Cross-account dependencies",
+                "May affect other operations"
+            ]
+        },
+    ],
+    "covenant_breach": [
+        {
+            "id": "negotiate_waiver",
+            "label": "Negotiate Lender Waiver",
+            "description": "Request temporary waiver from covenant",
+            "implications": [
+                "Preserves banking relationship",
+                "May incur waiver fees",
+                "Requires lender cooperation"
+            ]
+        },
+        {
+            "id": "accelerate_debt_paydown",
+            "label": "Accelerate Debt Paydown",
+            "description": "Make additional principal payments to improve ratio",
+            "implications": [
+                "Uses available cash",
+                "Improves covenant ratio",
+                "Reduces future flexibility"
+            ]
+        },
+        {
+            "id": "refinance_facility",
+            "label": "Explore Refinancing",
+            "description": "Seek new facility with different covenant terms",
+            "implications": [
+                "Potential better terms",
+                "Time-consuming process",
+                "Market rate exposure"
+            ]
+        },
+    ],
+    "settlement_failure": [
+        {
+            "id": "retry_settlement",
+            "label": "Retry Settlement",
+            "description": "Attempt settlement again with corrected details",
+            "implications": [
+                "Quick resolution if successful",
+                "May fail again",
+                "Counterparty coordination required"
+            ]
+        },
+        {
+            "id": "escalate_to_counterparty",
+            "label": "Escalate to Counterparty",
+            "description": "Formally escalate issue to counterparty management",
+            "implications": [
+                "Higher-level attention",
+                "Relationship implications",
+                "Documentation required"
+            ]
+        },
+        {
+            "id": "cancel_and_rebook",
+            "label": "Cancel and Rebook Trade",
+            "description": "Cancel failed trade and book new one at current rates",
+            "implications": [
+                "Clean resolution",
+                "Potential rate slippage",
+                "Operational complexity"
+            ]
+        },
+    ],
 }

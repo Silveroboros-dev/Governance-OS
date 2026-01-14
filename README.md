@@ -45,7 +45,7 @@ This repo is designed to demonstrate **responsible agentic engineering**: tool c
 - Immutable decision recording with rationale and assumptions
 - Evidence packs for defensibility and audit
 - One-screen decision UI (no recommendations, symmetric options)
-- Treasury pack with sample policies and fixtures
+- Treasury pack with realistic policies, signals, and demo scenarios
 
 ### Planned (Sprint 2 thin-slice)
 - **MCP server (read-only tools)** exposing kernel state safely  
@@ -125,6 +125,38 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks:
 - option templates
 - UI copy / vocabulary
 - fixtures for demos and replay
+
+#### Treasury Pack (included)
+
+**Signal Types (8):**
+- `position_limit_breach` - Asset position exceeds limit
+- `market_volatility_spike` - Volatility exceeds threshold
+- `counterparty_credit_downgrade` - Credit rating downgraded
+- `liquidity_threshold_breach` - Liquidity below required level
+- `fx_exposure_breach` - FX exposure exceeds limit
+- `cash_forecast_variance` - Cash position deviates from forecast
+- `covenant_breach` - Financial covenant violated
+- `settlement_failure` - Trade settlement failed
+
+**Policies (7):**
+- Position Limit Policy
+- Market Volatility Policy
+- Counterparty Credit Risk Policy
+- Liquidity Management Policy
+- FX Exposure Policy
+- Cash Forecasting Policy
+- Covenant Monitoring Policy
+- Settlement Risk Policy
+
+**Demo Scenarios (7):** Realistic treasury scenarios in `packs/treasury/fixtures/scenarios.json`
+
+```bash
+# Load realistic demo scenarios
+docker compose exec backend python -m core.scripts.seed_fixtures --scenarios
+
+# Load specific scenario
+docker compose exec backend python -m core.scripts.seed_fixtures --scenario=btc_position_breach_critical
+```
 
 ---
 

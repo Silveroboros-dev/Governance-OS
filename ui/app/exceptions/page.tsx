@@ -161,7 +161,7 @@ export default function ExceptionsPage() {
                           </span>
                         </div>
                         <h3 className="text-lg font-semibold">{exception.title}</h3>
-                        {exception.context.asset && (
+                        {exception.context?.asset && (
                           <p className="text-sm text-muted-foreground">
                             Asset: {exception.context.asset}
                           </p>
