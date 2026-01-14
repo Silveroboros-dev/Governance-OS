@@ -138,7 +138,7 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks:
 - `covenant_breach` - Financial covenant violated
 - `settlement_failure` - Trade settlement failed
 
-**Policies (7):**
+**Policies (8):**
 - Position Limit Policy
 - Market Volatility Policy
 - Counterparty Credit Risk Policy
