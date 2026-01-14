@@ -20,12 +20,13 @@ router = APIRouter(prefix="/decisions", tags=["decisions"])
 
 
 def validate_approver(db: Session, approved_by: str) -> bool:
-    """Check if user has approver privileges."""
+    """Check if user has approver privileges.
+
+    Returns False if user doesn't exist - unknown users cannot approve.
+    """
     user = db.query(User).filter(User.username == approved_by).first()
     if not user:
-        # If no user record exists, allow (for backwards compatibility)
-        # In production, this should be strict
-        return True
+        return False
     return user.can_approve()
 
 
