@@ -47,10 +47,13 @@ This repo is designed to demonstrate **responsible agentic engineering**: tool c
 - One-screen decision UI (no recommendations, symmetric options)
 - Treasury pack with realistic policies, signals, and demo scenarios
 
-### Planned (Sprint 2 thin-slice)
-- **MCP server (read-only tools)** exposing kernel state safely  
-- **NarrativeAgent v0**: drafts memos strictly grounded to evidence IDs  
+### ✅ Implemented (Sprint 2)
+- **Wealth Pack**: 8 signal types, 8 policies, 7 demo scenarios
+- **Replay Harness**: CSV ingestion with provenance, deterministic replay, comparison tools
+- **MCP Server (read-only tools)**: Exposes kernel state safely for AI agents
+- **NarrativeAgent v0**: Drafts memos strictly grounded to evidence IDs
 - **Evals v0**: CI fails on unsupported claims (anti-hallucination gate)
+- **Exception Metrics**: Budget tracking and replay analytics
 
 ### Planned (Sprint 3: portfolio-grade AI layer)
 - MCP write tools with approval gates + audit events  
@@ -106,14 +109,15 @@ Not allowed:
 
 ## Repo layout
 ```bash
-  /core FastAPI backend (deterministic governance kernel)
-  /ui Next.js frontend (one-screen exception UI + supporting views)
-  /db Migrations, schema, seed hooks
-  /packs Domain packs (treasury, wealth): templates + fixtures + vocabulary
-  /replay Replay harness: CSV import + scenario runner
+  /core        FastAPI backend (deterministic governance kernel)
+  /ui          Next.js frontend (one-screen exception UI + supporting views)
+  /db          Migrations, schema, seed hooks
+  /packs       Domain packs (treasury, wealth): templates + fixtures + vocabulary
+  /replay      Replay harness: CSV import + scenario runner + metrics
+  /tests       Comprehensive test suite (187 tests)
 
   # AI engineering layer
-  /mcp         MCP server exposing kernel tools (read-only v0, gated writes later)
+  /mcp_server  MCP server exposing kernel tools (read-only v0, gated writes later)
   /coprocessor Agents + tools + prompts + schemas + traces
   /evals       Datasets + goldens + eval runner (CI-gated)
 ```
@@ -157,6 +161,30 @@ docker compose exec backend python -m core.scripts.seed_fixtures --scenarios
 # Load specific scenario
 docker compose exec backend python -m core.scripts.seed_fixtures --scenario=btc_position_breach_critical
 ```
+
+#### Wealth Pack (Sprint 2)
+
+**Signal Types (8):**
+- `portfolio_drift` - Allocation drifted from target
+- `rebalancing_required` - Rebalancing threshold triggered
+- `suitability_mismatch` - Client risk profile vs holdings
+- `concentration_breach` - Single position concentration
+- `tax_loss_harvest_opportunity` - Tax-loss harvesting signal
+- `client_cash_withdrawal` - Large withdrawal request
+- `market_correlation_spike` - Portfolio correlation risk
+- `fee_schedule_change` - Fee changes affecting client
+
+**Policies (8):**
+- Portfolio Drift Policy
+- Rebalancing Policy
+- Suitability Policy
+- Concentration Policy
+- Tax Loss Harvesting Policy
+- Withdrawal Policy
+- Correlation Risk Policy
+- Fee Change Policy
+
+**Demo Scenarios (7):** Realistic wealth management scenarios in `packs/wealth/fixtures/scenarios.json`
 
 ---
 
@@ -207,6 +235,22 @@ make logs         # View logs
 make shell        # Open backend shell
 make db           # Open postgres shell
 make clean        # Remove all containers and volumes
+```
+
+### Sprint 2 commands
+
+```bash
+# Replay harness (policy tuning)
+make replay PACK=treasury FROM=2025-01-01 TO=2025-03-31
+
+# MCP server (for Claude Desktop integration)
+make mcp
+
+# Run evaluations (CI gate - fails on hallucinations)
+make evals
+
+# Load demo scenarios
+make scenarios
 ```
 
 ### Manual workflow
@@ -270,21 +314,17 @@ Memory is not logging: decisions link to evidence and outcomes; the graph compou
 - ✅ Treasury pack with sample policies
 - ✅ Full Docker Compose setup (postgres + backend + frontend)
 
-#### Sprint 2: Packs + replay (pilot-grade) + AI thin-slice
+#### ✅ Sprint 2: Packs + replay (pilot-grade) + AI thin-slice — COMPLETE
 
-treasury + wealth packs
-
-CSV ingestion + provenance
-
-replay namespace + comparisons
-
-exception budgets + metrics
-
-MCP v0 (read-only tools)
-
-NarrativeAgent v0 (grounded memos)
-
-Evals v0 (fail on unsupported claims)
+- ✅ Treasury + Wealth packs (8 signal types, 8 policies each)
+- ✅ CSV ingestion with SHA256 provenance tracking
+- ✅ Replay harness with isolated namespaces + determinism verification
+- ✅ Replay comparison tools (before/after policy changes)
+- ✅ Exception budgets + metrics dashboard
+- ✅ MCP v0 (read-only tools for AI agent integration)
+- ✅ NarrativeAgent v0 (grounded memos with evidence references)
+- ✅ Evals v0 (CI gate - fails on unsupported claims)
+- ✅ Comprehensive test suite (187 tests)
 
 #### Sprint 3: Agentic coprocessor (portfolio-grade AI engineering)
 

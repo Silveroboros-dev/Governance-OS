@@ -1,0 +1,274 @@
+{
+  "version": "1.0.0",
+  "description": "Golden test cases for narrative memo validation",
+  "test_cases": [
+    {
+      "id": "golden_001",
+      "name": "Properly Grounded Memo",
+      "description": "A correctly formatted memo with all claims grounded to evidence",
+      "expected_result": "pass",
+      "memo": {
+        "decision_id": "dec_test_001",
+        "title": "Position Limit Breach Resolution",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "The BTC position reached $150M, exceeding the $100M limit",
+                "evidence_refs": [
+                  {"evidence_id": "sig_abc123", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "The breach was detected by the position monitoring system",
+                "evidence_refs": [
+                  {"evidence_id": "sig_abc123", "evidence_type": "signal"},
+                  {"evidence_id": "eval_def456", "evidence_type": "evaluation"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Decision",
+            "claims": [
+              {
+                "text": "The decision-maker chose to reduce position immediately",
+                "evidence_refs": [
+                  {"evidence_id": "opt_ghi789", "evidence_type": "chosen_option"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_test_001",
+        "evidence_items": [
+          {"evidence_id": "sig_abc123", "type": "signal", "data": {}},
+          {"evidence_id": "eval_def456", "type": "evaluation", "data": {}},
+          {"evidence_id": "opt_ghi789", "type": "chosen_option", "data": {}}
+        ]
+      }
+    },
+    {
+      "id": "golden_002",
+      "name": "Ungrounded Claim",
+      "description": "Memo with a claim that has no evidence references",
+      "expected_result": "fail",
+      "expected_error_type": "ungrounded_claim",
+      "memo": {
+        "decision_id": "dec_test_002",
+        "title": "Market Volatility Response",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "Volatility spiked significantly in the past 24 hours",
+                "evidence_refs": []
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_test_002",
+        "evidence_items": [
+          {"evidence_id": "sig_vol123", "type": "signal", "data": {}}
+        ]
+      }
+    },
+    {
+      "id": "golden_003",
+      "name": "Invalid Evidence Reference",
+      "description": "Memo references an evidence ID that doesn't exist",
+      "expected_result": "fail",
+      "expected_error_type": "invalid_evidence_ref",
+      "memo": {
+        "decision_id": "dec_test_003",
+        "title": "Credit Risk Assessment",
+        "sections": [
+          {
+            "heading": "Analysis",
+            "claims": [
+              {
+                "text": "The counterparty was downgraded to BB",
+                "evidence_refs": [
+                  {"evidence_id": "sig_nonexistent", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_test_003",
+        "evidence_items": [
+          {"evidence_id": "sig_credit123", "type": "signal", "data": {}}
+        ]
+      }
+    },
+    {
+      "id": "golden_004",
+      "name": "Forbidden Recommendation",
+      "description": "Memo contains recommendation language",
+      "expected_result": "fail",
+      "expected_error_type": "recommendation",
+      "memo": {
+        "decision_id": "dec_test_004",
+        "title": "Liquidity Management",
+        "sections": [
+          {
+            "heading": "Recommendation",
+            "claims": [
+              {
+                "text": "The team should consider reducing exposure to minimize risk",
+                "evidence_refs": [
+                  {"evidence_id": "sig_liq123", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_test_004",
+        "evidence_items": [
+          {"evidence_id": "sig_liq123", "type": "signal", "data": {}}
+        ]
+      }
+    },
+    {
+      "id": "golden_005",
+      "name": "Forbidden Opinion",
+      "description": "Memo contains opinion language",
+      "expected_result": "fail",
+      "expected_error_type": "opinion",
+      "memo": {
+        "decision_id": "dec_test_005",
+        "title": "Settlement Failure Review",
+        "sections": [
+          {
+            "heading": "Assessment",
+            "claims": [
+              {
+                "text": "This appears to be a significant operational failure",
+                "evidence_refs": [
+                  {"evidence_id": "sig_set123", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_test_005",
+        "evidence_items": [
+          {"evidence_id": "sig_set123", "type": "signal", "data": {}}
+        ]
+      }
+    },
+    {
+      "id": "golden_006",
+      "name": "Forbidden Severity Judgment",
+      "description": "Memo makes severity judgment (kernel's job)",
+      "expected_result": "fail",
+      "expected_error_type": "severity_judgment",
+      "memo": {
+        "decision_id": "dec_test_006",
+        "title": "FX Exposure Alert",
+        "sections": [
+          {
+            "heading": "Urgency",
+            "claims": [
+              {
+                "text": "This is critical and requires immediate action",
+                "evidence_refs": [
+                  {"evidence_id": "sig_fx123", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_test_006",
+        "evidence_items": [
+          {"evidence_id": "sig_fx123", "type": "signal", "data": {}}
+        ]
+      }
+    },
+    {
+      "id": "golden_007",
+      "name": "Forbidden Policy Evaluation",
+      "description": "Memo evaluates policy (kernel's job)",
+      "expected_result": "fail",
+      "expected_error_type": "policy_evaluation",
+      "memo": {
+        "decision_id": "dec_test_007",
+        "title": "Covenant Review",
+        "sections": [
+          {
+            "heading": "Policy Review",
+            "claims": [
+              {
+                "text": "The policy threshold is too strict and should be adjusted",
+                "evidence_refs": [
+                  {"evidence_id": "sig_cov123", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_test_007",
+        "evidence_items": [
+          {"evidence_id": "sig_cov123", "type": "signal", "data": {}}
+        ]
+      }
+    },
+    {
+      "id": "golden_008",
+      "name": "Multiple Evidence References",
+      "description": "Claim properly references multiple evidence items",
+      "expected_result": "pass",
+      "memo": {
+        "decision_id": "dec_test_008",
+        "title": "Comprehensive Position Review",
+        "sections": [
+          {
+            "heading": "Context",
+            "claims": [
+              {
+                "text": "The position limit breach triggered an exception under the Position Limit Policy, which was evaluated by the governance kernel",
+                "evidence_refs": [
+                  {"evidence_id": "sig_pos123", "evidence_type": "signal"},
+                  {"evidence_id": "exc_abc456", "evidence_type": "exception_context"},
+                  {"evidence_id": "eval_def789", "evidence_type": "evaluation"},
+                  {"evidence_id": "pol_ghi012", "evidence_type": "policy"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_test_008",
+        "evidence_items": [
+          {"evidence_id": "sig_pos123", "type": "signal", "data": {}},
+          {"evidence_id": "exc_abc456", "type": "exception_context", "data": {}},
+          {"evidence_id": "eval_def789", "type": "evaluation", "data": {}},
+          {"evidence_id": "pol_ghi012", "type": "policy", "data": {}}
+        ]
+      }
+    }
+  ],
+  "forbidden_patterns": {
+    "recommendation_words": ["should", "recommend", "best option", "optimal", "advise", "suggest"],
+    "opinion_words": ["I think", "I believe", "appears to be", "seems", "probably", "likely"],
+    "severity_words": ["critical", "urgent", "immediately", "high priority"],
+    "policy_eval_words": ["policy is too", "threshold should be", "change the policy"]
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "pack": "wealth",
+  "version": "1.0.0",
+  "scenarios": [
+    {
+      "id": "portfolio_drift_equities_high",
+      "name": "Equity Allocation Drift - HNWI Client",
+      "description": "High-net-worth client's equity allocation has drifted significantly above target due to market rally",
+      "signals": [
+        {
+          "signal_type": "portfolio_drift",
+          "source": "portfolio_monitor",
+          "payload": {
+            "client_id": "CLIENT-HNW-001",
+            "portfolio_id": "PORT-001",
+            "asset_class": "equities",
+            "target_allocation_percent": 60,
+            "current_allocation_percent": 72,
+            "drift_percent": 12,
+            "drift_direction": "over",
+            "portfolio_value_usd": 8500000
+          }
+        }
+      ],
+      "expected_severity": "high",
+      "narrative": "Client's equity allocation has drifted to 72% (target: 60%) due to strong equity performance. The $8.5M portfolio is now overweight equities by 12 percentage points, increasing market risk exposure beyond the client's stated risk tolerance."
+    },
+    {
+      "id": "suitability_mismatch_aggressive",
+      "name": "Suitability Mismatch - Conservative Client",
+      "description": "Conservative retiree's portfolio has become too aggressive after inheritance of growth stocks",
+      "signals": [
+        {
+          "signal_type": "suitability_mismatch",
+          "source": "compliance_system",
+          "payload": {
+            "client_id": "CLIENT-RET-042",
+            "portfolio_id": "PORT-042",
+            "client_risk_score": 3,
+            "portfolio_risk_score": 7,
+            "risk_delta": 4,
+            "mismatch_direction": "too_aggressive",
+            "top_contributing_holdings": [
+              "NVDA - 15% of portfolio",
+              "TSLA - 8% of portfolio",
+              "ARKK - 5% of portfolio"
+            ],
+            "last_profile_update": "2025-06-15"
+          }
+        }
+      ],
+      "expected_severity": "critical",
+      "narrative": "A conservative retiree (risk score 3) inherited concentrated tech positions, pushing portfolio risk score to 7. The 4-point risk delta significantly exceeds suitability thresholds. Holdings in NVDA (15%), TSLA (8%), and ARKK (5%) are primary contributors to the mismatch."
+    },
+    {
+      "id": "concentration_breach_executive",
+      "name": "Single Stock Concentration - Corporate Executive",
+      "description": "Executive's employer stock has breached concentration limits after stock appreciation",
+      "signals": [
+        {
+          "signal_type": "concentration_breach",
+          "source": "position_monitor",
+          "payload": {
+            "client_id": "CLIENT-EXEC-007",
+            "portfolio_id": "PORT-007",
+            "security_id": "AAPL",
+            "security_name": "Apple Inc.",
+            "sector": "Technology",
+            "current_weight_percent": 28,
+            "limit_percent": 10,
+            "breach_amount_percent": 18,
+            "position_value_usd": 2800000,
+            "is_restricted_security": true
+          }
+        }
+      ],
+      "expected_severity": "critical",
+      "narrative": "Executive client's Apple stock position has reached 28% of the $10M portfolio, breaching the 10% concentration limit by 18 percentage points. As a restricted security due to executive status, this position requires careful handling with blackout period considerations."
+    },
+    {
+      "id": "tax_loss_harvest_tech",
+      "name": "Tax Loss Harvest - Tech Sector Decline",
+      "description": "Significant tax-loss harvesting opportunity in tech holdings after sector correction",
+      "signals": [
+        {
+          "signal_type": "tax_loss_harvest_opportunity",
+          "source": "tax_optimizer",
+          "payload": {
+            "client_id": "CLIENT-TAX-015",
+            "portfolio_id": "PORT-015",
+            "security_id": "META",
+            "security_name": "Meta Platforms Inc.",
+            "cost_basis_usd": 450000,
+            "current_value_usd": 310000,
+            "unrealized_loss_usd": 140000,
+            "holding_period_days": 400,
+            "is_short_term": false,
+            "wash_sale_risk": false,
+            "replacement_security_id": "GOOGL",
+            "estimated_tax_savings_usd": 56000
+          }
+        }
+      ],
+      "expected_severity": "high",
+      "narrative": "Long-term Meta position shows $140K unrealized loss with potential $56K tax savings. Position has been held 400+ days (long-term treatment). GOOGL identified as suitable replacement security with no wash sale risk."
+    },
+    {
+      "id": "large_withdrawal_request",
+      "name": "Major Withdrawal - Property Purchase",
+      "description": "Client requesting 40% portfolio withdrawal for real estate purchase",
+      "signals": [
+        {
+          "signal_type": "client_cash_withdrawal",
+          "source": "client_portal",
+          "payload": {
+            "client_id": "CLIENT-FAM-023",
+            "portfolio_id": "PORT-023",
+            "withdrawal_amount_usd": 2000000,
+            "withdrawal_percent": 40,
+            "available_cash_usd": 150000,
+            "liquidation_required": true,
+            "liquidation_amount_usd": 1850000,
+            "withdrawal_reason": "Real estate purchase - vacation home",
+            "requested_date": "2026-02-15"
+          }
+        }
+      ],
+      "expected_severity": "critical",
+      "narrative": "Client requests $2M withdrawal (40% of $5M portfolio) for vacation home purchase. Only $150K cash available; $1.85M liquidation required. Request timing allows for tax-efficient liquidation planning before Feb 15 target date."
+    },
+    {
+      "id": "correlation_spike_crisis",
+      "name": "Correlation Spike - Market Stress",
+      "description": "Portfolio diversification breakdown during market volatility event",
+      "signals": [
+        {
+          "signal_type": "market_correlation_spike",
+          "source": "risk_analytics",
+          "payload": {
+            "client_id": "CLIENT-DIV-008",
+            "portfolio_id": "PORT-008",
+            "benchmark": "SP500",
+            "current_correlation": 0.94,
+            "historical_correlation": 0.72,
+            "correlation_change": 0.22,
+            "lookback_days": 30,
+            "diversification_ratio": 1.05,
+            "risk_parity_breach": true
+          }
+        }
+      ],
+      "expected_severity": "high",
+      "narrative": "30-day rolling correlation with S&P 500 has spiked from historical 0.72 to 0.94, indicating diversification breakdown. Risk parity constraints breached. Alternative asset allocations are providing less diversification benefit than expected during market stress."
+    },
+    {
+      "id": "fee_increase_notification",
+      "name": "Fee Schedule Increase - Management Fees",
+      "description": "Platform-wide fee increase requiring client notification and potential consent",
+      "signals": [
+        {
+          "signal_type": "fee_schedule_change",
+          "source": "billing_system",
+          "payload": {
+            "client_id": "CLIENT-LT-055",
+            "portfolio_id": "PORT-055",
+            "fee_type": "management",
+            "current_rate_bps": 75,
+            "new_rate_bps": 100,
+            "change_bps": 25,
+            "effective_date": "2026-04-01",
+            "annual_impact_usd": 7500,
+            "requires_client_notification": true,
+            "requires_consent": true
+          }
+        }
+      ],
+      "expected_severity": "high",
+      "narrative": "Management fee increase from 75 bps to 100 bps effective April 1. Annual impact of $7,500 on this client's $3M portfolio. Client consent required per advisory agreement terms. 25 bps increase requires documented justification."
+    }
+  ]
+}

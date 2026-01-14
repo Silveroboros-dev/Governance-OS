@@ -19,3 +19,12 @@ httpx==0.26.0
 
 # Utilities
 python-dateutil==2.8.2
+
+# Sprint 2: MCP Server
+mcp>=1.0.0
+
+# Sprint 2: AI Coprocessor
+anthropic>=0.40.0
+
+# Sprint 2: CSV Processing (optional)
+pandas>=2.0.0
