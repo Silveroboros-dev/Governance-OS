@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from core.database import SessionLocal, engine, Base
 from core.models import Policy, PolicyVersion, PolicyStatus, Signal, SignalReliability
+from core.services import PolicyEngine, Evaluator, ExceptionEngine
 from packs.treasury.policy_templates import TREASURY_POLICY_TEMPLATES
 from packs.wealth.policy_templates import WEALTH_POLICY_TEMPLATES
 
@@ -252,16 +253,73 @@ def seed_scenarios(db: Session, pack: str = None, scenario_ids: list[str] = None
     print(f"Total scenarios seeded: {total_created} signals\n")
 
 
+def trigger_evaluations(db: Session, pack: str = None):
+    """Trigger policy evaluations to generate exceptions."""
+    packs_to_evaluate = [pack] if pack else list(PACK_CONFIGS.keys())
+
+    print("Triggering evaluations to generate exceptions...")
+    print("-" * 40)
+
+    for pack_name in packs_to_evaluate:
+        if pack_name not in PACK_CONFIGS:
+            continue
+
+        # Get active policies for pack
+        policy_engine = PolicyEngine(db)
+        policies = policy_engine.get_active_policies(pack_name)
+
+        if not policies:
+            print(f"  No active policies for {pack_name}")
+            continue
+
+        # Get recent signals for pack (last 24 hours)
+        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        signals = (
+            db.query(Signal)
+            .filter(
+                Signal.pack == pack_name,
+                Signal.observed_at >= since
+            )
+            .order_by(Signal.observed_at.desc())
+            .all()
+        )
+
+        if not signals:
+            print(f"  No recent signals for {pack_name}")
+            continue
+
+        print(f"\n  {pack_name.upper()}: Evaluating {len(policies)} policies against {len(signals)} signals")
+
+        # Evaluate each policy
+        evaluator = Evaluator(db)
+        exception_engine = ExceptionEngine(db)
+        exceptions_raised = 0
+
+        for policy_version in policies:
+            evaluation = evaluator.evaluate(policy_version, signals)
+            exception = exception_engine.generate_exception(evaluation, policy_version)
+            if exception:
+                exceptions_raised += 1
+                print(f"    Exception raised: {exception.title} ({exception.severity})")
+
+        print(f"  {pack_name}: {exceptions_raised} exceptions raised")
+
+    print("\n" + "-" * 40)
+    print("Evaluations complete!\n")
+
+
 def print_usage():
     """Print usage instructions."""
     print("Usage: python -m core.scripts.seed_fixtures [OPTIONS]")
     print()
     print("Options:")
-    print("  --pack=NAME   Seed specific pack (treasury, wealth). Default: all packs")
-    print("  --basic       Seed basic signals only (default)")
-    print("  --scenarios   Seed from scenarios.json (realistic demo data)")
-    print("  --all         Seed both basic signals and all scenarios")
-    print("  --scenario=ID Seed specific scenario by ID")
+    print("  --pack=NAME    Seed specific pack (treasury, wealth). Default: all packs")
+    print("  --basic        Seed basic signals only (default)")
+    print("  --scenarios    Seed from scenarios.json (realistic demo data)")
+    print("  --all          Seed both basic signals and all scenarios")
+    print("  --scenario=ID  Seed specific scenario by ID")
+    print("  --evaluate     Trigger evaluations after seeding (default)")
+    print("  --no-evaluate  Skip evaluation triggering")
     print()
     print("Available packs and scenarios:")
     for pack_name, config in PACK_CONFIGS.items():
@@ -288,6 +346,7 @@ def main():
     use_scenarios = False
     specific_scenarios = []
     target_pack = None  # None means all packs
+    run_evaluate = True  # Default: trigger evaluations after seeding
 
     if "--help" in args or "-h" in args:
         print_usage()
@@ -305,6 +364,10 @@ def main():
         elif arg.startswith("--scenario="):
             specific_scenarios.append(arg.split("=", 1)[1])
             use_basic = False
+        elif arg == "--no-evaluate":
+            run_evaluate = False
+        elif arg == "--evaluate":
+            run_evaluate = True
 
     # Create database session
     db = SessionLocal()
@@ -322,13 +385,21 @@ def main():
         elif specific_scenarios:
             seed_scenarios(db, pack=target_pack, scenario_ids=specific_scenarios)
 
+        # Trigger evaluations to generate exceptions
+        if run_evaluate:
+            trigger_evaluations(db, pack=target_pack)
+
         print("=" * 60)
         print("Seeding completed successfully!")
         print()
-        print("Next steps:")
-        print("  1. Trigger evaluation: POST /api/v1/evaluations")
-        print("  2. View exceptions: GET /api/v1/exceptions")
-        print("  3. Record decisions: POST /api/v1/decisions")
+        if run_evaluate:
+            print("Exceptions have been generated. View them at:")
+            print("  http://localhost:3000/exceptions")
+        else:
+            print("Next steps:")
+            print("  1. Trigger evaluation: POST /api/v1/evaluations")
+            print("  2. View exceptions: GET /api/v1/exceptions")
+            print("  3. Record decisions: POST /api/v1/decisions")
         print()
         print("Or run the full demo: make demo-kernel")
         print("=" * 60)
