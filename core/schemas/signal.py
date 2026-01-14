@@ -18,6 +18,10 @@ class SignalCreate(BaseModel):
     reliability: str = Field(..., description="Signal reliability: high, medium, low, unverified")
     observed_at: datetime = Field(..., description="When the signal was observed")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    idempotency_key: Optional[str] = Field(
+        None,
+        description="Client-provided idempotency key. If not provided, content hash is used."
+    )
 
 
 class SignalResponse(BaseModel):
@@ -31,6 +35,12 @@ class SignalResponse(BaseModel):
     observed_at: datetime
     ingested_at: datetime
     metadata: Optional[Dict[str, Any]] = None
+    content_hash: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class SignalCreateResponse(SignalResponse):
+    """Response for signal creation, includes idempotency info."""
+    was_deduplicated: bool = False  # True if existing signal was returned

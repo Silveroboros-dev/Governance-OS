@@ -28,6 +28,27 @@ class ColumnMapping(BaseModel):
     reliability: Optional[str] = Field(default=None, description="Column for reliability score")
 
 
+def compute_signal_content_hash(
+    pack: str,
+    signal_type: str,
+    payload: dict,
+    source: str,
+    observed_at: datetime
+) -> str:
+    """Compute deterministic content hash for signal deduplication."""
+    observed_str = observed_at.isoformat() if isinstance(observed_at, datetime) else str(observed_at)
+    content = {
+        "pack": pack,
+        "signal_type": signal_type,
+        "payload": payload,
+        "source": source,
+        "observed_at": observed_str
+    }
+    import json
+    canonical = json.dumps(content, sort_keys=True, default=str)
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
 class IngestedSignal(BaseModel):
     """Signal with provenance metadata from CSV import."""
 
@@ -41,6 +62,9 @@ class IngestedSignal(BaseModel):
     # Provenance metadata
     provenance: Dict[str, Any] = Field(default_factory=dict)
 
+    # Idempotency
+    content_hash: Optional[str] = None
+
 
 class ImportBatch(BaseModel):
     """Represents a batch of imported signals."""
@@ -53,6 +77,10 @@ class ImportBatch(BaseModel):
     file_hash: str
     column_mapping: ColumnMapping
     parse_errors: List[Dict[str, Any]] = Field(default_factory=list)
+
+    # Deduplication stats (populated by ingest_to_db)
+    signals_created: int = 0
+    signals_deduplicated: int = 0
 
 
 class CSVIngestor:
@@ -268,35 +296,85 @@ class CSVIngestor:
         filepath: Path,
         column_mapping: ColumnMapping,
         db_session,
-        skip_errors: bool = False
+        skip_errors: bool = False,
+        skip_duplicates: bool = True
     ) -> ImportBatch:
         """
-        Ingest CSV and persist signals to database.
+        Ingest CSV and persist signals to database (idempotent).
 
         Args:
             filepath: Path to the CSV file
             column_mapping: Mapping of CSV columns to signal fields
             db_session: SQLAlchemy database session
             skip_errors: If True, skip rows with parsing errors
+            skip_duplicates: If True, skip signals that already exist (default: True)
 
         Returns:
-            ImportBatch with database-persisted signals
+            ImportBatch with database-persisted signals and deduplication stats
         """
         from core.models import Signal as DBSignal
+        from core.models.signal import SignalReliability
 
         batch = self.ingest(filepath, column_mapping, skip_errors)
 
+        created_count = 0
+        dedupe_count = 0
+
+        # Map reliability float to enum
+        def get_reliability_enum(rel_float: float) -> SignalReliability:
+            if rel_float >= 0.9:
+                return SignalReliability.HIGH
+            elif rel_float >= 0.7:
+                return SignalReliability.MEDIUM
+            elif rel_float >= 0.5:
+                return SignalReliability.LOW
+            else:
+                return SignalReliability.UNVERIFIED
+
         for signal in batch.signals:
+            # Compute content hash for idempotency
+            content_hash = compute_signal_content_hash(
+                pack=self.pack,
+                signal_type=signal.signal_type,
+                payload=signal.payload,
+                source=signal.source,
+                observed_at=signal.timestamp
+            )
+            signal.content_hash = content_hash
+
+            # Check for existing signal (idempotency)
+            existing = db_session.query(DBSignal).filter(
+                DBSignal.content_hash == content_hash
+            ).first()
+
+            if existing:
+                dedupe_count += 1
+                if skip_duplicates:
+                    continue
+                else:
+                    raise ValueError(
+                        f"Duplicate signal detected: {signal.signal_type} at {signal.timestamp}"
+                    )
+
+            # Create new signal
             db_signal = DBSignal(
                 id=uuid.UUID(signal.id),
+                pack=self.pack,
                 signal_type=signal.signal_type,
                 source=signal.source,
                 payload=signal.payload,
-                timestamp=signal.timestamp,
-                reliability=signal.reliability,
-                signal_metadata=signal.provenance
+                observed_at=signal.timestamp,
+                reliability=get_reliability_enum(signal.reliability),
+                signal_metadata=signal.provenance,
+                content_hash=content_hash
             )
             db_session.add(db_signal)
+            created_count += 1
 
         db_session.commit()
+
+        # Update batch stats
+        batch.signals_created = created_count
+        batch.signals_deduplicated = dedupe_count
+
         return batch

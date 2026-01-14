@@ -9,9 +9,10 @@ from core.models.policy import Policy, PolicyVersion, PolicyStatus
 from core.models.signal import Signal, SignalReliability
 from core.models.evaluation import Evaluation, EvaluationResult
 from core.models.exception import Exception, ExceptionSeverity, ExceptionStatus
-from core.models.decision import Decision
+from core.models.decision import Decision, DecisionType
 from core.models.audit import AuditEvent, AuditEventType
 from core.models.evidence import EvidencePack
+from core.models.user import User, UserRole
 
 __all__ = [
     # Policy
@@ -30,9 +31,13 @@ __all__ = [
     "ExceptionStatus",
     # Decision
     "Decision",
+    "DecisionType",
     # Audit
     "AuditEvent",
     "AuditEventType",
     # Evidence
     "EvidencePack",
+    # User
+    "User",
+    "UserRole",
 ]

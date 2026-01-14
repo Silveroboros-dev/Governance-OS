@@ -5,13 +5,14 @@ Records immutable decisions for exceptions.
 Once recorded, decisions CANNOT be modified.
 """
 
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from core.models import Decision, Exception, ExceptionStatus, AuditEvent, AuditEventType
+from core.models import Decision, DecisionType, Exception, ExceptionStatus, AuditEvent, AuditEventType
 
 
 class DecisionRecorder:
@@ -38,7 +39,10 @@ class DecisionRecorder:
         chosen_option_id: str,
         rationale: str,
         decided_by: str,
-        assumptions: Optional[str] = None
+        assumptions: Optional[str] = None,
+        is_hard_override: bool = False,
+        approved_by: Optional[str] = None,
+        approval_notes: Optional[str] = None
     ) -> Decision:
         """
         Record immutable decision.
@@ -47,6 +51,7 @@ class DecisionRecorder:
         1. Exception exists and is open
         2. Chosen option is valid (exists in exception.options)
         3. Rationale is provided (required!)
+        4. Hard overrides have approval
 
         Side effects:
         1. Creates Decision record
@@ -60,6 +65,9 @@ class DecisionRecorder:
             rationale: Human explanation of decision (REQUIRED)
             decided_by: User/role who made the decision
             assumptions: Explicit assumptions (optional)
+            is_hard_override: True if this overrides policy recommendation
+            approved_by: Approver username (required for hard overrides)
+            approval_notes: Approver's justification (optional)
 
         Returns:
             Decision object
@@ -102,46 +110,61 @@ class DecisionRecorder:
         if not rationale or not rationale.strip():
             raise ValueError("Rationale is required and cannot be empty")
 
-        # Step 4: Create decision record (IMMUTABLE)
+        # Step 4: Validate hard override approval
+        if is_hard_override and not approved_by:
+            raise ValueError("Hard overrides require approved_by")
+
+        # Step 5: Create decision record (IMMUTABLE)
         decision = Decision(
             exception_id=exception_id,
             chosen_option_id=chosen_option_id,
             rationale=rationale.strip(),
             assumptions=assumptions.strip() if assumptions else None,
-            decided_by=decided_by
+            decided_by=decided_by,
+            # Hard override fields
+            decision_type=DecisionType.HARD_OVERRIDE if is_hard_override else DecisionType.STANDARD,
+            is_hard_override=is_hard_override,
+            approved_by=approved_by if is_hard_override else None,
+            approved_at=datetime.utcnow() if is_hard_override else None,
+            approval_notes=approval_notes if is_hard_override else None
         )
 
         self.db.add(decision)
         self.db.flush()  # Flush to generate decision.id before using it in audit event
 
-        # Step 5: Mark exception as resolved
+        # Step 6: Mark exception as resolved
         exception.status = ExceptionStatus.RESOLVED
         exception.resolved_at = decision.decided_at
 
-        # Step 6: Create audit event
+        # Step 7: Create audit event
+        event_data = {
+            "exception_id": str(exception_id),
+            "chosen_option_id": chosen_option_id,
+            "decided_by": decided_by,
+            "rationale_length": len(rationale),
+            "is_hard_override": is_hard_override
+        }
+        if is_hard_override:
+            event_data["approved_by"] = approved_by
+
         audit_event = AuditEvent(
             event_type=AuditEventType.DECISION_RECORDED,
             aggregate_type="decision",
             aggregate_id=decision.id,
-            event_data={
-                "exception_id": str(exception_id),
-                "chosen_option_id": chosen_option_id,
-                "decided_by": decided_by,
-                "rationale_length": len(rationale)
-            },
+            event_data=event_data,
             actor=decided_by
         )
 
         self.db.add(audit_event)
 
-        # Step 7: Commit (make immutable!)
+        # Step 8: Commit (make immutable!)
         try:
             self.db.commit()
         except IntegrityError as e:
             self.db.rollback()
             raise ValueError(f"Failed to record decision: {str(e)}")
 
-        # Step 8: Trigger evidence pack generation (would be async in production)
+        # Step 9: Trigger evidence pack generation (would be async in production)
         # For Sprint 1, we'll generate synchronously
         # In Sprint 2+, this would be a background task
 

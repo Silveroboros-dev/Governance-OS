@@ -9,7 +9,7 @@ from enum import Enum as PyEnum
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column, String, DateTime, ForeignKey, Index, Enum as SQLEnum
+    Column, String, DateTime, ForeignKey, Index, Enum as SQLEnum, UniqueConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from sqlalchemy.orm import relationship
@@ -60,6 +60,8 @@ class Evaluation(Base):
     __table_args__ = (
         Index("idx_evaluations_policy", "policy_version_id", "evaluated_at"),
         Index("idx_evaluations_hash", "input_hash"),  # Dedupe check
+        # Unique constraint: same inputs in same namespace = same evaluation
+        UniqueConstraint("input_hash", "replay_namespace", name="uq_evaluation_input_namespace"),
     )
 
     def __repr__(self):
