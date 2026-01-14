@@ -83,7 +83,11 @@ def get_exception(
     Get full exception detail for decision UI.
 
     This is the primary data source for the one-screen decision interface.
+    Returns exception with related evaluation, policy, and signals.
     """
+    from core.models import Evaluation, PolicyVersion, Policy, Signal
+    from core.schemas.exception import EvaluationSummary, PolicySummary, SignalSummary
+
     try:
         exc_uuid = UUID(exception_id)
     except ValueError:
@@ -94,4 +98,61 @@ def get_exception(
     if not exception:
         raise HTTPException(status_code=404, detail="Exception not found")
 
-    return exception
+    # Fetch related evaluation
+    evaluation = exception.evaluation
+    evaluation_summary = None
+    if evaluation:
+        evaluation_summary = EvaluationSummary(
+            id=evaluation.id,
+            result=evaluation.result.value,
+            details=evaluation.details,
+            evaluated_at=evaluation.evaluated_at,
+            input_hash=evaluation.input_hash
+        )
+
+    # Fetch related policy through evaluation -> policy_version -> policy
+    policy_summary = None
+    if evaluation and evaluation.policy_version:
+        policy_version = evaluation.policy_version
+        policy = policy_version.policy
+        policy_summary = PolicySummary(
+            id=policy.id,
+            name=policy.name,
+            pack=policy.pack,
+            description=policy.description,
+            version_number=policy_version.version_number,
+            rule_type=policy_version.rule_definition.get("type") if policy_version.rule_definition else None
+        )
+
+    # Fetch related signals
+    signals_summary = []
+    if evaluation and evaluation.signal_ids:
+        signals = db.query(Signal).filter(Signal.id.in_(evaluation.signal_ids)).all()
+        signals_summary = [
+            SignalSummary(
+                id=signal.id,
+                signal_type=signal.signal_type,
+                payload=signal.payload,
+                source=signal.source,
+                reliability=signal.reliability.value,
+                observed_at=signal.observed_at
+            )
+            for signal in signals
+        ]
+
+    # Build response with related data
+    return ExceptionDetail(
+        id=exception.id,
+        evaluation_id=exception.evaluation_id,
+        fingerprint=exception.fingerprint,
+        severity=exception.severity.value,
+        status=exception.status.value,
+        title=exception.title,
+        context=exception.context,
+        options=exception.options,
+        raised_at=exception.raised_at,
+        resolved_at=exception.resolved_at,
+        evaluation=evaluation_summary,
+        policy=policy_summary,
+        signals=signals_summary
+    )

@@ -30,8 +30,54 @@ class ExceptionListItem(BaseModel):
         from_attributes = True
 
 
+class EvaluationSummary(BaseModel):
+    """Evaluation data for exception detail."""
+    id: UUID
+    result: str
+    details: Dict[str, Any]
+    evaluated_at: datetime
+    input_hash: str
+
+    class Config:
+        from_attributes = True
+
+
+class PolicySummary(BaseModel):
+    """Policy data for exception detail."""
+    id: UUID
+    name: str
+    pack: str
+    description: Optional[str] = None
+    version_number: int
+    rule_type: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class SignalSummary(BaseModel):
+    """Signal data for exception detail."""
+    id: UUID
+    signal_type: str
+    payload: Dict[str, Any]
+    source: str
+    reliability: str
+    observed_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class ExceptionDetail(BaseModel):
-    """Schema for full exception detail."""
+    """
+    Schema for full exception detail.
+
+    Includes all related data needed for one-screen decision UI:
+    - Exception metadata
+    - Evaluation that triggered the exception
+    - Policy that was evaluated
+    - Signals that contributed to the evaluation
+    """
     id: UUID
     evaluation_id: UUID
     fingerprint: str
@@ -42,6 +88,11 @@ class ExceptionDetail(BaseModel):
     options: List[Dict[str, Any]]  # List of ExceptionOption dicts
     raised_at: datetime
     resolved_at: Optional[datetime] = None
+
+    # Related data for decision UI
+    evaluation: Optional[EvaluationSummary] = None
+    policy: Optional[PolicySummary] = None
+    signals: List[SignalSummary] = []
 
     class Config:
         from_attributes = True

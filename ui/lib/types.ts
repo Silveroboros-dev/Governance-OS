@@ -80,10 +80,37 @@ export interface Exception {
   resolved_at?: string
 }
 
+// Summary types for exception detail (from backend)
+export interface EvaluationSummary {
+  id: string
+  result: string
+  details: Record<string, any>
+  evaluated_at: string
+  input_hash: string
+}
+
+export interface PolicySummary {
+  id: string
+  name: string
+  pack: string
+  description?: string
+  version_number: number
+  rule_type?: string
+}
+
+export interface SignalSummary {
+  id: string
+  signal_type: string
+  payload: Record<string, any>
+  source: string
+  reliability: string
+  observed_at: string
+}
+
 export interface ExceptionDetail extends Exception {
-  evaluation?: Evaluation
-  policy?: PolicyWithVersion
-  signals?: Signal[]
+  evaluation?: EvaluationSummary
+  policy?: PolicySummary
+  signals?: SignalSummary[]
 }
 
 // Decision Types
