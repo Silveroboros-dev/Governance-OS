@@ -16,6 +16,9 @@ from sqlalchemy.orm import Session
 from core.models import Evaluation, PolicyVersion, Signal, EvaluationResult, AuditEvent, AuditEventType
 from core.domain.fingerprinting import compute_evaluation_input_hash, normalize_signal_data
 from core.domain.evaluation_rules import evaluate_policy
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class Evaluator:
@@ -65,6 +68,13 @@ class Evaluator:
             >>> evaluation.input_hash
             'a1b2c3d4...'
         """
+        # Log evaluation start
+        logger.evaluation_started(
+            policy_version_id=policy_version.id,
+            signal_count=len(signals),
+            replay_namespace=replay_namespace
+        )
+
         # Step 1: Normalize and sort signals for determinism
         signal_dicts = [self._signal_to_dict(s) for s in signals]
         signal_dicts_sorted = sorted(signal_dicts, key=lambda s: s["id"])
@@ -87,7 +97,19 @@ class Evaluator:
         )
 
         if existing:
-            # Already evaluated - return existing result
+            # Already evaluated - return existing result (idempotency)
+            logger.evaluation_cache_hit(
+                input_hash=input_hash,
+                evaluation_id=existing.id
+            )
+            logger.evaluation_completed(
+                evaluation_id=existing.id,
+                policy_version_id=policy_version.id,
+                result=existing.result.value,
+                input_hash=input_hash,
+                signal_count=len(signals),
+                is_cached=True
+            )
             return existing
 
         # Step 4: Execute policy rules
@@ -129,6 +151,16 @@ class Evaluator:
 
         self.db.add(audit_event)
         self.db.commit()
+
+        # Log evaluation completion
+        logger.evaluation_completed(
+            evaluation_id=evaluation.id,
+            policy_version_id=policy_version.id,
+            result=result_str,
+            input_hash=input_hash,
+            signal_count=len(signals),
+            is_cached=False
+        )
 
         return evaluation
 

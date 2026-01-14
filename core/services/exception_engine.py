@@ -15,6 +15,9 @@ from core.models import (
     ExceptionStatus, EvaluationResult, AuditEvent, AuditEventType
 )
 from core.domain.fingerprinting import compute_exception_fingerprint
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class ExceptionEngine:
@@ -65,6 +68,10 @@ class ExceptionEngine:
         """
         # Check if exception is needed
         if evaluation.result != EvaluationResult.FAIL:
+            logger.exception_not_needed(
+                evaluation_id=evaluation.id,
+                result=evaluation.result.value
+            )
             return None  # Passed - no exception
 
         # Extract exception details from evaluation
@@ -92,6 +99,10 @@ class ExceptionEngine:
 
         if existing:
             # Duplicate - don't create new exception
+            logger.exception_deduplicated(
+                fingerprint=fingerprint,
+                existing_exception_id=existing.id
+            )
             return None
 
         # Generate context for UI
@@ -132,6 +143,15 @@ class ExceptionEngine:
 
         self.db.add(audit_event)
         self.db.commit()
+
+        # Log exception raised
+        logger.exception_raised(
+            exception_id=exception.id,
+            evaluation_id=evaluation.id,
+            severity=severity_str,
+            fingerprint=fingerprint,
+            title=title
+        )
 
         return exception
 

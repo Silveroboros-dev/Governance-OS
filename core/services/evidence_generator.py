@@ -4,6 +4,7 @@ Evidence Generator Service.
 Generates deterministic, self-contained audit-grade evidence packs.
 """
 
+import time
 from typing import Dict, Any
 from uuid import UUID
 
@@ -14,6 +15,9 @@ from core.models import (
     AuditEvent, AuditEventType
 )
 from core.domain.fingerprinting import compute_content_hash
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class EvidenceGenerator:
@@ -61,6 +65,8 @@ class EvidenceGenerator:
             >>> pack.evidence.keys()
             dict_keys(['decision', 'exception', 'evaluation', 'signals', 'policy', 'audit_trail'])
         """
+        start_time = time.time()
+
         # Fetch related data
         exception = decision.exception
         evaluation = exception.evaluation
@@ -178,6 +184,13 @@ class EvidenceGenerator:
 
         self.db.add(audit_event)
         self.db.commit()
+
+        duration_ms = (time.time() - start_time) * 1000
+        logger.evidence_pack_generated(
+            evidence_pack_id=evidence_pack.id,
+            decision_id=decision.id,
+            duration_ms=duration_ms
+        )
 
         return evidence_pack
 

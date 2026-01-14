@@ -7,12 +7,17 @@ for replay and audit purposes.
 
 import csv
 import hashlib
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
+
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class ColumnMapping(BaseModel):
@@ -181,6 +186,13 @@ class CSVIngestor:
         batch_id = str(uuid.uuid4())
         signals: List[IngestedSignal] = []
         errors: List[Dict[str, Any]] = []
+        start_time = time.time()
+
+        logger.ingestion_started(
+            source_file=str(filepath),
+            pack=self.pack,
+            batch_id=batch_id
+        )
 
         with open(filepath, "r", newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
@@ -203,7 +215,17 @@ class CSVIngestor:
                             "error": str(e),
                             "data": row
                         })
+                        logger.ingestion_row_error(
+                            batch_id=batch_id,
+                            row_number=row_num,
+                            error=str(e)
+                        )
                     else:
+                        logger.ingestion_failed(
+                            batch_id=batch_id,
+                            error=str(e),
+                            row_number=row_num
+                        )
                         raise ValueError(f"Error parsing row {row_num}: {e}") from e
 
         batch = ImportBatch(
@@ -217,6 +239,15 @@ class CSVIngestor:
 
         if errors:
             batch.parse_errors = errors
+
+        duration_ms = (time.time() - start_time) * 1000
+        logger.ingestion_completed(
+            batch_id=batch_id,
+            signals_created=len(signals),
+            signals_deduplicated=0,  # Will be updated in ingest_to_db
+            parse_errors=len(errors),
+            duration_ms=duration_ms
+        )
 
         return batch
 

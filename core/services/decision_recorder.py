@@ -13,6 +13,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from core.models import Decision, DecisionType, Exception, ExceptionStatus, AuditEvent, AuditEventType
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class DecisionRecorder:
@@ -92,26 +95,44 @@ class DecisionRecorder:
         exception = self.db.query(Exception).filter(Exception.id == exception_id).first()
 
         if not exception:
+            logger.decision_validation_failed(
+                exception_id=exception_id,
+                error=f"Exception {exception_id} not found"
+            )
             raise ValueError(f"Exception {exception_id} not found")
 
         if exception.status != ExceptionStatus.OPEN:
+            logger.decision_validation_failed(
+                exception_id=exception_id,
+                error=f"Exception not open (status: {exception.status})"
+            )
             raise ValueError(f"Exception {exception_id} is not open (status: {exception.status})")
 
         # Step 2: Validate chosen option
         valid_option_ids = [opt["id"] for opt in exception.options]
 
         if chosen_option_id not in valid_option_ids:
-            raise ValueError(
-                f"Invalid option '{chosen_option_id}'. "
-                f"Valid options: {', '.join(valid_option_ids)}"
+            error_msg = f"Invalid option '{chosen_option_id}'. Valid options: {', '.join(valid_option_ids)}"
+            logger.decision_validation_failed(
+                exception_id=exception_id,
+                error=error_msg
             )
+            raise ValueError(error_msg)
 
         # Step 3: Validate rationale
         if not rationale or not rationale.strip():
+            logger.decision_validation_failed(
+                exception_id=exception_id,
+                error="Rationale is required and cannot be empty"
+            )
             raise ValueError("Rationale is required and cannot be empty")
 
         # Step 4: Validate hard override approval
         if is_hard_override and not approved_by:
+            logger.decision_validation_failed(
+                exception_id=exception_id,
+                error="Hard overrides require approved_by"
+            )
             raise ValueError("Hard overrides require approved_by")
 
         # Step 5: Create decision record (IMMUTABLE)
@@ -162,7 +183,20 @@ class DecisionRecorder:
             self.db.commit()
         except IntegrityError as e:
             self.db.rollback()
+            logger.decision_validation_failed(
+                exception_id=exception_id,
+                error=f"Database integrity error: {str(e)}"
+            )
             raise ValueError(f"Failed to record decision: {str(e)}")
+
+        # Log decision recorded
+        logger.decision_recorded(
+            decision_id=decision.id,
+            exception_id=exception_id,
+            chosen_option_id=chosen_option_id,
+            decided_by=decided_by,
+            is_hard_override=is_hard_override
+        )
 
         # Step 9: Trigger evidence pack generation (would be async in production)
         # For Sprint 1, we'll generate synchronously
