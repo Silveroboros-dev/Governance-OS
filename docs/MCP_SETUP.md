@@ -54,25 +54,29 @@ python -m core.scripts.seed_fixtures --pack=treasury --scenarios
 
 Edit your Claude Desktop config file:
 
-**macOS:** `~/.config/claude/claude_desktop_config.json`
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "governance-os": {
-      "command": "python",
+      "command": "/full/path/to/python",
       "args": ["-m", "mcp_server.server"],
       "cwd": "/path/to/Governance-OS",
       "env": {
-        "DATABASE_URL": "postgresql://govos:local_dev_password@localhost:5432/governance_os"
+        "DATABASE_URL": "postgresql://govos:local_dev_password@localhost:5432/governance_os",
+        "PYTHONPATH": "/path/to/Governance-OS"
       }
     }
   }
 }
 ```
 
-**Important:** Replace `/path/to/Governance-OS` with the actual path to your project.
+**Important:**
+- Replace `/path/to/Governance-OS` with the actual path to your project
+- Replace `/full/path/to/python` with your Python path (run `which python` to find it)
+- The `PYTHONPATH` is required for Claude Desktop to find the mcp_server module
 
 ### Step 5: Restart Claude Desktop
 
@@ -153,29 +157,56 @@ DATABASE_URL="postgresql://govos:local_dev_password@localhost:5432/governance_os
 
 ---
 
-## Example Prompts for Claude
+## Test Questions (Copy & Paste)
 
-Once configured, try these prompts in Claude Desktop:
+Once configured, test with these prompts in Claude Desktop. The MCP server listens automatically - just ask naturally and Claude will use the appropriate tools.
 
-### View Open Exceptions
+### Basic Read Operations
+
 ```
 What exceptions are currently open in the governance system?
 ```
 
-### Get Exception Details
 ```
-Show me the details of exception [id]
-```
-
-### Review a Decision
-```
-Get the evidence pack for decision [id]
+Show me all active policies in the system
 ```
 
-### Search History
 ```
-Find decisions made in the last week
+What decisions have been made recently?
 ```
+
+### Detailed Queries
+
+```
+Get the details for the most recent exception
+```
+
+```
+Show me the evidence pack for the latest decision
+```
+
+```
+What signals have been received in the last 24 hours?
+```
+
+### Signal Extraction (Write Tools)
+
+Copy the sample treasury memo from `docs/demos/sample_treasury_memo.txt` and ask:
+
+```
+I have this treasury memo. Can you extract any signals that might be relevant to our governance policies and propose them to the system?
+
+[paste memo content]
+```
+
+This will trigger the `propose_signal` tool, which adds signals to the approval queue for human review.
+
+### Tips
+
+- Claude automatically uses MCP tools when relevant - no special syntax needed
+- Use keywords like "governance", "exceptions", "policies", "decisions", "signals"
+- If Claude doesn't use the tools, be explicit: "Use the governance-os tools to..."
+- Write operations go to the approval queue - check the UI at http://localhost:3000/approvals
 
 ---
 

@@ -1,0 +1,41 @@
+INTERNAL MEMO - TREASURY OPERATIONS
+Date: January 15, 2026
+From: Treasury Operations Desk
+To: Risk Committee
+Subject: Market Conditions Update and Position Review
+
+EXECUTIVE SUMMARY
+
+Following yesterday's market volatility, we have identified several areas requiring immediate attention. The VIX spiked to 28.5 this morning, well above our 25-point threshold for heightened monitoring.
+
+POSITION CONCERNS
+
+Our Bitcoin holdings have grown to approximately $47.2M, which represents 127% of our approved position limit of $37.2M. This breach has persisted for approximately 6 hours. The position accumulated during the December rally when we increased exposure ahead of the ETF approvals.
+
+Additionally, our Ethereum allocation shows significant volatility - daily price swings of 8.3% compared to our policy threshold of 5%. The 30-day realized volatility is running at 62%, substantially above the 45% limit specified in our Market Volatility Policy.
+
+COUNTERPARTY UPDATE
+
+We received notification that Exchange ABC has been downgraded from A to BBB+ by S&P. Our current exposure to this counterparty stands at $12.4M across spot and derivatives positions. Under our Counterparty Credit Risk Policy, a two-notch downgrade triggers a mandatory exposure review within 48 hours.
+
+LIQUIDITY POSITION
+
+Current liquid reserves stand at $8.2M against a required minimum of $10M per our Liquidity Management Policy. The shortfall arose from the unplanned settlement of the Morgan Stanley derivatives position on Monday. We expect inflows of $3.1M from the Fidelity redemption by Thursday.
+
+COVENANT STATUS
+
+Q4 financial review indicates our Debt Service Coverage Ratio (DSCR) has fallen to 1.18x, below the 1.25x covenant minimum in our credit facility with JPMorgan. The covenant measurement date is January 31st, giving us approximately two weeks to remediate.
+
+RECOMMENDED ACTIONS
+
+1. Immediate review of BTC position sizing - consider gradual reduction over 5-day period
+2. Activate ETH hedging strategy given volatility levels
+3. Reduce Exchange ABC exposure by 50% within 48 hours
+4. Initiate cash sweep from money market funds to restore liquidity buffer
+5. Engage legal counsel regarding covenant waiver request
+
+Please advise on priorities for the Risk Committee meeting tomorrow at 2pm.
+
+---
+Treasury Operations Team
+Confidential - Internal Use Only
