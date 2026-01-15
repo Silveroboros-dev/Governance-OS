@@ -6,6 +6,7 @@ Provides test database setup and common fixtures.
 
 import pytest
 from datetime import datetime, timedelta
+from uuid import uuid4
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -13,6 +14,9 @@ from core.database import Base
 from core.models import (
     Policy, PolicyVersion, PolicyStatus, Signal, SignalReliability
 )
+# Sprint 3 models
+from core.models.approval import ApprovalQueue, ApprovalActionType, ApprovalStatus
+from core.models.trace import AgentTrace, AgentType, AgentTraceStatus
 
 
 # Test database URL (separate from production)
@@ -137,3 +141,120 @@ def sample_signals(db_session):
     db_session.commit()
 
     return signals
+
+
+# Sprint 3 fixtures
+
+@pytest.fixture
+def sample_trace(db_session):
+    """Create a sample agent trace."""
+    trace = AgentTrace(
+        agent_type=AgentType.INTAKE,
+        session_id=uuid4(),
+        pack="treasury",
+        document_source="email/inbox/test_123",
+        input_summary={"document_length": 5000, "source": "email"},
+    )
+    db_session.add(trace)
+    db_session.commit()
+    return trace
+
+
+@pytest.fixture
+def sample_approval(db_session, sample_trace):
+    """Create a sample approval queue entry."""
+    approval = ApprovalQueue(
+        action_type=ApprovalActionType.SIGNAL,
+        payload={
+            "pack": "treasury",
+            "signal_type": "position_limit_breach",
+            "payload": {"asset": "BTC", "position": 120, "limit": 100},
+            "source": "email/inbox/test_123",
+        },
+        proposed_by="intake_agent",
+        summary="Position limit breach for BTC",
+        confidence=0.85,
+        trace_id=sample_trace.id,
+    )
+    db_session.add(approval)
+    db_session.commit()
+    return approval
+
+
+@pytest.fixture
+def multiple_approvals(db_session):
+    """Create multiple approval queue entries with different statuses."""
+    approvals = []
+
+    # Pending signal approval
+    approvals.append(ApprovalQueue(
+        action_type=ApprovalActionType.SIGNAL,
+        payload={"pack": "treasury", "signal_type": "type_1"},
+        proposed_by="intake_agent",
+        status=ApprovalStatus.PENDING,
+    ))
+
+    # Approved policy draft
+    approved = ApprovalQueue(
+        action_type=ApprovalActionType.POLICY_DRAFT,
+        payload={"pack": "treasury", "name": "Test Policy"},
+        proposed_by="policy_draft_agent",
+        status=ApprovalStatus.APPROVED,
+        reviewed_by="test_user",
+        reviewed_at=datetime.utcnow(),
+    )
+    approvals.append(approved)
+
+    # Rejected dismiss request
+    rejected = ApprovalQueue(
+        action_type=ApprovalActionType.DISMISS,
+        payload={"exception_id": str(uuid4())},
+        proposed_by="agent",
+        status=ApprovalStatus.REJECTED,
+        reviewed_by="test_user",
+        reviewed_at=datetime.utcnow(),
+        review_notes="Not appropriate to dismiss",
+    )
+    approvals.append(rejected)
+
+    db_session.add_all(approvals)
+    db_session.commit()
+    return approvals
+
+
+@pytest.fixture
+def multiple_traces(db_session):
+    """Create multiple agent traces with different statuses."""
+    traces = []
+
+    # Running intake trace
+    traces.append(AgentTrace(
+        agent_type=AgentType.INTAKE,
+        session_id=uuid4(),
+        status=AgentTraceStatus.RUNNING,
+        pack="treasury",
+    ))
+
+    # Completed narrative trace
+    completed = AgentTrace(
+        agent_type=AgentType.NARRATIVE,
+        session_id=uuid4(),
+        status=AgentTraceStatus.COMPLETED,
+        completed_at=datetime.utcnow(),
+        total_duration_ms=1500,
+    )
+    traces.append(completed)
+
+    # Failed policy draft trace
+    failed = AgentTrace(
+        agent_type=AgentType.POLICY_DRAFT,
+        session_id=uuid4(),
+        status=AgentTraceStatus.FAILED,
+        completed_at=datetime.utcnow(),
+        error_message="LLM rate limit exceeded",
+    )
+    traces.append(failed)
+
+    db_session.add_all(traces)
+    db_session.commit()
+    return traces

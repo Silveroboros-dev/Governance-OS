@@ -13,6 +13,9 @@ from core.models.decision import Decision, DecisionType
 from core.models.audit import AuditEvent, AuditEventType
 from core.models.evidence import EvidencePack
 from core.models.user import User, UserRole
+# Sprint 3: Agentic coprocessor models
+from core.models.approval import ApprovalQueue, ApprovalActionType, ApprovalStatus
+from core.models.trace import AgentTrace, AgentType, AgentTraceStatus
 
 __all__ = [
     # Policy
@@ -40,4 +43,12 @@ __all__ = [
     # User
     "User",
     "UserRole",
+    # Sprint 3: Approval Queue
+    "ApprovalQueue",
+    "ApprovalActionType",
+    "ApprovalStatus",
+    # Sprint 3: Agent Traces
+    "AgentTrace",
+    "AgentType",
+    "AgentTraceStatus",
 ]

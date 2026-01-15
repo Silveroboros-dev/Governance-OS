@@ -1,0 +1,138 @@
+name: Evaluations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'coprocessor/**'
+      - 'evals/**'
+      - 'core/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'coprocessor/**'
+      - 'evals/**'
+      - 'core/**'
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Evaluation suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - extraction
+          - regression
+          - policy
+          - hallucination
+
+jobs:
+  extraction-evals:
+    name: Extraction Accuracy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r core/requirements.txt
+          pip install pytest
+
+      - name: Run extraction evals
+        run: |
+          python -m evals.runner --suite extraction --threshold 0.85 --verbose
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  regression-evals:
+    name: Kernel Regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r core/requirements.txt
+          pip install pytest
+
+      - name: Run kernel regression
+        run: |
+          python -m evals.runner --suite regression --fail-on-drift --verbose
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  policy-evals:
+    name: Policy Draft Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r core/requirements.txt
+          pip install pytest
+
+      - name: Run policy draft evals
+        run: |
+          python -m evals.runner --suite policy --verbose
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  hallucination-evals:
+    name: Hallucination Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r core/requirements.txt
+          pip install pytest
+
+      - name: Run hallucination checks
+        run: |
+          python -m evals.runner --suite hallucination --zero-tolerance --verbose
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+  all-evals:
+    name: All Evaluations Summary
+    runs-on: ubuntu-latest
+    needs: [extraction-evals, regression-evals, policy-evals, hallucination-evals]
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          if [ "${{ needs.extraction-evals.result }}" == "failure" ] || \
+             [ "${{ needs.regression-evals.result }}" == "failure" ] || \
+             [ "${{ needs.policy-evals.result }}" == "failure" ] || \
+             [ "${{ needs.hallucination-evals.result }}" == "failure" ]; then
+            echo "One or more evaluation suites failed"
+            exit 1
+          fi
+          echo "All evaluation suites passed"

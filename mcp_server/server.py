@@ -21,21 +21,28 @@ from mcp.server import FastMCP
 mcp = FastMCP(
     "governance-os",
     instructions="""
-    Governance OS MCP Server - Read-only access to governance kernel.
+    Governance OS MCP Server - Access to governance kernel with gated writes.
 
-    Available tools:
+    READ TOOLS:
     - get_open_exceptions: List exceptions requiring human decisions
     - get_exception_detail: Get full context for a specific exception
     - get_policies: List active policies
     - get_evidence_pack: Get complete evidence for a decision
     - search_decisions: Search decision history
+    - get_recent_signals: Get recent signals
 
-    IMPORTANT: This server is read-only. You cannot:
-    - Create or modify policies
-    - Make decisions on exceptions
-    - Modify any kernel state
+    WRITE TOOLS (Sprint 3 - all require human approval):
+    - propose_signal: Propose a candidate signal for human review
+    - propose_policy_draft: Propose a draft policy for human review
+    - add_exception_context: Enrich exception with additional context (no approval needed)
+    - dismiss_exception: Propose dismissing an exception for human review
+    - propose_decision: Provide decision context (NOT recommendations)
 
-    All claims in narratives MUST reference evidence IDs from get_evidence_pack.
+    SAFETY RULES:
+    - All write operations go through approval queue for human review
+    - Never recommend or rank options - present them symmetrically
+    - All claims in narratives MUST reference evidence IDs
+    - Confidence scores must be honest - don't inflate them
     """
 )
 
@@ -598,6 +605,15 @@ def get_recent_signals(
 
     except Exception as e:
         return [{"error": str(e)}]
+
+
+# ============================================================================
+# WRITE TOOLS (Sprint 3)
+# ============================================================================
+
+# Import and register write tools
+from mcp_server.tools.write_tools import register_write_tools
+write_tools = register_write_tools(mcp)
 
 
 # ============================================================================

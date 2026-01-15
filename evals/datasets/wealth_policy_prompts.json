@@ -1,0 +1,37 @@
+{
+  "pack": "wealth",
+  "description": "Policy prompts for Wealth Management PolicyDraftAgent evaluation",
+  "version": "1.0.0",
+  "prompts": [
+    {
+      "id": "wealth_prompt_001",
+      "pack": "wealth",
+      "description": "Create a policy for investment suitability compliance",
+      "context": "We manage assets for clients with varying risk profiles (Conservative, Moderate, Aggressive). Each profile has maximum allocations to different asset classes. We need to monitor and enforce these limits automatically."
+    },
+    {
+      "id": "wealth_prompt_002",
+      "pack": "wealth",
+      "description": "Create a policy for portfolio concentration risk management",
+      "context": "Clients should not have excessive concentration in any single security, sector, or asset class. Single stock positions should not exceed 10% of portfolio value, and sector exposure should not exceed 25%."
+    },
+    {
+      "id": "wealth_prompt_003",
+      "pack": "wealth",
+      "description": "Create a policy for beneficiary designation review",
+      "context": "Beneficiary designations should be reviewed annually and after any major life event (marriage, divorce, birth, death). Accounts with outdated designations pose legal and operational risk."
+    },
+    {
+      "id": "wealth_prompt_004",
+      "pack": "wealth",
+      "description": "Create a policy for performance monitoring and client communication",
+      "context": "We need to monitor portfolio performance against benchmarks. Sustained underperformance (more than 2% below benchmark for 2+ consecutive quarters) should trigger mandatory client outreach and strategy review."
+    },
+    {
+      "id": "wealth_prompt_005",
+      "pack": "wealth",
+      "description": "Create a policy for estate planning review triggers",
+      "context": "High-net-worth clients (>$5M AUM) should have annual estate planning reviews. Clients should be contacted when estate tax exemption changes affect their planning or when trust funding gaps are identified."
+    }
+  ]
+}

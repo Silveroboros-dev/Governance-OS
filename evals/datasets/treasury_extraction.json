@@ -1,0 +1,122 @@
+{
+  "pack": "treasury",
+  "description": "Golden dataset for Treasury IntakeAgent extraction evaluation",
+  "version": "1.0.0",
+  "documents": [
+    {
+      "id": "treasury_doc_001",
+      "source": "email",
+      "content": "From: CFO@acme.com\nTo: Treasury@acme.com\nSubject: Q4 Cash Position Update\n\nTeam,\n\nPlease note that our current cash position as of December 31st is $45.2M across all accounts. The main operating account at Chase has $32.1M, and our sweep account at Goldman has $13.1M.\n\nWe need to execute a wire transfer of $5M to our European subsidiary by January 15th for their Q1 operating expenses.\n\nAlso, I noticed our daily cash forecast is showing a potential shortfall of $2.3M in the third week of January due to the large vendor payments scheduled.\n\nPlease review and advise on our options.\n\nRegards,\nJohn",
+      "expected_signals": [
+        {
+          "signal_type": "cash_position_update",
+          "payload": {
+            "total_amount": 45200000,
+            "as_of_date": "2024-12-31"
+          }
+        },
+        {
+          "signal_type": "wire_transfer_request",
+          "payload": {
+            "amount": 5000000,
+            "destination": "European subsidiary",
+            "due_date": "2025-01-15"
+          }
+        },
+        {
+          "signal_type": "cash_forecast_alert",
+          "payload": {
+            "shortfall_amount": 2300000,
+            "period": "third week of January"
+          }
+        }
+      ]
+    },
+    {
+      "id": "treasury_doc_002",
+      "source": "bank_statement",
+      "content": "DAILY TREASURY REPORT\nDate: January 10, 2025\nAccount: ACME Corp Operating Account #4521\n\nOpening Balance: $28,450,000.00\n\nCredits:\n- ACH Deposit - Customer Payment: $1,250,000.00\n- Wire In - Investment Maturity: $3,000,000.00\n\nDebits:\n- Wire Out - Vendor Payment: ($2,100,000.00)\n- ACH Debit - Payroll: ($4,500,000.00)\n\nClosing Balance: $26,100,000.00\n\nAlert: Balance dropped below $27M threshold",
+      "expected_signals": [
+        {
+          "signal_type": "balance_threshold_breach",
+          "payload": {
+            "threshold": 27000000,
+            "actual_balance": 26100000,
+            "account": "Operating Account #4521"
+          }
+        },
+        {
+          "signal_type": "large_transaction",
+          "payload": {
+            "type": "debit",
+            "amount": 4500000,
+            "description": "Payroll"
+          }
+        }
+      ]
+    },
+    {
+      "id": "treasury_doc_003",
+      "source": "compliance_report",
+      "content": "COUNTERPARTY EXPOSURE REPORT\nGenerated: January 8, 2025\n\nBank of America:\n- Total Exposure: $52,000,000\n- Limit: $50,000,000\n- Utilization: 104%\n- STATUS: LIMIT BREACH\n\nJP Morgan Chase:\n- Total Exposure: $43,000,000\n- Limit: $75,000,000\n- Utilization: 57%\n- STATUS: OK\n\nCitibank:\n- Total Exposure: $28,500,000\n- Limit: $30,000,000\n- Utilization: 95%\n- STATUS: WARNING - Approaching Limit",
+      "expected_signals": [
+        {
+          "signal_type": "counterparty_limit_breach",
+          "payload": {
+            "counterparty": "Bank of America",
+            "exposure": 52000000,
+            "limit": 50000000,
+            "utilization": 1.04
+          }
+        },
+        {
+          "signal_type": "counterparty_limit_warning",
+          "payload": {
+            "counterparty": "Citibank",
+            "exposure": 28500000,
+            "limit": 30000000,
+            "utilization": 0.95
+          }
+        }
+      ]
+    },
+    {
+      "id": "treasury_doc_004",
+      "source": "fx_desk",
+      "content": "FX POSITION ALERT\n\nUrgent: EUR/USD position requires attention\n\nCurrent Position: Long EUR 15,000,000\nMark-to-Market: -$425,000 (2.8% loss)\nStop Loss Level: -$500,000 (3.3%)\n\nThe position has moved against us following the ECB announcement. We are approaching our stop loss threshold.\n\nRecommendation: Consider partial hedge or position reduction.\n\nTrading Desk",
+      "expected_signals": [
+        {
+          "signal_type": "fx_position_alert",
+          "payload": {
+            "currency_pair": "EUR/USD",
+            "position": "Long EUR 15,000,000",
+            "mtm_loss": 425000,
+            "stop_loss_threshold": 500000
+          }
+        }
+      ]
+    },
+    {
+      "id": "treasury_doc_005",
+      "source": "investment_report",
+      "content": "INVESTMENT MATURITY SCHEDULE\nWeek of January 13-17, 2025\n\nMonday, Jan 13:\n- Treasury Bill (91-day): $10,000,000 maturing\n- Commercial Paper (ABC Corp): $5,000,000 maturing\n\nWednesday, Jan 15:\n- Certificate of Deposit (Wells Fargo): $8,000,000 maturing\n\nFriday, Jan 17:\n- Treasury Note (2-year): $15,000,000 maturing\n\nTotal Maturities This Week: $38,000,000\n\nReinvestment Decision Required by Jan 10, 2025",
+      "expected_signals": [
+        {
+          "signal_type": "investment_maturity",
+          "payload": {
+            "total_maturing": 38000000,
+            "period": "January 13-17, 2025",
+            "decision_deadline": "2025-01-10"
+          }
+        },
+        {
+          "signal_type": "reinvestment_decision_required",
+          "payload": {
+            "amount": 38000000,
+            "deadline": "2025-01-10"
+          }
+        }
+      ]
+    }
+  ]
+}

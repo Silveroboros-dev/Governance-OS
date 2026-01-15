@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.database import engine, Base
 from core.api import signals, evaluations, exceptions, decisions, evidence, policies, stats, replay
+# Sprint 3: Agentic coprocessor APIs
+from core.api import approvals, traces
 
 # Create FastAPI app
 app = FastAPI(
@@ -38,6 +40,9 @@ app.include_router(evidence.router, prefix=settings.api_v1_prefix)
 app.include_router(policies.router, prefix=settings.api_v1_prefix)
 app.include_router(stats.router, prefix=settings.api_v1_prefix)
 app.include_router(replay.router, prefix=settings.api_v1_prefix)
+# Sprint 3: Agentic coprocessor routers
+app.include_router(approvals.router, prefix=settings.api_v1_prefix)
+app.include_router(traces.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/")

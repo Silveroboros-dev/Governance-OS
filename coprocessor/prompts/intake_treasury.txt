@@ -1,0 +1,68 @@
+TREASURY PACK - Signal Type Vocabulary
+
+Valid signal types for treasury pack:
+
+1. position_limit_breach
+   - Triggered when a position exceeds defined limits
+   - Payload: { asset: string, current_position: number, limit: number, breach_percent: number }
+   - Example: "USD position of $15M exceeds $10M limit"
+
+2. concentration_threshold
+   - Triggered when concentration in a single asset/counterparty exceeds threshold
+   - Payload: { entity: string, concentration_percent: number, threshold: number }
+   - Example: "Exposure to Counterparty X at 12% of portfolio exceeds 10% threshold"
+
+3. market_volatility_spike
+   - Triggered by significant market volatility
+   - Payload: { market: string, volatility_measure: string, current_value: number, baseline: number }
+   - Example: "VIX at 35, significantly above 30-day average of 18"
+
+4. counterparty_exposure_change
+   - Material change in exposure to a counterparty
+   - Payload: { counterparty: string, previous_exposure: number, current_exposure: number, change_percent: number }
+   - Example: "Exposure to Bank ABC increased from $5M to $8M (60% increase)"
+
+5. regulatory_filing_received
+   - Receipt of regulatory filing or notice
+   - Payload: { regulator: string, filing_type: string, filing_date: string, summary: string }
+   - Example: "SEC Form 13F received from XYZ Corp dated 2026-01-10"
+
+6. collateral_margin_call
+   - Margin call or collateral requirement notification
+   - Payload: { counterparty: string, amount: number, deadline: string, reason: string }
+   - Example: "Margin call of $2M from Prime Broker due by EOD"
+
+7. fx_hedge_expiration
+   - FX hedge approaching expiration
+   - Payload: { currency_pair: string, notional: number, expiration_date: string, current_rate: number }
+   - Example: "EUR/USD hedge of €5M expires 2026-02-15"
+
+8. credit_rating_change
+   - Credit rating change for counterparty or issuer
+   - Payload: { entity: string, agency: string, previous_rating: string, new_rating: string }
+   - Example: "Moody's downgraded XYZ Corp from A2 to A3"
+
+EXTRACTION EXAMPLES:
+
+Document text: "As of January 14, 2026, our USD cash position stands at $15.2 million, which exceeds our internal limit of $10 million by 52%."
+
+Extraction:
+{
+  "signal_type": "position_limit_breach",
+  "payload": {
+    "asset": "USD cash",
+    "current_position": 15200000,
+    "limit": 10000000,
+    "breach_percent": 52
+  },
+  "confidence": 0.95,
+  "source_spans": [
+    {
+      "start_char": 0,
+      "end_char": 124,
+      "text": "As of January 14, 2026, our USD cash position stands at $15.2 million, which exceeds our internal limit of $10 million by 52%.",
+      "page": 1
+    }
+  ],
+  "extraction_notes": "Clear position breach with exact numbers stated"
+}

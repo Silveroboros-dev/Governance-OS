@@ -1,0 +1,176 @@
+{
+  "pack": "wealth",
+  "description": "Historical decisions for Wealth Management kernel regression testing",
+  "version": "1.0.0",
+  "policy_version_id": "wealth_policy_v1.0",
+  "decisions": [
+    {
+      "decision_id": "WM-2024-001",
+      "policy_version_id": "wealth_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "suitability_breach",
+          "payload": {
+            "client_id": "WM-12345",
+            "risk_profile": "Conservative",
+            "speculative_exposure": 0.15,
+            "max_allowed": 0.05
+          },
+          "timestamp": "2024-11-10T10:00:00Z"
+        }
+      ],
+      "evaluation_result": "exception_raised",
+      "exception": {
+        "severity": "critical",
+        "type": "suitability_violation",
+        "options": [
+          {
+            "id": "opt_1",
+            "action": "liquidate_speculative",
+            "description": "Liquidate speculative holdings to bring within limits"
+          },
+          {
+            "id": "opt_2",
+            "action": "update_risk_profile",
+            "description": "Document client's explicit request and update risk profile"
+          },
+          {
+            "id": "opt_3",
+            "action": "client_meeting",
+            "description": "Schedule client meeting to discuss suitability concerns"
+          }
+        ]
+      },
+      "input_hash": "sha256:wm_abc123def"
+    },
+    {
+      "decision_id": "WM-2024-002",
+      "policy_version_id": "wealth_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "concentration_risk_alert",
+          "payload": {
+            "client_id": "WM-67890",
+            "sector": "technology",
+            "concentration": 0.42,
+            "max_allowed": 0.25
+          },
+          "timestamp": "2024-11-12T14:30:00Z"
+        }
+      ],
+      "evaluation_result": "exception_raised",
+      "exception": {
+        "severity": "high",
+        "type": "concentration_breach",
+        "options": [
+          {
+            "id": "opt_1",
+            "action": "rebalance_auto",
+            "description": "Execute automatic rebalancing to target allocation"
+          },
+          {
+            "id": "opt_2",
+            "action": "rebalance_gradual",
+            "description": "Implement gradual rebalancing over 3 months"
+          },
+          {
+            "id": "opt_3",
+            "action": "acknowledge_risk",
+            "description": "Document client acknowledgment of concentration risk"
+          }
+        ]
+      },
+      "input_hash": "sha256:wm_def456ghi"
+    },
+    {
+      "decision_id": "WM-2024-003",
+      "policy_version_id": "wealth_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "rebalancing_request",
+          "payload": {
+            "client_id": "WM-34567",
+            "current_equity_allocation": 0.65,
+            "target_equity_allocation": 0.60
+          },
+          "timestamp": "2024-11-14T09:00:00Z"
+        }
+      ],
+      "evaluation_result": "pass",
+      "input_hash": "sha256:wm_ghi789jkl"
+    },
+    {
+      "decision_id": "WM-2024-004",
+      "policy_version_id": "wealth_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "underperformance_alert",
+          "payload": {
+            "client_id": "WM-89012",
+            "period": "Q3 2024",
+            "portfolio_return": -0.05,
+            "benchmark_return": 0.02,
+            "consecutive_quarters": 4
+          },
+          "timestamp": "2024-11-15T11:00:00Z"
+        }
+      ],
+      "evaluation_result": "exception_raised",
+      "exception": {
+        "severity": "high",
+        "type": "sustained_underperformance",
+        "options": [
+          {
+            "id": "opt_1",
+            "action": "strategy_review",
+            "description": "Conduct comprehensive strategy review with client"
+          },
+          {
+            "id": "opt_2",
+            "action": "manager_change",
+            "description": "Consider changing portfolio manager or strategy"
+          },
+          {
+            "id": "opt_3",
+            "action": "benchmark_review",
+            "description": "Review if current benchmark is appropriate"
+          }
+        ]
+      },
+      "input_hash": "sha256:wm_jkl012mno"
+    },
+    {
+      "decision_id": "WM-2024-005",
+      "policy_version_id": "wealth_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "beneficiary_update_required",
+          "payload": {
+            "client_id": "WM-45678",
+            "last_updated": "2020-03",
+            "trigger_events": ["divorce"]
+          },
+          "timestamp": "2024-11-16T16:00:00Z"
+        }
+      ],
+      "evaluation_result": "exception_raised",
+      "exception": {
+        "severity": "medium",
+        "type": "beneficiary_review",
+        "options": [
+          {
+            "id": "opt_1",
+            "action": "schedule_review",
+            "description": "Schedule beneficiary designation review meeting"
+          },
+          {
+            "id": "opt_2",
+            "action": "send_forms",
+            "description": "Send beneficiary update forms to client"
+          }
+        ]
+      },
+      "input_hash": "sha256:wm_mno345pqr"
+    }
+  ]
+}

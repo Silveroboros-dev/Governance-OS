@@ -1,0 +1,158 @@
+{
+  "pack": "treasury",
+  "description": "Historical decisions for Treasury kernel regression testing",
+  "version": "1.0.0",
+  "policy_version_id": "treasury_policy_v1.0",
+  "decisions": [
+    {
+      "decision_id": "TREAS-2024-001",
+      "policy_version_id": "treasury_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "balance_threshold_breach",
+          "payload": {
+            "threshold": 25000000,
+            "actual_balance": 22500000,
+            "account": "Operating"
+          },
+          "timestamp": "2024-11-15T09:30:00Z"
+        }
+      ],
+      "evaluation_result": "exception_raised",
+      "exception": {
+        "severity": "high",
+        "type": "liquidity_shortfall",
+        "options": [
+          {
+            "id": "opt_1",
+            "action": "liquidate_money_market",
+            "description": "Liquidate $3M from money market fund"
+          },
+          {
+            "id": "opt_2",
+            "action": "draw_credit_line",
+            "description": "Draw $3M from revolving credit facility"
+          },
+          {
+            "id": "opt_3",
+            "action": "accelerate_receivables",
+            "description": "Contact customers to accelerate receivables"
+          }
+        ]
+      },
+      "input_hash": "sha256:abc123def456"
+    },
+    {
+      "decision_id": "TREAS-2024-002",
+      "policy_version_id": "treasury_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "counterparty_limit_breach",
+          "payload": {
+            "counterparty": "Wells Fargo",
+            "exposure": 55000000,
+            "limit": 50000000,
+            "utilization": 1.10
+          },
+          "timestamp": "2024-11-16T14:00:00Z"
+        }
+      ],
+      "evaluation_result": "exception_raised",
+      "exception": {
+        "severity": "critical",
+        "type": "counterparty_exposure",
+        "options": [
+          {
+            "id": "opt_1",
+            "action": "reduce_deposits",
+            "description": "Transfer $5M to alternate bank"
+          },
+          {
+            "id": "opt_2",
+            "action": "increase_limit",
+            "description": "Request temporary limit increase (requires board approval)"
+          }
+        ]
+      },
+      "input_hash": "sha256:def789ghi012"
+    },
+    {
+      "decision_id": "TREAS-2024-003",
+      "policy_version_id": "treasury_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "investment_maturity",
+          "payload": {
+            "instrument": "Treasury Bill",
+            "amount": 10000000,
+            "maturity_date": "2024-11-20"
+          },
+          "timestamp": "2024-11-18T08:00:00Z"
+        }
+      ],
+      "evaluation_result": "pass",
+      "input_hash": "sha256:ghi345jkl678"
+    },
+    {
+      "decision_id": "TREAS-2024-004",
+      "policy_version_id": "treasury_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "fx_position_alert",
+          "payload": {
+            "currency_pair": "EUR/USD",
+            "position": "Long EUR 20,000,000",
+            "mtm_loss": 480000,
+            "stop_loss_threshold": 500000
+          },
+          "timestamp": "2024-11-19T10:30:00Z"
+        }
+      ],
+      "evaluation_result": "exception_raised",
+      "exception": {
+        "severity": "high",
+        "type": "fx_stop_loss_warning",
+        "options": [
+          {
+            "id": "opt_1",
+            "action": "close_position",
+            "description": "Close full EUR position at current market"
+          },
+          {
+            "id": "opt_2",
+            "action": "reduce_position",
+            "description": "Reduce position by 50% to limit further exposure"
+          },
+          {
+            "id": "opt_3",
+            "action": "add_hedge",
+            "description": "Purchase EUR put options for downside protection"
+          },
+          {
+            "id": "opt_4",
+            "action": "hold",
+            "description": "Maintain position and monitor closely"
+          }
+        ]
+      },
+      "input_hash": "sha256:jkl901mno234"
+    },
+    {
+      "decision_id": "TREAS-2024-005",
+      "policy_version_id": "treasury_policy_v1.0",
+      "signals": [
+        {
+          "signal_type": "wire_transfer_request",
+          "payload": {
+            "amount": 2500000,
+            "destination": "Vendor - ABC Corp",
+            "due_date": "2024-11-21"
+          },
+          "timestamp": "2024-11-20T11:00:00Z"
+        }
+      ],
+      "evaluation_result": "pass",
+      "input_hash": "sha256:mno567pqr890"
+    }
+  ]
+}

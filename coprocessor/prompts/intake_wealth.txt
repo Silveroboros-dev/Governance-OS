@@ -1,0 +1,91 @@
+WEALTH PACK - Signal Type Vocabulary
+
+Valid signal types for wealth pack:
+
+1. risk_tolerance_change
+   - Client's risk tolerance has changed
+   - Payload: { client_id: string, previous_tolerance: string, new_tolerance: string, reason: string }
+   - Example: "Client moved from Aggressive to Moderate following retirement"
+
+2. large_transaction_alert
+   - Significant transaction that may require review
+   - Payload: { client_id: string, transaction_type: string, amount: number, description: string }
+   - Example: "Client withdrew $500,000 for real estate purchase"
+
+3. beneficiary_update
+   - Change to beneficiary designations
+   - Payload: { client_id: string, account: string, change_type: string, details: string }
+   - Example: "Added spouse as primary beneficiary on IRA"
+
+4. tax_event
+   - Significant tax event requiring action
+   - Payload: { client_id: string, event_type: string, estimated_impact: number, deadline: string }
+   - Example: "Capital gains distribution of $75,000 expected in December"
+
+5. estate_document_update
+   - Estate planning document has been updated
+   - Payload: { client_id: string, document_type: string, update_date: string, summary: string }
+   - Example: "Trust agreement amended to add grandchildren"
+
+6. investment_objective_change
+   - Client investment objectives have changed
+   - Payload: { client_id: string, previous_objective: string, new_objective: string, reason: string }
+   - Example: "Shifted from growth to income focus"
+
+7. account_ownership_change
+   - Change in account ownership or structure
+   - Payload: { client_id: string, account: string, previous_ownership: string, new_ownership: string }
+   - Example: "Converted individual account to joint with spouse"
+
+8. compliance_violation_flag
+   - Potential compliance issue identified
+   - Payload: { client_id: string, violation_type: string, details: string, severity: string }
+   - Example: "Pattern trading detected in client account"
+
+EXTRACTION EXAMPLES:
+
+Document text: "Per our meeting on January 12, 2026, John Smith (Client ID: WM-12345) has requested to change his investment objective from Growth to Income Generation. He cited his upcoming retirement in June 2026 as the primary reason."
+
+Extraction:
+{
+  "signal_type": "investment_objective_change",
+  "payload": {
+    "client_id": "WM-12345",
+    "previous_objective": "Growth",
+    "new_objective": "Income Generation",
+    "reason": "Upcoming retirement in June 2026"
+  },
+  "confidence": 0.92,
+  "source_spans": [
+    {
+      "start_char": 0,
+      "end_char": 220,
+      "text": "Per our meeting on January 12, 2026, John Smith (Client ID: WM-12345) has requested to change his investment objective from Growth to Income Generation. He cited his upcoming retirement in June 2026 as the primary reason.",
+      "page": 1
+    }
+  ],
+  "extraction_notes": "Clear objective change with client ID and reason stated"
+}
+
+Document text: "This is to notify you that Mrs. Sarah Johnson (Account #98765) would like to add her daughter, Emily Johnson, as a beneficiary on her Roth IRA, effective immediately."
+
+Extraction:
+{
+  "signal_type": "beneficiary_update",
+  "payload": {
+    "client_id": "98765",
+    "account": "Roth IRA",
+    "change_type": "add_beneficiary",
+    "details": "Added daughter Emily Johnson as beneficiary"
+  },
+  "confidence": 0.88,
+  "source_spans": [
+    {
+      "start_char": 0,
+      "end_char": 167,
+      "text": "This is to notify you that Mrs. Sarah Johnson (Account #98765) would like to add her daughter, Emily Johnson, as a beneficiary on her Roth IRA, effective immediately.",
+      "page": 1
+    }
+  ],
+  "extraction_notes": "Beneficiary addition with account and details"
+}

@@ -17,6 +17,16 @@ import type {
   TriggerEvaluationRequest,
   EvidencePack,
   DashboardStats,
+  // Sprint 3 types
+  Approval,
+  ApprovalListParams,
+  ApprovalListResponse,
+  ApprovalStats,
+  AgentTrace,
+  AgentTraceDetail,
+  TraceListParams,
+  TraceListResponse,
+  TraceStats,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
@@ -167,6 +177,65 @@ export const statsApi = {
   },
 }
 
+// Sprint 3: Approval Queue API
+export const approvalApi = {
+  list: async (params?: ApprovalListParams): Promise<ApprovalListResponse> => {
+    const searchParams = new URLSearchParams()
+    if (params?.status) searchParams.append('status', params.status)
+    if (params?.action_type) searchParams.append('action_type', params.action_type)
+    if (params?.page) searchParams.append('page', params.page.toString())
+    if (params?.page_size) searchParams.append('page_size', params.page_size.toString())
+
+    const query = searchParams.toString()
+    return fetchApi<ApprovalListResponse>(`/approvals${query ? `?${query}` : ''}`)
+  },
+
+  get: async (id: string): Promise<Approval> => {
+    return fetchApi<Approval>(`/approvals/${id}`)
+  },
+
+  approve: async (id: string, reviewedBy: string, notes?: string): Promise<Approval> => {
+    return fetchApi<Approval>(`/approvals/${id}/approve?reviewed_by=${encodeURIComponent(reviewedBy)}`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    })
+  },
+
+  reject: async (id: string, reviewedBy: string, reason?: string, notes?: string): Promise<Approval> => {
+    return fetchApi<Approval>(`/approvals/${id}/reject?reviewed_by=${encodeURIComponent(reviewedBy)}`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, notes }),
+    })
+  },
+
+  stats: async (): Promise<ApprovalStats> => {
+    return fetchApi<ApprovalStats>('/approvals/stats/summary')
+  },
+}
+
+// Sprint 3: Agent Traces API
+export const traceApi = {
+  list: async (params?: TraceListParams): Promise<TraceListResponse> => {
+    const searchParams = new URLSearchParams()
+    if (params?.agent_type) searchParams.append('agent_type', params.agent_type)
+    if (params?.status) searchParams.append('status', params.status)
+    if (params?.pack) searchParams.append('pack', params.pack)
+    if (params?.page) searchParams.append('page', params.page.toString())
+    if (params?.page_size) searchParams.append('page_size', params.page_size.toString())
+
+    const query = searchParams.toString()
+    return fetchApi<TraceListResponse>(`/traces${query ? `?${query}` : ''}`)
+  },
+
+  get: async (id: string): Promise<AgentTraceDetail> => {
+    return fetchApi<AgentTraceDetail>(`/traces/${id}`)
+  },
+
+  stats: async (): Promise<TraceStats> => {
+    return fetchApi<TraceStats>('/traces/stats/summary')
+  },
+}
+
 // Combined API object
 export const api = {
   exceptions: exceptionApi,
@@ -176,6 +245,9 @@ export const api = {
   evaluations: evaluationApi,
   evidence: evidenceApi,
   stats: statsApi,
+  // Sprint 3
+  approvals: approvalApi,
+  traces: traceApi,
 }
 
 export { ApiError }

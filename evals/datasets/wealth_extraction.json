@@ -1,0 +1,132 @@
+{
+  "pack": "wealth",
+  "description": "Golden dataset for Wealth Management IntakeAgent extraction evaluation",
+  "version": "1.0.0",
+  "documents": [
+    {
+      "id": "wealth_doc_001",
+      "source": "client_email",
+      "content": "From: john.smith@email.com\nTo: advisor@wealthfirm.com\nSubject: Portfolio Rebalancing Request\n\nDear Sarah,\n\nI'd like to request a rebalancing of my portfolio. Currently, my equity allocation has drifted to 72% due to the recent market rally, but my target allocation is 60% equities, 30% fixed income, and 10% alternatives.\n\nI'm also concerned about concentration risk - my tech holdings (AAPL, MSFT, GOOGL) now represent 35% of my total portfolio.\n\nCould we schedule a call to discuss reducing my tech exposure and bringing everything back to target?\n\nThanks,\nJohn Smith\nAccount #WM-45892",
+      "expected_signals": [
+        {
+          "signal_type": "rebalancing_request",
+          "payload": {
+            "client_id": "WM-45892",
+            "current_equity_allocation": 0.72,
+            "target_equity_allocation": 0.60
+          }
+        },
+        {
+          "signal_type": "concentration_risk_alert",
+          "payload": {
+            "sector": "technology",
+            "concentration": 0.35,
+            "holdings": ["AAPL", "MSFT", "GOOGL"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "wealth_doc_002",
+      "source": "compliance_system",
+      "content": "SUITABILITY ALERT\nGenerated: January 9, 2025\n\nClient: Margaret Chen (Account #WM-78234)\nRisk Profile: Conservative (Score: 2/5)\nAge: 68\nInvestment Horizon: 5 years\n\nALERT: Recent trades inconsistent with risk profile\n\n- Trade #T-45892: Purchased 500 shares TSLA @ $245\n  Risk Score: 5/5 (Speculative)\n  \n- Trade #T-45893: Purchased 200 call options SPY Jan 2026\n  Risk Score: 5/5 (Speculative)\n\nTotal speculative exposure: $185,000 (18.5% of portfolio)\nMax allowed for Conservative profile: 5%\n\nAction Required: Review with client and document suitability rationale",
+      "expected_signals": [
+        {
+          "signal_type": "suitability_breach",
+          "payload": {
+            "client_id": "WM-78234",
+            "risk_profile": "Conservative",
+            "speculative_exposure": 0.185,
+            "max_allowed": 0.05
+          }
+        },
+        {
+          "signal_type": "client_review_required",
+          "payload": {
+            "client_id": "WM-78234",
+            "reason": "suitability_breach",
+            "trades": ["T-45892", "T-45893"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "wealth_doc_003",
+      "source": "market_research",
+      "content": "WEALTH MANAGEMENT - CLIENT IMPACT ANALYSIS\nDate: January 8, 2025\n\nSubject: Impact of Fed Rate Decision on Client Portfolios\n\nThe Federal Reserve has signaled potential rate cuts in Q2 2025. This impacts client portfolios as follows:\n\nClients with >30% Fixed Income Allocation:\n- Average duration: 7.2 years\n- Estimated gain on 50bp cut: +3.6%\n- Affected clients: 127\n\nClients with Floating Rate Exposure:\n- Total floating rate debt: $45M across 23 clients\n- Estimated annual savings: $225,000\n\nRecommendation: Contact clients with significant fixed income holdings to discuss duration positioning.\n\nHigh Priority Contacts (>$5M AUM, >40% fixed income):\n- Robert Williams (WM-12345)\n- Susan Park (WM-67890)\n- James Thompson (WM-34567)",
+      "expected_signals": [
+        {
+          "signal_type": "market_event_impact",
+          "payload": {
+            "event": "Fed rate decision",
+            "affected_client_count": 127,
+            "segment": "high_fixed_income"
+          }
+        },
+        {
+          "signal_type": "client_outreach_required",
+          "payload": {
+            "priority": "high",
+            "client_ids": ["WM-12345", "WM-67890", "WM-34567"],
+            "reason": "rate_impact_discussion"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wealth_doc_004",
+      "source": "estate_planning",
+      "content": "ESTATE PLANNING REVIEW\nClient: Thompson Family Trust\nAccount: WM-99001\n\nAnnual Review Findings:\n\n1. Estate Tax Exposure\n   - Current estate value: $18.5M\n   - Federal exemption: $13.61M (2024)\n   - Taxable estate: $4.89M\n   - Estimated tax liability: $1.96M (40%)\n\n2. Beneficiary Updates Needed\n   - Last update: March 2019\n   - Life events since: Daughter married (2021), Grandson born (2023)\n   \n3. Trust Funding Gap\n   - Assets titled in trust: $12.2M\n   - Assets outside trust: $6.3M (requires attention)\n\nAction Items:\n- Schedule beneficiary designation review\n- Discuss trust funding strategy\n- Review gifting opportunities",
+      "expected_signals": [
+        {
+          "signal_type": "estate_planning_review",
+          "payload": {
+            "client_id": "WM-99001",
+            "estate_value": 18500000,
+            "tax_exposure": 1960000
+          }
+        },
+        {
+          "signal_type": "beneficiary_update_required",
+          "payload": {
+            "client_id": "WM-99001",
+            "last_updated": "2019-03",
+            "trigger_events": ["marriage", "birth"]
+          }
+        },
+        {
+          "signal_type": "trust_funding_gap",
+          "payload": {
+            "client_id": "WM-99001",
+            "unfunded_amount": 6300000
+          }
+        }
+      ]
+    },
+    {
+      "id": "wealth_doc_005",
+      "source": "performance_report",
+      "content": "QUARTERLY PERFORMANCE REVIEW\nQ4 2024\n\nClient: David Morrison\nAccount: WM-55678\nAUM: $3,250,000\n\nPerformance Summary:\n- Portfolio Return (Q4): -8.2%\n- Benchmark Return (60/40): -2.1%\n- Underperformance: -6.1%\n\nKey Drivers:\n- Concentrated position in NVDA (-15%)\n- Overweight emerging markets (-12%)\n- Underweight US large cap (+8%)\n\nYTD Performance:\n- Portfolio: +12.5%\n- Benchmark: +18.3%\n- Underperformance: -5.8%\n\nNOTE: Client has underperformed benchmark for 3 consecutive quarters. Performance review call required.",
+      "expected_signals": [
+        {
+          "signal_type": "underperformance_alert",
+          "payload": {
+            "client_id": "WM-55678",
+            "period": "Q4 2024",
+            "portfolio_return": -0.082,
+            "benchmark_return": -0.021,
+            "underperformance": -0.061
+          }
+        },
+        {
+          "signal_type": "performance_review_required",
+          "payload": {
+            "client_id": "WM-55678",
+            "consecutive_quarters": 3,
+            "reason": "sustained_underperformance"
+          }
+        }
+      ]
+    }
+  ]
+}

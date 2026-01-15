@@ -219,3 +219,100 @@ export interface DashboardStats {
     active: number
   }
 }
+
+// Sprint 3: Approval Queue Types
+export type ApprovalActionType = "signal" | "policy_draft" | "decision" | "dismiss" | "context"
+export type ApprovalStatus = "pending" | "approved" | "rejected"
+
+export interface Approval {
+  id: string
+  action_type: ApprovalActionType
+  payload: Record<string, any>
+  proposed_by: string
+  proposed_at: string
+  status: ApprovalStatus
+  reviewed_by?: string
+  reviewed_at?: string
+  review_notes?: string
+  result_id?: string
+  trace_id?: string
+  summary?: string
+  confidence?: number
+}
+
+export interface ApprovalListParams {
+  status?: ApprovalStatus
+  action_type?: ApprovalActionType
+  page?: number
+  page_size?: number
+}
+
+export interface ApprovalListResponse {
+  items: Approval[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface ApprovalStats {
+  pending: number
+  approved: number
+  rejected: number
+  pending_by_type: Record<string, number>
+}
+
+// Sprint 3: Agent Trace Types
+export type AgentType = "intake" | "narrative" | "policy_draft"
+export type AgentTraceStatus = "running" | "completed" | "failed"
+
+export interface ToolCall {
+  tool: string
+  args: Record<string, any>
+  result: any
+  duration_ms: number
+  timestamp: string
+  error?: string
+}
+
+export interface AgentTrace {
+  id: string
+  agent_type: AgentType
+  session_id: string
+  started_at: string
+  completed_at?: string
+  status: AgentTraceStatus
+  input_summary?: Record<string, any>
+  output_summary?: Record<string, any>
+  error_message?: string
+  total_duration_ms?: number
+  pack?: string
+  document_source?: string
+}
+
+export interface AgentTraceDetail extends AgentTrace {
+  tool_calls?: ToolCall[]
+  approval_count: number
+}
+
+export interface TraceListParams {
+  agent_type?: AgentType
+  status?: AgentTraceStatus
+  pack?: string
+  page?: number
+  page_size?: number
+}
+
+export interface TraceListResponse {
+  items: AgentTrace[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface TraceStats {
+  running: number
+  completed: number
+  failed: number
+  by_agent_type: Record<string, number>
+  average_duration_ms?: number
+}

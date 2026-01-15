@@ -1,0 +1,37 @@
+{
+  "pack": "treasury",
+  "description": "Policy prompts for Treasury PolicyDraftAgent evaluation",
+  "version": "1.0.0",
+  "prompts": [
+    {
+      "id": "treasury_prompt_001",
+      "pack": "treasury",
+      "description": "Create a policy for managing counterparty credit exposure limits",
+      "context": "Our company has relationships with multiple banks for deposits, investments, and credit facilities. We need to ensure no single bank represents too much of our total exposure. Current practice is informal with no hard limits enforced."
+    },
+    {
+      "id": "treasury_prompt_002",
+      "pack": "treasury",
+      "description": "Create a policy for cash position monitoring and minimum balance requirements",
+      "context": "We need to maintain minimum cash balances for operational needs and covenant compliance. The operating account should never fall below $20M, and total cash should not fall below $50M across all accounts."
+    },
+    {
+      "id": "treasury_prompt_003",
+      "pack": "treasury",
+      "description": "Create a policy for foreign exchange risk management",
+      "context": "We have significant EUR and GBP exposure from European operations. Monthly exposures average EUR 10M and GBP 5M. We want to limit mark-to-market losses and require hedging above certain thresholds."
+    },
+    {
+      "id": "treasury_prompt_004",
+      "pack": "treasury",
+      "description": "Create a policy for investment maturity ladder management",
+      "context": "Our investment portfolio is $100M. We need to ensure adequate liquidity by maintaining a maturity ladder. No more than 20% should mature in any single week, and at least 30% should be accessible within 7 days."
+    },
+    {
+      "id": "treasury_prompt_005",
+      "pack": "treasury",
+      "description": "Create a policy for wire transfer authorization and approval",
+      "context": "We process approximately 50 wire transfers per month ranging from $10K to $25M. We need tiered approval requirements based on amount and destination type (domestic vs international, existing vs new counterparty)."
+    }
+  ]
+}
