@@ -6,9 +6,70 @@ proper grounding to evidence.
 """
 
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+
+class MemoLength(str, Enum):
+    """Length variants for memo generation."""
+    SHORT = "short"      # 1-2 paragraphs, key facts only
+    STANDARD = "standard"  # Full narrative, typical length
+    DETAILED = "detailed"  # Comprehensive with all context
+
+
+class MemoTemplate(str, Enum):
+    """Available memo templates."""
+    # Generic templates
+    EXECUTIVE_SUMMARY = "executive_summary"
+    DECISION_BRIEF = "decision_brief"
+
+    # Treasury-specific templates
+    TREASURY_LIQUIDITY = "treasury_liquidity"
+    TREASURY_POSITION = "treasury_position"
+    TREASURY_COUNTERPARTY = "treasury_counterparty"
+
+    # Wealth-specific templates
+    WEALTH_SUITABILITY = "wealth_suitability"
+    WEALTH_PORTFOLIO = "wealth_portfolio"
+    WEALTH_CLIENT = "wealth_client"
+
+
+class MemoTemplateConfig(BaseModel):
+    """Configuration for a memo template."""
+
+    template_id: MemoTemplate = Field(..., description="Template identifier")
+    name: str = Field(..., description="Human-readable template name")
+    description: str = Field(..., description="What this template is for")
+    pack: Optional[str] = Field(default=None, description="Pack this template belongs to (treasury/wealth/None for generic)")
+
+    # Structure configuration
+    required_sections: List[str] = Field(
+        default_factory=list,
+        description="Section headings that must be present"
+    )
+    max_sections: int = Field(default=5, description="Maximum number of sections")
+    max_claims_per_section: int = Field(default=10, description="Maximum claims per section")
+
+    # Length guidelines per MemoLength
+    length_guidelines: Dict[str, Dict[str, int]] = Field(
+        default_factory=lambda: {
+            "short": {"max_sections": 2, "max_claims_per_section": 3},
+            "standard": {"max_sections": 4, "max_claims_per_section": 6},
+            "detailed": {"max_sections": 6, "max_claims_per_section": 10},
+        }
+    )
+
+    # Content guidance
+    focus_areas: List[str] = Field(
+        default_factory=list,
+        description="Key areas to emphasize in this template"
+    )
+    vocabulary_hints: List[str] = Field(
+        default_factory=list,
+        description="Domain-specific terms to use"
+    )
 
 
 class EvidenceReference(BaseModel):
@@ -86,6 +147,8 @@ class NarrativeMemo(BaseModel):
     - sections: Organized sections with grounded claims
     - decision_id: Link to the decision
     - evidence_pack_id: Link to the evidence pack used
+    - template_used: Which template was applied
+    - length: short/standard/detailed
     """
 
     decision_id: str = Field(..., description="ID of the decision this memo describes")
@@ -101,6 +164,30 @@ class NarrativeMemo(BaseModel):
     generated_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="When this memo was generated"
+    )
+
+    # v1 additions: template tracking
+    template_used: Optional[str] = Field(
+        default=None,
+        description="Template ID used to generate this memo"
+    )
+    length: str = Field(
+        default="standard",
+        description="Length variant: short, standard, or detailed"
+    )
+    pack: Optional[str] = Field(
+        default=None,
+        description="Pack context: treasury or wealth"
+    )
+
+    # Metadata for uncertainties and assumptions
+    uncertainties: List[str] = Field(
+        default_factory=list,
+        description="Explicit list of uncertainties in the evidence"
+    )
+    assumptions: List[str] = Field(
+        default_factory=list,
+        description="Assumptions made in the narrative"
     )
 
     @field_validator("title")

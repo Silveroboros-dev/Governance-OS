@@ -1,5 +1,12 @@
 """
-Tests for NarrativeAgent - AI agent that drafts grounded memos.
+Tests for NarrativeAgent v1 - AI agent that drafts grounded memos.
+
+Tests cover:
+- Basic initialization and configuration
+- Multi-template support (treasury/wealth-specific templates)
+- Short/standard/detailed length variants
+- Evidence grounding validation
+- Uncertainty and assumption tracking
 """
 
 import pytest
@@ -12,6 +19,9 @@ from coprocessor.schemas.narrative import (
     NarrativeClaim,
     EvidenceReference,
     MemoSection,
+    MemoTemplate,
+    MemoLength,
+    MemoTemplateConfig,
 )
 
 
@@ -368,3 +378,418 @@ class TestNarrativeAgentSafetyConstraints:
         # Should mention grounding requirement
         assert "evidence" in prompt
         assert ("must" in prompt or "required" in prompt or "every" in prompt)
+
+
+# ============================================================================
+# V1 TESTS: MULTI-TEMPLATE SUPPORT
+# ============================================================================
+
+class TestNarrativeAgentV1Templates:
+    """Tests for NarrativeAgent v1 multi-template support."""
+
+    @pytest.fixture
+    def agent(self):
+        return NarrativeAgent()
+
+    def test_get_available_templates_treasury(self, agent):
+        """Test getting available templates for treasury pack."""
+        templates = agent.get_available_templates("treasury")
+
+        assert MemoTemplate.TREASURY_LIQUIDITY in templates
+        assert MemoTemplate.TREASURY_POSITION in templates
+        assert MemoTemplate.TREASURY_COUNTERPARTY in templates
+        assert MemoTemplate.EXECUTIVE_SUMMARY in templates
+        assert MemoTemplate.DECISION_BRIEF in templates
+
+    def test_get_available_templates_wealth(self, agent):
+        """Test getting available templates for wealth pack."""
+        templates = agent.get_available_templates("wealth")
+
+        assert MemoTemplate.WEALTH_SUITABILITY in templates
+        assert MemoTemplate.WEALTH_PORTFOLIO in templates
+        assert MemoTemplate.WEALTH_CLIENT in templates
+        assert MemoTemplate.EXECUTIVE_SUMMARY in templates
+        assert MemoTemplate.DECISION_BRIEF in templates
+
+    def test_get_available_templates_unknown_pack(self, agent):
+        """Test getting templates for unknown pack returns default."""
+        templates = agent.get_available_templates("unknown_pack")
+
+        # Should return at least decision_brief
+        assert MemoTemplate.DECISION_BRIEF in templates
+
+    def test_get_template_config_treasury_liquidity(self, agent):
+        """Test getting treasury liquidity template config."""
+        config = agent.get_template_config(MemoTemplate.TREASURY_LIQUIDITY)
+
+        assert config is not None
+        assert config.template_id == MemoTemplate.TREASURY_LIQUIDITY
+        assert config.pack == "treasury"
+        assert "liquidity" in config.name.lower()
+        assert len(config.required_sections) > 0
+        assert len(config.vocabulary_hints) > 0
+
+    def test_get_template_config_wealth_suitability(self, agent):
+        """Test getting wealth suitability template config."""
+        config = agent.get_template_config(MemoTemplate.WEALTH_SUITABILITY)
+
+        assert config is not None
+        assert config.template_id == MemoTemplate.WEALTH_SUITABILITY
+        assert config.pack == "wealth"
+        assert "suitability" in config.name.lower()
+
+    def test_template_config_has_length_guidelines(self, agent):
+        """Test that template configs have length guidelines."""
+        config = agent.get_template_config(MemoTemplate.TREASURY_LIQUIDITY)
+
+        assert "short" in config.length_guidelines
+        assert "standard" in config.length_guidelines
+        assert "detailed" in config.length_guidelines
+
+        # Short should have fewer sections than detailed
+        assert config.length_guidelines["short"]["max_sections"] <= config.length_guidelines["detailed"]["max_sections"]
+
+
+class TestNarrativeAgentV1TemplatePromptBuilding:
+    """Tests for template prompt building functionality."""
+
+    @pytest.fixture
+    def agent(self):
+        return NarrativeAgent()
+
+    def test_build_template_prompt_includes_name(self, agent):
+        """Test that template prompt includes template name."""
+        prompt = agent._build_template_prompt(
+            MemoTemplate.TREASURY_LIQUIDITY,
+            MemoLength.STANDARD,
+            "treasury"
+        )
+
+        assert "Treasury Liquidity" in prompt
+
+    def test_build_template_prompt_includes_sections(self, agent):
+        """Test that template prompt includes required sections."""
+        prompt = agent._build_template_prompt(
+            MemoTemplate.TREASURY_LIQUIDITY,
+            MemoLength.STANDARD,
+            "treasury"
+        )
+
+        assert "Required sections" in prompt or "Current Position" in prompt
+
+    def test_build_template_prompt_includes_vocabulary(self, agent):
+        """Test that template prompt includes vocabulary hints."""
+        prompt = agent._build_template_prompt(
+            MemoTemplate.TREASURY_LIQUIDITY,
+            MemoLength.STANDARD,
+            "treasury"
+        )
+
+        assert "liquidity" in prompt.lower()
+
+    def test_build_template_prompt_short_length(self, agent):
+        """Test that short length has appropriate guidance."""
+        prompt = agent._build_template_prompt(
+            MemoTemplate.TREASURY_LIQUIDITY,
+            MemoLength.SHORT,
+            "treasury"
+        )
+
+        assert "SHORT" in prompt
+        assert "essential" in prompt.lower() or "brief" in prompt.lower() or "1-2" in prompt
+
+    def test_build_template_prompt_detailed_length(self, agent):
+        """Test that detailed length has appropriate guidance."""
+        prompt = agent._build_template_prompt(
+            MemoTemplate.TREASURY_LIQUIDITY,
+            MemoLength.DETAILED,
+            "treasury"
+        )
+
+        assert "DETAILED" in prompt
+        assert "comprehensive" in prompt.lower() or "context" in prompt.lower()
+
+
+class TestNarrativeAgentV1TemplateValidation:
+    """Tests for template validation."""
+
+    @pytest.fixture
+    def agent(self):
+        return NarrativeAgent()
+
+    @patch.object(NarrativeAgent, '_get_client')
+    def test_draft_memo_rejects_invalid_template_for_pack(self, mock_get_client, agent, sample_evidence_pack):
+        """Test that draft_memo rejects templates not valid for pack."""
+        # Treasury template should not be available for wealth pack
+        with pytest.raises(ValueError, match="not available for pack"):
+            agent.draft_memo_sync(
+                "dec_001",
+                sample_evidence_pack,
+                template=MemoTemplate.TREASURY_LIQUIDITY,
+                pack="wealth"
+            )
+
+    @patch.object(NarrativeAgent, '_get_client')
+    def test_draft_memo_accepts_valid_template_for_pack(self, mock_get_client, agent, sample_evidence_pack):
+        """Test that draft_memo accepts valid templates for pack."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.content = [Mock(text='''
+        {
+            "title": "Test",
+            "sections": [
+                {"heading": "Current Position", "claims": [{"text": "Test", "evidence_refs": ["sig_001"]}]}
+            ],
+            "uncertainties": [],
+            "assumptions": []
+        }
+        ''')]
+        mock_client.messages.create.return_value = mock_response
+
+        # This should not raise
+        memo = agent.draft_memo_sync(
+            "dec_001",
+            sample_evidence_pack,
+            template=MemoTemplate.TREASURY_LIQUIDITY,
+            pack="treasury"
+        )
+
+        assert memo is not None
+        assert memo.template_used == "treasury_liquidity"
+
+
+class TestNarrativeAgentV1LengthVariants:
+    """Tests for length variant support."""
+
+    @pytest.fixture
+    def agent(self):
+        return NarrativeAgent()
+
+    @patch.object(NarrativeAgent, '_get_client')
+    def test_draft_memo_accepts_short_length(self, mock_get_client, agent, sample_evidence_pack):
+        """Test that draft_memo accepts short length."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.content = [Mock(text='{"title": "Test", "sections": [], "uncertainties": [], "assumptions": []}')]
+        mock_client.messages.create.return_value = mock_response
+
+        memo = agent.draft_memo_sync(
+            "dec_001",
+            sample_evidence_pack,
+            length=MemoLength.SHORT,
+            pack="treasury"
+        )
+
+        assert memo.length == "short"
+
+    @patch.object(NarrativeAgent, '_get_client')
+    def test_draft_memo_accepts_detailed_length(self, mock_get_client, agent, sample_evidence_pack):
+        """Test that draft_memo accepts detailed length."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.content = [Mock(text='{"title": "Test", "sections": [], "uncertainties": [], "assumptions": []}')]
+        mock_client.messages.create.return_value = mock_response
+
+        memo = agent.draft_memo_sync(
+            "dec_001",
+            sample_evidence_pack,
+            length=MemoLength.DETAILED,
+            pack="treasury"
+        )
+
+        assert memo.length == "detailed"
+
+    @patch.object(NarrativeAgent, '_get_client')
+    def test_draft_memo_accepts_string_length(self, mock_get_client, agent, sample_evidence_pack):
+        """Test that draft_memo accepts string for length."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.content = [Mock(text='{"title": "Test", "sections": [], "uncertainties": [], "assumptions": []}')]
+        mock_client.messages.create.return_value = mock_response
+
+        memo = agent.draft_memo_sync(
+            "dec_001",
+            sample_evidence_pack,
+            length="short",  # String instead of enum
+            pack="treasury"
+        )
+
+        assert memo.length == "short"
+
+
+class TestNarrativeAgentV1UncertaintiesAssumptions:
+    """Tests for uncertainty and assumption tracking."""
+
+    @pytest.fixture
+    def agent(self):
+        return NarrativeAgent()
+
+    @patch.object(NarrativeAgent, '_get_client')
+    def test_memo_includes_uncertainties(self, mock_get_client, agent, sample_evidence_pack):
+        """Test that memo captures uncertainties from LLM response."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.content = [Mock(text='''
+        {
+            "title": "Test",
+            "sections": [],
+            "uncertainties": ["Exact timing of the breach is unknown", "Market conditions may have changed"],
+            "assumptions": []
+        }
+        ''')]
+        mock_client.messages.create.return_value = mock_response
+
+        memo = agent.draft_memo_sync("dec_001", sample_evidence_pack, pack="treasury")
+
+        assert len(memo.uncertainties) == 2
+        assert "timing" in memo.uncertainties[0].lower()
+
+    @patch.object(NarrativeAgent, '_get_client')
+    def test_memo_includes_assumptions(self, mock_get_client, agent, sample_evidence_pack):
+        """Test that memo captures assumptions from LLM response."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.content = [Mock(text='''
+        {
+            "title": "Test",
+            "sections": [],
+            "uncertainties": [],
+            "assumptions": ["Market will remain stable", "Counterparty will honor agreement"]
+        }
+        ''')]
+        mock_client.messages.create.return_value = mock_response
+
+        memo = agent.draft_memo_sync("dec_001", sample_evidence_pack, pack="treasury")
+
+        assert len(memo.assumptions) == 2
+        assert "market" in memo.assumptions[0].lower()
+
+    def test_format_memo_markdown_includes_uncertainties(self, agent):
+        """Test that markdown formatting includes uncertainties."""
+        memo = NarrativeMemo(
+            decision_id="dec_001",
+            title="Test",
+            sections=[],
+            uncertainties=["Some uncertainty"],
+            assumptions=[],
+        )
+
+        markdown = agent.format_memo_markdown(memo)
+
+        assert "Uncertainties" in markdown
+        assert "Some uncertainty" in markdown
+
+    def test_format_memo_markdown_includes_assumptions(self, agent):
+        """Test that markdown formatting includes assumptions."""
+        memo = NarrativeMemo(
+            decision_id="dec_001",
+            title="Test",
+            sections=[],
+            uncertainties=[],
+            assumptions=["Some assumption"],
+        )
+
+        markdown = agent.format_memo_markdown(memo)
+
+        assert "Assumptions" in markdown
+        assert "Some assumption" in markdown
+
+
+class TestNarrativeAgentV1TemplateSelection:
+    """Tests for automatic template selection."""
+
+    @pytest.fixture
+    def agent(self):
+        return NarrativeAgent()
+
+    def test_select_template_for_liquidity_breach(self, agent):
+        """Test selecting template for liquidity signal."""
+        exception_context = {"signal_type": "liquidity_threshold_breach"}
+
+        template = agent.select_template_for_exception(exception_context, "treasury")
+
+        assert template == MemoTemplate.TREASURY_LIQUIDITY
+
+    def test_select_template_for_position_breach(self, agent):
+        """Test selecting template for position signal."""
+        exception_context = {"signal_type": "position_limit_breach"}
+
+        template = agent.select_template_for_exception(exception_context, "treasury")
+
+        assert template == MemoTemplate.TREASURY_POSITION
+
+    def test_select_template_for_suitability_mismatch(self, agent):
+        """Test selecting template for suitability signal."""
+        exception_context = {"signal_type": "suitability_mismatch"}
+
+        template = agent.select_template_for_exception(exception_context, "wealth")
+
+        assert template == MemoTemplate.WEALTH_SUITABILITY
+
+    def test_select_template_unknown_signal_returns_default(self, agent):
+        """Test selecting template for unknown signal returns default."""
+        exception_context = {"signal_type": "unknown_signal_type"}
+
+        template = agent.select_template_for_exception(exception_context, "treasury")
+
+        assert template == MemoTemplate.DECISION_BRIEF
+
+
+class TestNarrativeAgentV1PackTracking:
+    """Tests for pack tracking in memos."""
+
+    @pytest.fixture
+    def agent(self):
+        return NarrativeAgent()
+
+    @patch.object(NarrativeAgent, '_get_client')
+    def test_memo_tracks_pack(self, mock_get_client, agent, sample_evidence_pack):
+        """Test that memo tracks which pack was used."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.content = [Mock(text='{"title": "Test", "sections": [], "uncertainties": [], "assumptions": []}')]
+        mock_client.messages.create.return_value = mock_response
+
+        memo = agent.draft_memo_sync("dec_001", sample_evidence_pack, pack="wealth")
+
+        assert memo.pack == "wealth"
+
+    def test_format_memo_markdown_includes_pack(self, agent):
+        """Test that markdown formatting includes pack."""
+        memo = NarrativeMemo(
+            decision_id="dec_001",
+            title="Test",
+            sections=[],
+            pack="treasury",
+        )
+
+        markdown = agent.format_memo_markdown(memo)
+
+        assert "treasury" in markdown.lower()
+
+    def test_format_memo_markdown_includes_template(self, agent):
+        """Test that markdown formatting includes template."""
+        memo = NarrativeMemo(
+            decision_id="dec_001",
+            title="Test",
+            sections=[],
+            template_used="treasury_liquidity",
+        )
+
+        markdown = agent.format_memo_markdown(memo)
+
+        assert "treasury_liquidity" in markdown
