@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Activity, Clock, CheckCircle, XCircle, AlertCircle, Filter, Bot, ChevronRight } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
@@ -59,7 +59,7 @@ export default function TracesPage() {
   const [agentTypeFilter, setAgentTypeFilter] = useState<AgentType | 'all'>('all')
   const [statusFilter, setStatusFilter] = useState<AgentTraceStatus | 'all'>('all')
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -84,11 +84,11 @@ export default function TracesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [agentTypeFilter, statusFilter])
 
   useEffect(() => {
     fetchData()
-  }, [agentTypeFilter, statusFilter])
+  }, [fetchData])
 
   if (loading) {
     return (

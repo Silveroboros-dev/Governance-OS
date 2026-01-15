@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { CheckCircle, XCircle, Clock, Filter, Bot, FileText, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import type { Approval, ApprovalStatus, ApprovalActionType, ApprovalStats } from '@/lib/types'
@@ -76,7 +76,7 @@ export default function ApprovalsPage() {
   // Expanded payload view
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -101,11 +101,11 @@ export default function ApprovalsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, actionTypeFilter])
 
   useEffect(() => {
     fetchData()
-  }, [statusFilter, actionTypeFilter])
+  }, [fetchData])
 
   const handleApprove = async () => {
     if (!selectedApproval || !reviewerName.trim()) return
@@ -385,7 +385,7 @@ export default function ApprovalsPage() {
                             <span className="font-medium">{approval.reviewed_by}</span>{' '}
                             {approval.reviewed_at && formatRelativeTime(approval.reviewed_at)}
                             {approval.review_notes && (
-                              <p className="mt-1 italic">"{approval.review_notes}"</p>
+                              <p className="mt-1 italic">&ldquo;{approval.review_notes}&rdquo;</p>
                             )}
                           </div>
                         )}
