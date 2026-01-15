@@ -276,6 +276,58 @@ make evals
 make scenarios
 ```
 
+### MCP Server (AI Agent Integration)
+
+The MCP server exposes the governance kernel to AI agents via Model Context Protocol.
+
+#### Available Tools
+
+**Read Tools:**
+- `get_open_exceptions` - List exceptions requiring decisions
+- `get_exception_detail` - Full context for an exception
+- `get_policies` - List active policies
+- `get_policy_detail` - Full policy with rule definition
+- `get_evidence_pack` - Complete evidence for a decision
+- `search_decisions` - Search decision history
+- `get_recent_signals` - Recent signals
+
+**Write Tools (Sprint 3 - all require human approval):**
+- `propose_signal` - Propose candidate signal → approval queue
+- `propose_policy_draft` - Propose policy draft → approval queue
+- `dismiss_exception` - Propose dismissal → approval queue
+- `add_exception_context` - Enrich exception (no approval needed)
+
+#### Testing with MCP Inspector
+
+```bash
+# Start MCP Inspector (requires postgres running)
+docker compose up -d postgres
+
+DATABASE_URL="postgresql://govos:local_dev_password@localhost:5432/governance_os" \
+  npx @modelcontextprotocol/inspector python -m mcp_server.server
+
+# Opens browser at http://localhost:6274 with tools panel
+```
+
+#### Claude Desktop Integration
+
+Add to `~/.config/claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "governance-os": {
+      "command": "python",
+      "args": ["-m", "mcp_server.server"],
+      "cwd": "/path/to/Governance-OS",
+      "env": {
+        "DATABASE_URL": "postgresql://govos:local_dev_password@localhost:5432/governance_os"
+      }
+    }
+  }
+}
+```
+
 ### Manual workflow
 
 If you prefer to run steps manually:
