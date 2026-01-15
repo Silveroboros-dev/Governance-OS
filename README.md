@@ -31,6 +31,7 @@ Governance OS is built as a **control-plane**: autonomous where safe, interrupti
 | Core determinism tests | [`core/tests/test_determinism.py`](core/tests/test_determinism.py) |
 | Structured logging | [`core/logging.py`](core/logging.py) |
 | Runbook | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) |
+| MCP Setup Guide | [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md) |
 
 **Planned:**
 - MCP tool contracts: `mcp/schemas/*.json`
