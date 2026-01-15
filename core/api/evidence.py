@@ -4,6 +4,8 @@ Evidence API Router.
 Handles evidence pack retrieval and export.
 """
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -55,13 +57,22 @@ def get_evidence_pack(
 @router.get("/{decision_id}/export")
 def export_evidence_pack(
     decision_id: str,
-    format: str = "json",
+    format: Literal["json", "html", "pdf"] = "json",
+    inline: bool = False,
     db: Session = Depends(get_db)
 ):
     """
     Export evidence pack for external consumption.
 
-    Formats: json (Sprint 1), pdf (Sprint 2+)
+    Args:
+        decision_id: UUID of the decision
+        format: Export format - json, html, or pdf
+        inline: If true, display in browser; if false, trigger download
+
+    Formats:
+        - json: Raw JSON data
+        - html: Standalone HTML with embedded CSS (print-ready)
+        - pdf: PDF document (requires WeasyPrint)
     """
     try:
         dec_uuid = UUID(decision_id)
@@ -84,15 +95,34 @@ def export_evidence_pack(
         content = generator.export_pack(pack.id, format)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ImportError as e:
+        # WeasyPrint not available for PDF (or Jinja2 issue)
+        if "weasyprint" in str(e).lower():
+            raise HTTPException(
+                status_code=501,
+                detail="PDF export unavailable. WeasyPrint not installed. Use format=html instead."
+            )
+        # Re-raise other import errors for debugging
+        raise HTTPException(
+            status_code=500,
+            detail=f"Import error: {str(e)}"
+        )
 
-    # Return as downloadable file
-    media_type = "application/json" if format == "json" else "application/octet-stream"
-    filename = f"evidence_pack_{decision_id}.{format}"
+    # Media types by format
+    media_types = {
+        "json": "application/json",
+        "html": "text/html; charset=utf-8",
+        "pdf": "application/pdf",
+    }
+
+    # Content disposition: inline (view in browser) or attachment (download)
+    disposition = "inline" if inline else "attachment"
+    filename = f"evidence_pack_{decision_id[:8]}.{format}"
 
     return Response(
         content=content,
-        media_type=media_type,
+        media_type=media_types[format],
         headers={
-            "Content-Disposition": f"attachment; filename={filename}"
+            "Content-Disposition": f"{disposition}; filename={filename}"
         }
     )

@@ -96,6 +96,13 @@ def get_open_exceptions(
 
         exceptions = []
         for exc in query.all():
+            # Get policy info from evaluation
+            policy_id = None
+            policy_name = None
+            if exc.evaluation and exc.evaluation.policy_version and exc.evaluation.policy_version.policy:
+                policy_id = str(exc.evaluation.policy_version.policy.id)
+                policy_name = exc.evaluation.policy_version.policy.name
+
             exceptions.append({
                 "id": str(exc.id),
                 "title": exc.title,
@@ -103,7 +110,8 @@ def get_open_exceptions(
                 "status": exc.status.value if hasattr(exc.status, 'value') else exc.status,
                 "raised_at": exc.raised_at.isoformat(),
                 "context": exc.context or {},
-                "policy_id": str(exc.policy_id) if exc.policy_id else None,
+                "policy_id": policy_id,
+                "policy_name": policy_name,
             })
 
         db.close()
@@ -129,7 +137,7 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
         - Related evaluation details
     """
     try:
-        from core.models import Exception as DBException, ExceptionOption, Signal, Evaluation
+        from core.models import Exception as DBException, Signal, Evaluation
 
         db = get_db_session()
         exc = db.query(DBException).filter(DBException.id == exception_id).first()
@@ -137,20 +145,14 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
         if not exc:
             return {"error": f"Exception not found: {exception_id}"}
 
-        # Get options
-        options = []
-        for opt in db.query(ExceptionOption).filter(ExceptionOption.exception_id == exc.id).all():
-            options.append({
-                "id": str(opt.id),
-                "label": opt.label,
-                "description": opt.description,
-                "implications": opt.implications or [],
-            })
+        # Options are stored as JSONB in the exception model
+        # Structure: [{"id": "...", "label": "...", "description": "...", "implications": [...]}, ...]
+        options = exc.options or []
 
-        # Get signals
+        # Get signals from evaluation
         signals = []
-        if exc.signal_ids:
-            for signal_id in exc.signal_ids:
+        if exc.evaluation and exc.evaluation.signal_ids:
+            for signal_id in exc.evaluation.signal_ids:
                 signal = db.query(Signal).filter(Signal.id == signal_id).first()
                 if signal:
                     signals.append({
@@ -158,8 +160,8 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
                         "signal_type": signal.signal_type,
                         "source": signal.source,
                         "payload": signal.payload,
-                        "timestamp": signal.timestamp.isoformat(),
-                        "reliability": signal.reliability,
+                        "timestamp": signal.observed_at.isoformat() if signal.observed_at else None,
+                        "reliability": signal.reliability.value if hasattr(signal.reliability, 'value') else signal.reliability,
                     })
 
         # Get evaluation if exists
@@ -174,6 +176,17 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
                     "input_hash": eval.input_hash,
                 }
 
+        # Get policy info from evaluation
+        policy_info = None
+        if exc.evaluation and exc.evaluation.policy_version:
+            pv = exc.evaluation.policy_version
+            if pv.policy:
+                policy_info = {
+                    "id": str(pv.policy.id),
+                    "name": pv.policy.name,
+                    "version_number": pv.version_number,
+                }
+
         result = {
             "id": str(exc.id),
             "title": exc.title,
@@ -185,7 +198,7 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
             "options": options,
             "signals": signals,
             "evaluation": evaluation,
-            "policy_id": str(exc.policy_id) if exc.policy_id else None,
+            "policy": policy_info,
         }
 
         db.close()
@@ -348,7 +361,7 @@ def get_evidence_pack(decision_id: str) -> Dict[str, Any]:
     """
     try:
         from core.models import (
-            Decision, Exception as DBException, ExceptionOption,
+            Decision, Exception as DBException,
             Policy, PolicyVersion, Signal, Evaluation, AuditEvent
         )
 
@@ -372,118 +385,116 @@ def get_evidence_pack(decision_id: str) -> Dict[str, Any]:
             "evidence_items": []
         }
 
-        # Add chosen option
-        if decision.chosen_option_id:
-            option = db.query(ExceptionOption).filter(
-                ExceptionOption.id == decision.chosen_option_id
-            ).first()
-            if option:
-                evidence["decision"]["chosen_option"] = {
-                    "id": str(option.id),
-                    "label": option.label,
-                    "description": option.description,
-                }
-                evidence["evidence_items"].append({
-                    "evidence_id": f"opt_{option.id}",
-                    "type": "chosen_option",
-                    "data": {
-                        "label": option.label,
-                        "description": option.description,
-                        "implications": option.implications,
-                    }
-                })
-
-        # Add exception context
+        # Get exception for context and options
+        exc = None
         if decision.exception_id:
             exc = db.query(DBException).filter(DBException.id == decision.exception_id).first()
-            if exc:
-                evidence["exception"] = {
-                    "id": str(exc.id),
-                    "title": exc.title,
-                    "severity": exc.severity.value if hasattr(exc.severity, 'value') else exc.severity,
-                    "context": exc.context,
-                    "raised_at": exc.raised_at.isoformat(),
-                }
-                evidence["evidence_items"].append({
-                    "evidence_id": f"exc_{exc.id}",
-                    "type": "exception_context",
-                    "data": exc.context or {}
-                })
 
-                # Add signals
-                if exc.signal_ids:
-                    for signal_id in exc.signal_ids:
-                        signal = db.query(Signal).filter(Signal.id == signal_id).first()
-                        if signal:
-                            evidence["evidence_items"].append({
-                                "evidence_id": f"sig_{signal.id}",
-                                "type": "signal",
-                                "data": {
-                                    "signal_type": signal.signal_type,
-                                    "source": signal.source,
-                                    "payload": signal.payload,
-                                    "timestamp": signal.timestamp.isoformat(),
-                                    "reliability": signal.reliability,
-                                }
-                            })
-
-                # Add evaluation
-                if exc.evaluation_id:
-                    eval = db.query(Evaluation).filter(Evaluation.id == exc.evaluation_id).first()
-                    if eval:
-                        evidence["evaluation"] = {
-                            "id": str(eval.id),
-                            "result": eval.result.value if hasattr(eval.result, 'value') else eval.result,
-                            "details": eval.details,
-                            "input_hash": eval.input_hash,
+        # Add chosen option (options are stored as JSONB in exception)
+        if decision.chosen_option_id and exc and exc.options:
+            # Find the chosen option from the exception's options array
+            for opt in exc.options:
+                if opt.get("id") == decision.chosen_option_id:
+                    evidence["decision"]["chosen_option"] = {
+                        "id": opt.get("id"),
+                        "label": opt.get("label"),
+                        "description": opt.get("description"),
+                    }
+                    evidence["evidence_items"].append({
+                        "evidence_id": f"opt_{opt.get('id')}",
+                        "type": "chosen_option",
+                        "data": {
+                            "label": opt.get("label"),
+                            "description": opt.get("description"),
+                            "implications": opt.get("implications", []),
                         }
-                        evidence["evidence_items"].append({
-                            "evidence_id": f"eval_{eval.id}",
-                            "type": "evaluation",
-                            "data": eval.details or {}
-                        })
+                    })
+                    break
 
-                # Add policy
-                if exc.policy_id:
-                    policy = db.query(Policy).filter(Policy.id == exc.policy_id).first()
-                    if policy:
-                        version = db.query(PolicyVersion).filter(
-                            PolicyVersion.policy_id == policy.id,
-                            PolicyVersion.is_current == True
-                        ).first()
+        # Add exception context
+        if exc:
+            evidence["exception"] = {
+                "id": str(exc.id),
+                "title": exc.title,
+                "severity": exc.severity.value if hasattr(exc.severity, 'value') else exc.severity,
+                "context": exc.context,
+                "raised_at": exc.raised_at.isoformat(),
+            }
+            evidence["evidence_items"].append({
+                "evidence_id": f"exc_{exc.id}",
+                "type": "exception_context",
+                "data": exc.context or {}
+            })
 
-                        evidence["policy"] = {
-                            "id": str(policy.id),
-                            "name": policy.name,
-                            "description": policy.description,
-                        }
-                        if version:
+            # Get evaluation and signals from evaluation
+            if exc.evaluation_id:
+                eval_obj = db.query(Evaluation).filter(Evaluation.id == exc.evaluation_id).first()
+                if eval_obj:
+                    evidence["evaluation"] = {
+                        "id": str(eval_obj.id),
+                        "result": eval_obj.result.value if hasattr(eval_obj.result, 'value') else eval_obj.result,
+                        "details": eval_obj.details,
+                        "input_hash": eval_obj.input_hash,
+                    }
+                    evidence["evidence_items"].append({
+                        "evidence_id": f"eval_{eval_obj.id}",
+                        "type": "evaluation",
+                        "data": eval_obj.details or {}
+                    })
+
+                    # Add signals from evaluation
+                    if eval_obj.signal_ids:
+                        for signal_id in eval_obj.signal_ids:
+                            signal = db.query(Signal).filter(Signal.id == signal_id).first()
+                            if signal:
+                                evidence["evidence_items"].append({
+                                    "evidence_id": f"sig_{signal.id}",
+                                    "type": "signal",
+                                    "data": {
+                                        "signal_type": signal.signal_type,
+                                        "source": signal.source,
+                                        "payload": signal.payload,
+                                        "timestamp": signal.observed_at.isoformat() if signal.observed_at else None,
+                                        "reliability": signal.reliability.value if hasattr(signal.reliability, 'value') else signal.reliability,
+                                    }
+                                })
+
+                    # Add policy from evaluation's policy_version
+                    if eval_obj.policy_version:
+                        pv = eval_obj.policy_version
+                        policy = pv.policy
+                        if policy:
+                            evidence["policy"] = {
+                                "id": str(policy.id),
+                                "name": policy.name,
+                                "description": policy.description,
+                            }
                             evidence["policy"]["version"] = {
-                                "id": str(version.id),
-                                "version_number": version.version_number,
-                                "rule_definition": version.rule_definition,
+                                "id": str(pv.id),
+                                "version_number": pv.version_number,
+                                "rule_definition": pv.rule_definition,
                             }
                             evidence["evidence_items"].append({
                                 "evidence_id": f"pol_{policy.id}",
                                 "type": "policy",
                                 "data": {
                                     "name": policy.name,
-                                    "rule_definition": version.rule_definition,
+                                    "rule_definition": pv.rule_definition,
                                 }
                             })
 
-        # Add audit events
+        # Add audit events (query by aggregate_id = decision.id)
         audit_events = db.query(AuditEvent).filter(
-            AuditEvent.decision_id == decision.id
-        ).order_by(AuditEvent.timestamp.asc()).all()
+            AuditEvent.aggregate_id == decision.id
+        ).order_by(AuditEvent.occurred_at.asc()).all()
 
         evidence["audit_trail"] = [
             {
                 "id": str(event.id),
-                "event_type": event.event_type,
-                "timestamp": event.timestamp.isoformat(),
+                "event_type": event.event_type.value if hasattr(event.event_type, 'value') else event.event_type,
+                "timestamp": event.occurred_at.isoformat(),
                 "actor": event.actor,
-                "details": event.details,
+                "details": event.event_data,
             }
             for event in audit_events
         ]

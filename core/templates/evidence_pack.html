@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';">
+    <title>Evidence Pack - {{ pack_id[:8] }}</title>
+    <style>
+        /* Base styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #1a1a1a;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm 15mm;
+            background: white;
+        }
+
+        /* Print styles */
+        @page {
+            size: A4;
+            margin: 20mm 15mm 25mm 15mm;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            .page-break {
+                break-before: page;
+                page-break-before: always;
+            }
+
+            h1, h2, h3 {
+                break-after: avoid;
+                page-break-after: avoid;
+            }
+
+            table, .keep-together {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Header */
+        header {
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            font-size: 18pt;
+            color: #1e40af;
+            margin: 0 0 10px 0;
+        }
+
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 9pt;
+            color: #4b5563;
+        }
+
+        .metadata dt {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .metadata dd {
+            margin: 0;
+            font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            font-size: 14pt;
+            color: #1e40af;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+            margin: 0 0 15px 0;
+        }
+
+        h3 {
+            font-size: 11pt;
+            color: #374151;
+            margin: 15px 0 10px 0;
+        }
+
+        /* Summary section */
+        #summary p {
+            margin: 5px 0;
+        }
+
+        #summary strong {
+            display: inline-block;
+            width: 120px;
+            color: #374151;
+        }
+
+        .severity-high {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .severity-medium {
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        .severity-low {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+            margin: 10px 0;
+        }
+
+        th, td {
+            padding: 8px 10px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        /* Key-value table */
+        .kv-table th {
+            width: 140px;
+            background: #f3f4f6;
+        }
+
+        /* Options list */
+        .options-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .options-list li {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        .options-list li.chosen {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .options-list .option-label {
+            font-weight: 600;
+            color: #1e40af;
+        }
+
+        .options-list .badge {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            font-size: 9pt;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+
+        .options-list .option-desc {
+            margin: 5px 0 0 0;
+            color: #4b5563;
+            font-size: 10pt;
+        }
+
+        /* Rationale block */
+        blockquote {
+            margin: 10px 0;
+            padding: 12px 15px;
+            background: #f9fafb;
+            border-left: 3px solid #2563eb;
+            font-style: italic;
+            color: #374151;
+        }
+
+        /* Context/code blocks */
+        pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 9pt;
+            font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+        }
+
+        code {
+            font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+            background: #f3f4f6;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #2563eb;
+            font-size: 9pt;
+            color: #6b7280;
+        }
+
+        footer code {
+            display: block;
+            margin: 5px 0;
+            word-break: break-all;
+        }
+
+        /* Utility */
+        .text-muted {
+            color: #6b7280;
+        }
+
+        .text-small {
+            font-size: 9pt;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Governance OS - Evidence Pack</h1>
+        <dl class="metadata">
+            <dt>Pack ID</dt>
+            <dd>{{ pack_id }}</dd>
+            <dt>Generated</dt>
+            <dd>{{ generated_at }}</dd>
+            <dt>Content Hash</dt>
+            <dd>{{ content_hash[:16] }}...</dd>
+            <dt>Decision ID</dt>
+            <dd>{{ decision.id if decision.id else 'N/A' }}</dd>
+        </dl>
+    </header>
+
+    <section id="summary">
+        <h2>Executive Summary</h2>
+        <p><strong>Exception:</strong> {{ exception.title if exception.title else 'N/A' }}</p>
+        <p>
+            <strong>Severity:</strong>
+            <span class="severity-{{ exception.severity|lower if exception.severity else 'low' }}">
+                {{ exception.severity|upper if exception.severity else 'N/A' }}
+            </span>
+        </p>
+        <p><strong>Decision:</strong> {{ chosen_option.label if chosen_option.label else 'N/A' }}</p>
+        <p><strong>Decided By:</strong> {{ decision.decided_by if decision.decided_by else 'N/A' }}</p>
+        <p><strong>Decided At:</strong> {{ decision.decided_at if decision.decided_at else 'N/A' }}</p>
+    </section>
+
+    <section id="policy">
+        <h2>Policy Applied</h2>
+        <table class="kv-table">
+            <tr>
+                <th>Name</th>
+                <td>{{ policy.name if policy.name else 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Pack</th>
+                <td>{{ policy.pack if policy.pack else 'N/A' }}</td>
+            </tr>
+            {% if policy.version %}
+            <tr>
+                <th>Version</th>
+                <td>{{ policy.version.version_number if policy.version.version_number else 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Valid From</th>
+                <td>{{ policy.version.valid_from if policy.version.valid_from else 'N/A' }}</td>
+            </tr>
+            {% if policy.version.valid_to %}
+            <tr>
+                <th>Valid To</th>
+                <td>{{ policy.version.valid_to }}</td>
+            </tr>
+            {% endif %}
+            {% endif %}
+        </table>
+    </section>
+
+    <section id="signals">
+        <h2>Contributing Signals ({{ signals|length }})</h2>
+        {% if signals %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Source</th>
+                    <th>Reliability</th>
+                    <th>Observed At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for signal in signals %}
+                <tr>
+                    <td>{{ signal.signal_type }}</td>
+                    <td>{{ signal.source }}</td>
+                    <td>{{ signal.reliability }}</td>
+                    <td>{{ signal.observed_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No signals recorded.</p>
+        {% endif %}
+    </section>
+
+    <section id="exception">
+        <h2>Exception Details</h2>
+
+        {% if exception.context %}
+        <h3>Context</h3>
+        <pre>{{ exception.context | tojson(indent=2) }}</pre>
+        {% endif %}
+
+        <h3>Options Presented</h3>
+        {% if exception.options %}
+        <ol class="options-list">
+            {% for option in exception.options %}
+            <li class="{% if option.id == decision.chosen_option_id %}chosen{% endif %}">
+                <span class="option-label">{{ option.label }}</span>
+                {% if option.id == decision.chosen_option_id %}
+                <span class="badge">CHOSEN</span>
+                {% endif %}
+                {% if option.description %}
+                <p class="option-desc">{{ option.description }}</p>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="text-muted">No options recorded.</p>
+        {% endif %}
+    </section>
+
+    <section id="decision">
+        <h2>Decision Record</h2>
+
+        <h3>Rationale</h3>
+        <blockquote>{{ decision.rationale if decision.rationale else "No rationale provided." }}</blockquote>
+
+        {% if decision.assumptions %}
+        <h3>Assumptions</h3>
+        <p>{{ decision.assumptions }}</p>
+        {% endif %}
+
+        <table class="kv-table">
+            <tr>
+                <th>Chosen Option</th>
+                <td>{{ chosen_option.label }} ({{ decision.chosen_option_id }})</td>
+            </tr>
+            <tr>
+                <th>Decided By</th>
+                <td>{{ decision.decided_by if decision.decided_by else 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Decided At</th>
+                <td>{{ decision.decided_at if decision.decided_at else 'N/A' }}</td>
+            </tr>
+        </table>
+    </section>
+
+    <section id="audit-trail" class="page-break">
+        <h2>Audit Trail</h2>
+        {% if audit_trail %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 180px;">Time</th>
+                    <th>Event</th>
+                    <th>Actor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in audit_trail %}
+                <tr>
+                    <td class="text-small">{{ event.occurred_at }}</td>
+                    <td>{{ event.event_type }}</td>
+                    <td>{{ event.actor }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No audit events recorded.</p>
+        {% endif %}
+    </section>
+
+    <footer>
+        <p><strong>Integrity Verification</strong></p>
+        <p>Content Hash (SHA-256):</p>
+        <code>{{ content_hash }}</code>
+        <p class="text-small" style="margin-top: 10px;">
+            This document is deterministically generated. Same inputs produce identical output.
+            To verify integrity, regenerate the evidence pack and compare hashes.
+        </p>
+    </footer>
+</body>
+</html>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -14,7 +14,11 @@ import {
   Activity,
   User,
   Clock,
-  ChevronRight
+  ChevronRight,
+  FileJson,
+  FileCode,
+  Printer,
+  ExternalLink
 } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import type { DecisionDetail, EvidencePack } from '@/lib/types'
@@ -38,6 +42,22 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showRawEvidence, setShowRawEvidence] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showExportMenu])
 
   useEffect(() => {
     async function fetchData() {
@@ -47,9 +67,14 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
         const decisionData = await api.decisions.get(params.id)
         setDecision(decisionData)
 
-        if (decisionData.evidence_pack_id) {
+        // Always try to fetch evidence pack - it will be generated on demand if not present
+        // Note: evidence_pack_id on decision may be null due to immutability constraints,
+        // but evidence pack is still accessible via the evidence API
+        try {
           const evidenceData = await api.evidence.get(params.id)
           setEvidencePack(evidenceData)
+        } catch {
+          // Evidence pack not yet available - will show "generating" message
         }
       } catch (err) {
         if (err instanceof ApiError) {
@@ -65,19 +90,36 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
     fetchData()
   }, [params.id])
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'json' | 'html' | 'pdf', inline: boolean = false) => {
     try {
-      const blob = await api.evidence.export(params.id, 'json')
+      setExporting(true)
+      setShowExportMenu(false)
+
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+
+      if (inline && format === 'html') {
+        // Open HTML in new tab for viewing/printing
+        window.open(`${API_BASE}/evidence/${params.id}/export?format=html&inline=true`, '_blank')
+        return
+      }
+
+      const blob = await api.evidence.export(params.id, format)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `evidence-${params.id}.json`
+      a.download = `evidence-${params.id.slice(0, 8)}.${format}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (err) {
-      alert('Failed to export evidence')
+      if (err instanceof ApiError && err.status === 501) {
+        alert('PDF export is unavailable. Please use HTML export instead.')
+      } else {
+        alert('Failed to export evidence')
+      }
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -131,10 +173,54 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
                 <Shield className="h-3 w-3" />
                 {evidencePack.content_hash.slice(0, 12)}...
               </Badge>
-              <Button onClick={handleExport} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
+              <div className="relative" ref={exportMenuRef}>
+                <Button
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  variant="outline"
+                  size="sm"
+                  disabled={exporting}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {exporting ? 'Exporting...' : 'Export'}
+                </Button>
+                {showExportMenu && (
+                  <div className="absolute right-0 mt-1 w-48 bg-background border rounded-md shadow-lg z-10">
+                    <div className="py-1">
+                      <button
+                        onClick={() => handleExport('html', true)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left"
+                      >
+                        <Printer className="h-4 w-4" />
+                        <span>View / Print</span>
+                        <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={() => handleExport('html')}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left"
+                      >
+                        <FileCode className="h-4 w-4" />
+                        <span>Download HTML</span>
+                      </button>
+                      <button
+                        onClick={() => handleExport('json')}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left"
+                      >
+                        <FileJson className="h-4 w-4" />
+                        <span>Download JSON</span>
+                      </button>
+                      <div className="border-t my-1" />
+                      <button
+                        onClick={() => handleExport('pdf')}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left text-muted-foreground"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>Download PDF</span>
+                        <span className="text-xs ml-auto">(optional)</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -160,7 +246,12 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
                   <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <span className="text-xs font-medium mt-1">Evaluation</span>
-                <span className="text-xs text-muted-foreground">{evaluation.result || 'fail'}</span>
+                <span className="text-xs text-muted-foreground">
+                  {evaluation.result === 'fail' ? 'Breach detected' :
+                   evaluation.result === 'pass' ? 'Passed' :
+                   evaluation.result === 'exception_raised' ? 'Exception' :
+                   evaluation.result || 'Checked'}
+                </span>
               </div>
 
               <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />

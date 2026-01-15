@@ -166,8 +166,9 @@ class EvidenceGenerator:
         self.db.add(evidence_pack)
         self.db.flush()  # Flush to generate evidence_pack.id before using it
 
-        # Update decision with evidence pack link
-        decision.evidence_pack_id = evidence_pack.id
+        # Note: We don't update decision.evidence_pack_id because decisions table
+        # is immutable (has database triggers preventing UPDATE). The link is
+        # through EvidencePack.decision_id instead.
 
         # Create audit event
         audit_event = AuditEvent(
@@ -204,13 +205,14 @@ class EvidenceGenerator:
 
         Args:
             evidence_pack_id: UUID of the evidence pack
-            format: Export format ("json" only for Sprint 1; "pdf" in Sprint 2+)
+            format: Export format - "json", "html", or "pdf"
 
         Returns:
             Bytes of exported pack
 
         Raises:
             ValueError: If pack not found or format unsupported
+            ImportError: If PDF requested but WeasyPrint not installed
         """
         pack = (
             self.db.query(EvidencePack)
@@ -221,13 +223,26 @@ class EvidenceGenerator:
         if not pack:
             raise ValueError(f"Evidence pack {evidence_pack_id} not found")
 
-        if format != "json":
-            raise ValueError(f"Format '{format}' not supported in Sprint 1")
+        if format == "json":
+            # Export as pretty-printed JSON
+            import json
+            json_str = json.dumps(pack.evidence, indent=2, sort_keys=True)
+            return json_str.encode("utf-8")
 
-        # Export as pretty-printed JSON
-        import json
-        json_str = json.dumps(pack.evidence, indent=2, sort_keys=True)
-        return json_str.encode('utf-8')
+        elif format == "html":
+            # Export as standalone HTML
+            from core.services.evidence_renderer import EvidenceRenderer
+            renderer = EvidenceRenderer()
+            return renderer.render_html(pack).encode("utf-8")
+
+        elif format == "pdf":
+            # Export as PDF (requires WeasyPrint)
+            from core.services.evidence_renderer import EvidenceRenderer
+            renderer = EvidenceRenderer()
+            return renderer.render_pdf(pack)
+
+        else:
+            raise ValueError(f"Format '{format}' not supported. Use 'json', 'html', or 'pdf'.")
 
     def _fetch_audit_trail(
         self,
