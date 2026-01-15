@@ -1,7 +1,7 @@
 # Implementation Complete: Backend & Core Kernel
 
-**Date:** 2026-01-13 (Updated: 2026-01-14)
-**Status:** ✅ Backend + Frontend fully functional
+**Date:** 2026-01-13 (Updated: 2026-01-15)
+**Status:** ✅ Sprint 3 Complete - Full Agentic Coprocessor
 **Architecture Review:** Completed - see Known Issues section
 
 ---
@@ -166,11 +166,32 @@ From the Sprint 1 plan, we've achieved:
 - ✅ NarrativeAgent for evidence summaries
 - ✅ Evaluation framework for faithfulness
 
-### Sprint 3: Full Agentic Coprocessor
-- MCP write tools with approval gates
-- IntakeAgent (unstructured docs → candidate signals)
-- PolicyDraftAgent (policy text → draft PolicyVersion)
-- Tracing viewer for agent execution
+### ✅ Sprint 3: Full Agentic Coprocessor — COMPLETE
+
+- ✅ **MCP Write Tools** with approval gates + audit events
+  - `propose_signal`: Agent proposes signal → approval queue
+  - `propose_policy_draft`: Agent proposes policy → approval queue
+  - `dismiss_exception`: Agent proposes dismissal → approval queue
+- ✅ **IntakeAgent**: Extract candidate signals from unstructured documents
+  - Pack-specific prompts (treasury/wealth vocabularies)
+  - Source span tracking for provenance
+  - Confidence scoring
+- ✅ **PolicyDraftAgent**: Generate policy drafts from natural language
+  - Test scenario generation
+  - Signal type validation against pack vocabulary
+- ✅ **Approval Queue**: Human-in-the-loop gating for all agent writes
+- ✅ **Agent Tracing**: Full observability for executions
+  - Tool call logging with timing
+  - Error tracking
+  - Session grouping
+- ✅ **Trace Viewer UI**: Browse and inspect agent runs
+- ✅ **Approvals Dashboard**: Approve/reject agent proposals
+- ✅ **Expanded Evals**:
+  - ExtractionEvaluator: precision/recall/F1
+  - RegressionEvaluator: kernel determinism verification
+  - PolicyDraftEvaluator: coverage and test validation
+- ✅ **CI Eval Gate**: GitHub Actions workflow fails on regressions
+- ✅ **302 tests** (115 new Sprint 3 tests)
 
 ---
 

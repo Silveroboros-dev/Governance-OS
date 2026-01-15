@@ -74,11 +74,15 @@ This repo is designed to demonstrate **responsible agentic engineering**: tool c
 - **Evals v0**: CI fails on unsupported claims (anti-hallucination gate)
 - **Exception Metrics**: Budget tracking and replay analytics
 
-### Planned (Sprint 3: portfolio-grade AI layer)
-- MCP write tools with approval gates + audit events  
-- IntakeAgent (unstructured → candidate signals w/ provenance + confidence + source spans)  
-- Agent tracing viewer (runs → tool calls → audit events)  
-- Expanded eval suites (extraction accuracy + faithfulness + kernel regression)
+### ✅ Implemented (Sprint 3)
+- **MCP Write Tools**: Gated write operations (propose_signal, propose_policy_draft, dismiss_exception) with approval queue
+- **IntakeAgent**: Extract candidate signals from unstructured documents with provenance, confidence scores, and source spans
+- **PolicyDraftAgent**: Generate policy drafts from natural language descriptions with test scenarios
+- **Approval Queue**: Human-in-the-loop gating for all agent-proposed writes
+- **Agent Tracing**: Full observability for agent executions (tool calls, timing, errors)
+- **Trace Viewer UI**: Browse agent runs, inspect tool calls, approve/reject proposals
+- **Expanded Evals**: Extraction accuracy (precision/recall/F1), kernel regression, policy draft validation
+- **CI Eval Gate**: GitHub Actions workflow fails on eval regressions
 
 ## AI safety boundaries (non-negotiable)
 
@@ -133,10 +137,10 @@ Not allowed:
   /db          Migrations, schema, seed hooks
   /packs       Domain packs (treasury, wealth): templates + fixtures + vocabulary
   /replay      Replay harness: CSV import + scenario runner + metrics
-  /tests       Comprehensive test suite (187 tests)
+  /tests       Comprehensive test suite (302 tests)
 
   # AI engineering layer
-  /mcp_server  MCP server exposing kernel tools (read-only v0, gated writes later)
+  /mcp_server  MCP server exposing kernel tools (read-only + gated writes via approval queue)
   /coprocessor Agents + tools + prompts + schemas + traces
   /evals       Datasets + goldens + eval runner (CI-gated)
 ```
@@ -345,15 +349,15 @@ Memory is not logging: decisions link to evidence and outcomes; the graph compou
 - ✅ Evals v0 (CI gate - fails on unsupported claims)
 - ✅ Comprehensive test suite (187 tests)
 
-#### Sprint 3: Agentic coprocessor (portfolio-grade AI engineering)
+#### ✅ Sprint 3: Agentic coprocessor (portfolio-grade AI engineering) — COMPLETE
 
-MCP write tools with approval gates + audit events
-
-IntakeAgent (unstructured → candidate signals with provenance + source spans)
-
-tracing viewer (agent runs → tool calls → audit events)
-
-expanded eval suites + CI gates
+- ✅ MCP write tools with approval gates + audit events
+- ✅ IntakeAgent (unstructured → candidate signals with provenance + source spans)
+- ✅ PolicyDraftAgent (natural language → policy drafts with test scenarios)
+- ✅ Approval queue with human-in-the-loop gating
+- ✅ Agent tracing viewer (runs → tool calls → audit events)
+- ✅ Expanded eval suites (extraction, regression, policy draft) + CI gates
+- ✅ Comprehensive test suite (302 tests)
 
 ### Contributing
 
