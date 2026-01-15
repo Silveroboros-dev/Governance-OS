@@ -1,0 +1,8 @@
+{
+  "apphosting": [
+    {
+      "backendId": "cgos-backend",
+      "rootDir": "ui"
+    }
+  ]
+}
