@@ -33,7 +33,7 @@
             "heading": "Decision",
             "claims": [
               {
-                "text": "The decision-maker chose to reduce position immediately",
+                "text": "The decision-maker chose to reduce the position",
                 "evidence_refs": [
                   {"evidence_id": "opt_ghi789", "evidence_type": "chosen_option"}
                 ]
