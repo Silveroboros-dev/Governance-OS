@@ -19,14 +19,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY core/ /app/core/
 COPY db/ /app/db/
 COPY packs/ /app/packs/
-COPY coprocessor/ /app/coprocessor/
 COPY alembic.ini /app/
 
 # Set Python path to include app directory
 ENV PYTHONPATH=/app
 
-# Expose port
-EXPOSE 8000
+# Cloud Run sets PORT environment variable
+ENV PORT=8080
+EXPOSE 8080
 
-# Default command (will be overridden by docker-compose)
-CMD ["uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Production command (no reload)
+CMD exec uvicorn core.main:app --host 0.0.0.0 --port $PORT

@@ -141,4 +141,28 @@ TREASURY_SIGNAL_TYPES = {
             "failure_reason": "insufficient_funds"
         }
     },
+    "settlement_rail_shortfall": {
+        "description": "Insufficient funds available on a settlement rail to cover required payments",
+        "payload_schema": {
+            "rail": "string",
+            "required_usd": "number",
+            "available_usd": "number",
+            "shortfall_usd": "number",
+            "coverage_ratio": "number",
+            "fragmentation_ratio": "number",
+            "restricted_cash_usd": "number",
+            "root_cause": "string",
+        },
+        "reliability_default": "high",
+        "example": {
+            "rail": "Fedwire",
+            "required_usd": 15000000,
+            "available_usd": 12000000,
+            "shortfall_usd": 3000000,
+            "coverage_ratio": 0.80,
+            "fragmentation_ratio": 0.35,
+            "restricted_cash_usd": 2500000,
+            "root_cause": "intraday_timing_mismatch"
+        }
+    },
 }

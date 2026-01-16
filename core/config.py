@@ -15,7 +15,10 @@ class Settings(BaseSettings):
 
     # API
     api_v1_prefix: str = "/api/v1"
-    cors_origins: List[str] = ["http://localhost:3000"]
+    cors_origins: List[str] = [
+        "http://localhost:3000",
+        "https://web--governance-os.europe-west4.hosted.app"
+    ]
 
     # Logging
     log_level: str = "INFO"

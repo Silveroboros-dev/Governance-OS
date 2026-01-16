@@ -27,6 +27,9 @@ import type {
   TraceListParams,
   TraceListResponse,
   TraceStats,
+  // Intake types
+  IntakeProcessRequest,
+  IntakeProcessResponse,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
@@ -236,6 +239,16 @@ export const traceApi = {
   },
 }
 
+// Sprint 3: Intake Processing API
+export const intakeApi = {
+  process: async (data: IntakeProcessRequest): Promise<IntakeProcessResponse> => {
+    return fetchApi<IntakeProcessResponse>('/intake/process', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+}
+
 // Combined API object
 export const api = {
   exceptions: exceptionApi,
@@ -248,6 +261,7 @@ export const api = {
   // Sprint 3
   approvals: approvalApi,
   traces: traceApi,
+  intake: intakeApi,
 }
 
 export { ApiError }

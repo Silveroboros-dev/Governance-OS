@@ -155,10 +155,17 @@ TREASURY_SIGNAL_TYPES = [
     "concentration_threshold",
     "market_volatility_spike",
     "counterparty_exposure_change",
+    "counterparty_credit_downgrade",
     "regulatory_filing_received",
     "collateral_margin_call",
     "fx_hedge_expiration",
+    "fx_exposure_breach",
     "credit_rating_change",
+    "liquidity_threshold_breach",
+    "cash_forecast_variance",
+    "covenant_breach",
+    "settlement_failure",
+    "settlement_rail_shortfall",
 ]
 
 WEALTH_SIGNAL_TYPES = [

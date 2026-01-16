@@ -11,7 +11,7 @@ Safety invariants:
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 from typing import Optional
 from uuid import UUID
 
@@ -73,7 +73,7 @@ def list_approvals(
     # Order by status (pending first) then by proposed_at descending
     query = query.order_by(
         # Pending items first
-        func.case(
+        case(
             (ApprovalQueue.status == ApprovalStatus.PENDING, 0),
             else_=1
         ),
@@ -149,7 +149,7 @@ def approve_approval(
 
     # Create audit event
     audit_event = AuditEvent(
-        event_type=AuditEventType.DECISION_RECORDED,  # Using existing type
+        event_type=AuditEventType.APPROVAL_APPROVED,
         aggregate_type="approval",
         aggregate_id=approval.id,
         event_data={
@@ -201,7 +201,7 @@ def reject_approval(
 
     # Create audit event
     audit_event = AuditEvent(
-        event_type=AuditEventType.DECISION_RECORDED,  # Using existing type
+        event_type=AuditEventType.APPROVAL_REJECTED,
         aggregate_type="approval",
         aggregate_id=approval.id,
         event_data={
@@ -329,7 +329,7 @@ def _execute_signal_approval(approval: ApprovalQueue, db: Session) -> UUID:
 
     # Create audit event for signal creation
     audit_event = AuditEvent(
-        event_type=AuditEventType.SIGNAL_INGESTED,
+        event_type=AuditEventType.SIGNAL_RECEIVED,
         aggregate_type="signal",
         aggregate_id=signal.id,
         event_data={

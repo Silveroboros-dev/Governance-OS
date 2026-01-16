@@ -4,16 +4,16 @@ These triggers enforce database-level immutability, preventing UPDATE or DELETE
 operations even with direct database access. This is critical for audit-grade
 evidence integrity.
 
-Revision ID: 005_add_immutability_triggers
-Revises: 004_add_approval_rules
+Revision ID: 005_immutability
+Revises: 004_approval_rules
 Create Date: 2026-01-14
 """
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '005_add_immutability_triggers'
-down_revision = '004_add_approval_rules'
+revision = '005_immutability'
+down_revision = '004_approval_rules'
 branch_labels = None
 depends_on = None
 

@@ -15,6 +15,9 @@ export function Header() {
             <PackSelector />
           </div>
           <div className="flex gap-6">
+            <Link href="/ingest" className="hover:underline">
+              Ingest
+            </Link>
             <Link href="/exceptions" className="hover:underline">
               Exceptions
             </Link>
@@ -26,6 +29,12 @@ export function Header() {
             </Link>
             <Link href="/signals" className="hover:underline">
               Signals
+            </Link>
+            <Link href="/approvals" className="hover:underline">
+              Approvals
+            </Link>
+            <Link href="/traces" className="hover:underline">
+              Traces
             </Link>
           </div>
         </nav>

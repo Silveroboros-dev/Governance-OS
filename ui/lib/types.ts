@@ -316,3 +316,40 @@ export interface TraceStats {
   by_agent_type: Record<string, number>
   average_duration_ms?: number
 }
+
+// Sprint 3: Intake Processing Types
+export type Pack = "treasury" | "wealth"
+
+export interface IntakeProcessRequest {
+  document_text: string
+  pack: Pack
+  document_source?: string
+}
+
+export interface SourceSpan {
+  start_char: number
+  end_char: number
+  text: string
+  page?: number
+}
+
+export interface ExtractedSignal {
+  signal_type: string
+  payload: Record<string, any>
+  confidence: number
+  source_spans: SourceSpan[]
+  extraction_notes?: string
+  requires_verification: boolean
+}
+
+export interface IntakeProcessResponse {
+  trace_id: string
+  signals: ExtractedSignal[]
+  approval_ids: string[]
+  total_candidates: number
+  high_confidence: number
+  requires_verification: number
+  processing_time_ms: number
+  extraction_notes?: string
+  warnings: string[]
+}

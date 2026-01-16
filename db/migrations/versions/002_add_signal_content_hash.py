@@ -1,6 +1,6 @@
 """Add content_hash column to signals for idempotency.
 
-Revision ID: 002_add_signal_content_hash
+Revision ID: 002_signal_hash
 Revises: add_inconclusive
 Create Date: 2025-01-14
 """
@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '002_add_signal_content_hash'
+revision = '002_signal_hash'
 down_revision = 'add_inconclusive'
 branch_labels = None
 depends_on = None

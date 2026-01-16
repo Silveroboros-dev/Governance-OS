@@ -116,7 +116,7 @@ def create_signal(
 
     # Create audit event
     audit_event = AuditEvent(
-        event_type=AuditEventType.SIGNAL_INGESTED,
+        event_type=AuditEventType.SIGNAL_RECEIVED,
         aggregate_type="signal",
         aggregate_id=signal.id,
         event_data={

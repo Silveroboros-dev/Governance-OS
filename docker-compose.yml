@@ -29,6 +29,7 @@ services:
       DATABASE_URL: postgresql://govos:local_dev_password@postgres:5432/governance_os
       CORS_ORIGINS: '["http://localhost:3000"]'
       LOG_LEVEL: INFO
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     ports:
       - "8000:8000"
     depends_on:
@@ -38,6 +39,7 @@ services:
       - ./core:/app/core
       - ./packs:/app/packs
       - ./db:/app/db
+      - ./coprocessor:/app/coprocessor
     networks:
       - govos_network
     command: >

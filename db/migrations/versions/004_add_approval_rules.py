@@ -1,7 +1,7 @@
 """Add approval rules for hard overrides.
 
-Revision ID: 004_add_approval_rules
-Revises: 003_add_evaluation_unique_constraint
+Revision ID: 004_approval_rules
+Revises: 003_eval_unique
 Create Date: 2025-01-14
 """
 
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '004_add_approval_rules'
-down_revision = '003_add_evaluation_unique_constraint'
+revision = '004_approval_rules'
+down_revision = '003_eval_unique'
 branch_labels = None
 depends_on = None
 

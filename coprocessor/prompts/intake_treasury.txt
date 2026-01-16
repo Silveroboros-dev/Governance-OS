@@ -42,6 +42,11 @@ Valid signal types for treasury pack:
    - Payload: { entity: string, agency: string, previous_rating: string, new_rating: string }
    - Example: "Moody's downgraded XYZ Corp from A2 to A3"
 
+9. settlement_rail_shortfall
+   - Insufficient funds on a settlement rail to cover required payments
+   - Payload: { rail: string, required_usd: number, available_usd: number, shortfall_usd: number, coverage_ratio: number, fragmentation_ratio: number, restricted_cash_usd: number, root_cause: string }
+   - Example: "Fedwire balance of $12M insufficient to cover $15M in required payments, $3M shortfall with 0.80 coverage ratio"
+
 EXTRACTION EXAMPLES:
 
 Document text: "As of January 14, 2026, our USD cash position stands at $15.2 million, which exceeds our internal limit of $10 million by 52%."

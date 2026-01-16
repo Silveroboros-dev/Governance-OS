@@ -16,13 +16,22 @@ from core.database import Base
 
 class AuditEventType(str, PyEnum):
     """Types of audit events."""
-    SIGNAL_INGESTED = "signal_ingested"
+    # Core governance events (match database enum)
     POLICY_CREATED = "policy_created"
-    POLICY_VERSION_PUBLISHED = "policy_version_published"
+    POLICY_VERSION_CREATED = "policy_version_created"
+    POLICY_ACTIVATED = "policy_activated"
+    SIGNAL_RECEIVED = "signal_received"
     EVALUATION_EXECUTED = "evaluation_executed"
     EXCEPTION_RAISED = "exception_raised"
     DECISION_RECORDED = "decision_recorded"
     EVIDENCE_PACK_GENERATED = "evidence_pack_generated"
+    # Sprint 3: Agent approval events
+    APPROVAL_PROPOSED = "approval_proposed"
+    APPROVAL_APPROVED = "approval_approved"
+    APPROVAL_REJECTED = "approval_rejected"
+    AGENT_EXECUTION_STARTED = "agent_execution_started"
+    AGENT_EXECUTION_COMPLETED = "agent_execution_completed"
+    AGENT_EXECUTION_FAILED = "agent_execution_failed"
 
 
 class AuditEvent(Base):
