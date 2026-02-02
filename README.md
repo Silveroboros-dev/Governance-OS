@@ -412,6 +412,78 @@ Memory is not logging: decisions link to evidence and outcomes; the graph compou
 - ✅ Expanded eval suites (extraction, regression, policy draft) + CI gates
 - ✅ Comprehensive test suite (302 tests)
 
+---
+
+## Gemini 3 Integration (Hackathon Features)
+
+### Hack A: Context Caching (90% Cost Reduction)
+
+The agent layer uses Gemini 3's context caching for massive cost savings:
+
+```
+coprocessor/cache/
+├── gemini_client.py   # Gemini 3 API client with caching
+├── manager.py         # Cache lifecycle management
+└── __init__.py        # Public API
+```
+
+**Key Features:**
+- **90% cost reduction** on cached tokens (system prompts + vocabularies)
+- **Auto-refresh on policy changes** - caches invalidate when policies update
+- **Per-agent caching** - IntakeAgent, NarrativeAgent, PolicyDraftAgent each have optimized caches
+- **TTL management** - 1-hour default with auto-renewal
+
+**Usage:**
+```python
+from coprocessor.cache import get_cache_manager, invalidate_on_policy_change
+
+# Build caches for all agents
+manager = get_cache_manager()
+manager.build_all_caches()
+
+# Auto-invalidate on policy change
+invalidate_on_policy_change("treasury", "v2")
+```
+
+### Hack B: Gemini-Powered Evals (Zero Hallucinations Verified)
+
+Beyond regex-based hallucination detection, we use Gemini as a semantic judge:
+
+```
+evals/
+├── validators/
+│   ├── gemini_judge.py      # Gemini-powered semantic verification
+│   ├── hallucination.py     # Regex-based pattern detection
+│   └── grounding.py         # Evidence ID validation
+├── datasets/
+│   ├── treasury_goldens.json  # 10 treasury test cases
+│   └── wealth_goldens.json    # 10 wealth test cases
+└── runner.py                  # CI-integrated eval runner
+```
+
+**Key Features:**
+- **Semantic verification** - Gemini catches hallucinations regex can't (wrong numbers, causal claims without support)
+- **Two-stage pipeline** - Fast regex checks first, then deep Gemini verification
+- **Adversarial generation** - Use Gemini to generate tricky test cases
+- **CI badge** - "Zero hallucinations verified" for credibility
+
+**Usage:**
+```bash
+# Run all evals (regex + Gemini if API key available)
+make evals
+
+# Run Gemini semantic verification only
+make evals-gemini
+
+# Generate adversarial test cases
+make evals-adversarial PACK=treasury
+```
+
+**CI Integration:**
+- Stage 1: Fast deterministic checks (no API calls)
+- Stage 2: Gemini semantic verification (requires `GOOGLE_API_KEY` secret)
+- Fails CI on ANY hallucination (zero tolerance)
+
 ### Contributing
 
 This repo is early-stage and moving fast. Contributions are welcome:

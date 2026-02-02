@@ -21,6 +21,11 @@ help:
 	@echo "  make replay       - Run replay harness (PACK=treasury FROM=2025-01-01 TO=2025-03-31)"
 	@echo "  make mcp          - Start MCP server (for Claude Desktop)"
 	@echo "  make evals        - Run evaluations (CI gate - exits 1 on failure)"
+	@echo ""
+	@echo "Hack B: Gemini-Powered Evals:"
+	@echo "  make evals-pack   - Run pack-specific golden tests (PACK=treasury|wealth|all)"
+	@echo "  make evals-gemini - Run Gemini semantic verification (requires GOOGLE_API_KEY)"
+	@echo "  make evals-adversarial - Generate adversarial test cases (requires GOOGLE_API_KEY)"
 
 up:
 	docker compose up --build -d
@@ -88,6 +93,27 @@ evals:
 	@echo "Running evaluations..."
 	python -m evals.runner -v
 	@echo "Evaluations complete."
+
+# Hack B: Gemini-powered semantic verification
+evals-gemini:
+	@echo "Running Gemini semantic verification..."
+	@echo "Requires GOOGLE_API_KEY environment variable"
+	python -m evals.runner --suite gemini -v
+	@echo "Gemini verification complete."
+
+# Generate adversarial test cases
+evals-adversarial:
+	@echo "Generating adversarial test cases..."
+	@echo "Requires GOOGLE_API_KEY environment variable"
+	python -m evals.runner --generate-adversarial 10 --pack $(or $(PACK),treasury) \
+		--adversarial-output evals/datasets/adversarial/$(or $(PACK),treasury)_adversarial.json
+	@echo "Adversarial cases generated."
+
+# Quick eval for pack-specific golden tests
+evals-pack:
+	@echo "Running pack golden tests..."
+	python -m evals.runner --suite pack-goldens --pack $(or $(PACK),all) -v
+	@echo "Pack tests complete."
 
 # Load demo scenarios
 scenarios:

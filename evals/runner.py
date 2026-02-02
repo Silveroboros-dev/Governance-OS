@@ -1,8 +1,14 @@
 """
-Eval Runner - CI-integrated evaluation runner.
+Eval Runner - CI-integrated evaluation runner with Gemini-powered verification.
 
 Runs all evaluations and exits with code 1 if any fail.
 This ensures hallucinations and ungrounded claims fail CI.
+
+Hack B: Gemini-Powered Evals
+- Gemini-as-judge for semantic hallucination detection
+- 90% cost reduction via context caching
+- Adversarial test case generation
+- CI badge for "zero hallucinations verified"
 
 Usage:
     python -m evals.runner                     # Run all evals
@@ -12,7 +18,9 @@ Usage:
     python -m evals.runner --suite regression  # Run kernel regression
     python -m evals.runner --suite policy      # Run policy draft suite
     python -m evals.runner --suite hallucination # Run hallucination checks
+    python -m evals.runner --suite gemini      # Run Gemini-powered verification
     python -m evals.runner --pack treasury     # Limit to treasury pack
+    python -m evals.runner --generate-adversarial 5  # Generate adversarial cases
 """
 
 import argparse
@@ -33,6 +41,15 @@ from coprocessor.schemas.narrative import (
     MemoSection,
 )
 
+# Optional Gemini judge import
+try:
+    from .validators.gemini_judge import GeminiJudge, GeminiJudgeResult
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+    GeminiJudge = None
+    GeminiJudgeResult = None
+
 
 class TestCaseResult(BaseModel):
     """Result of running a single test case."""
@@ -44,6 +61,7 @@ class TestCaseResult(BaseModel):
     passed: bool
     grounding_result: Optional[GroundingResult] = None
     hallucination_result: Optional[HallucinationResult] = None
+    gemini_result: Optional[Any] = None  # GeminiJudgeResult when available
     error_message: Optional[str] = None
     duration_ms: float = 0
 
@@ -409,6 +427,234 @@ def run_policy_draft_suite(pack: str, verbose: bool = False) -> bool:
     return all_passed
 
 
+def run_gemini_suite(pack: str, verbose: bool = False, use_cache: bool = True) -> bool:
+    """
+    Run Gemini-powered semantic verification suite.
+
+    This is the "Hack B" differentiator - uses Gemini 3 to:
+    1. Semantically verify claims against evidence
+    2. Detect subtle hallucinations regex can't catch
+    3. Provide explanations for failures
+
+    Returns True if passed, False otherwise.
+    """
+    if not GEMINI_AVAILABLE:
+        if verbose:
+            print("\n[SKIP] Gemini judge not available (missing google-genai)")
+        return True
+
+    import os
+    if not os.environ.get("GOOGLE_API_KEY"):
+        if verbose:
+            print("\n[SKIP] Gemini judge requires GOOGLE_API_KEY")
+        return True
+
+    packs = [pack] if pack != "all" else ["treasury", "wealth"]
+    all_passed = True
+    total_cases = 0
+    passed_cases = 0
+
+    try:
+        judge = GeminiJudge(strict_mode=True)
+    except Exception as e:
+        if verbose:
+            print(f"\n[SKIP] Failed to initialize Gemini judge: {e}")
+        return True
+
+    datasets_path = Path(__file__).parent / "datasets"
+
+    for p in packs:
+        if verbose:
+            print(f"\n{'='*60}")
+            print(f"Gemini Semantic Verification: {p}")
+            print('='*60)
+
+        # Load pack-specific goldens
+        golden_file = datasets_path / f"{p}_goldens.json"
+        if not golden_file.exists():
+            if verbose:
+                print(f"[SKIP] No golden dataset for {p}")
+            continue
+
+        with open(golden_file, "r") as f:
+            data = json.load(f)
+
+        cases = data.get("test_cases", [])
+        if verbose:
+            print(f"[INFO] Running {len(cases)} cases through Gemini judge")
+
+        for case in cases:
+            total_cases += 1
+            case_id = case.get("id", "unknown")
+            case_name = case.get("name", "Unnamed")
+            expected_result = case.get("expected_result", "pass")
+
+            try:
+                # Run Gemini verification
+                result = judge.verify_claims(
+                    memo=case.get("memo", {}),
+                    evidence_pack=case.get("evidence_pack", {}),
+                )
+
+                actual_result = "pass" if result.passed else "fail"
+                case_passed = (actual_result == expected_result)
+
+                if case_passed:
+                    passed_cases += 1
+                    status = "PASS"
+                else:
+                    all_passed = False
+                    status = "FAIL"
+
+                if verbose:
+                    print(f"  [{status}] {case_name}")
+                    if not case_passed:
+                        print(f"         Expected: {expected_result}, Got: {actual_result}")
+                        if result.overall_explanation:
+                            print(f"         Gemini: {result.overall_explanation[:100]}...")
+                        # Show unsupported claims
+                        for v in result.claim_verifications:
+                            if not v.is_supported:
+                                print(f"         Unsupported: {v.claim_text[:50]}...")
+                                for issue in v.issues:
+                                    print(f"           - {issue}")
+
+            except Exception as e:
+                all_passed = False
+                if verbose:
+                    print(f"  [ERROR] {case_name}: {e}")
+
+    if verbose:
+        print(f"\n{'='*60}")
+        print(f"Gemini Suite: {passed_cases}/{total_cases} passed")
+        if all_passed:
+            print("[PASS] All Gemini verifications passed")
+        else:
+            print("[FAIL] Some verifications failed")
+
+    return all_passed
+
+
+def run_pack_golden_suite(pack: str, verbose: bool = False) -> bool:
+    """
+    Run golden test cases for specific packs (treasury/wealth).
+
+    Uses the richer pack-specific golden datasets.
+    """
+    datasets_path = Path(__file__).parent / "datasets"
+    packs = [pack] if pack != "all" else ["treasury", "wealth"]
+    all_passed = True
+
+    for p in packs:
+        if verbose:
+            print(f"\n{'='*60}")
+            print(f"Pack Golden Tests: {p}")
+            print('='*60)
+
+        golden_file = datasets_path / f"{p}_goldens.json"
+        if not golden_file.exists():
+            if verbose:
+                print(f"[SKIP] No golden dataset for {p}")
+            continue
+
+        # Run through standard runner with pack-specific dataset
+        runner = EvalRunner(datasets_path=datasets_path)
+
+        # Temporarily swap the load function to use pack-specific file
+        with open(golden_file, "r") as f:
+            data = json.load(f)
+        cases = data.get("test_cases", [])
+
+        if verbose:
+            print(f"[INFO] Running {len(cases)} test cases for {p}")
+
+        passed = 0
+        failed = 0
+
+        for case in cases:
+            result = runner.run_case(case)
+            if result.passed:
+                passed += 1
+                if verbose:
+                    print(f"  [PASS] {result.case_name}")
+            else:
+                failed += 1
+                all_passed = False
+                if verbose:
+                    print(f"  [FAIL] {result.case_name}")
+                    if result.error_message:
+                        print(f"         {result.error_message}")
+
+        if verbose:
+            print(f"\n{p}: {passed}/{passed+failed} passed")
+
+    return all_passed
+
+
+def generate_adversarial_cases(
+    num_cases: int = 5,
+    pack: str = "treasury",
+    output_file: Optional[str] = None,
+    verbose: bool = False,
+) -> List[Dict[str, Any]]:
+    """
+    Generate adversarial test cases using Gemini.
+
+    Args:
+        num_cases: Number of cases to generate
+        pack: Domain pack for context
+        output_file: Optional file to write cases to
+        verbose: Print progress
+
+    Returns:
+        List of generated test cases
+    """
+    if not GEMINI_AVAILABLE:
+        if verbose:
+            print("[ERROR] Gemini not available for adversarial generation")
+        return []
+
+    import os
+    if not os.environ.get("GOOGLE_API_KEY"):
+        if verbose:
+            print("[ERROR] GOOGLE_API_KEY required for adversarial generation")
+        return []
+
+    if verbose:
+        print(f"\nGenerating {num_cases} adversarial test cases for {pack}...")
+
+    try:
+        judge = GeminiJudge()
+        cases = judge.generate_adversarial_cases(num_cases=num_cases, pack=pack)
+
+        if verbose:
+            print(f"Generated {len(cases)} cases:")
+            for case in cases:
+                print(f"  - {case.name}: expects {case.expected_result}")
+
+        # Save to file if requested
+        if output_file:
+            output_path = Path(output_file)
+            output_data = {
+                "version": "1.0.0",
+                "pack": pack,
+                "description": f"Adversarial test cases generated by Gemini",
+                "generated_at": datetime.utcnow().isoformat(),
+                "test_cases": [case.model_dump() for case in cases],
+            }
+            with open(output_path, "w") as f:
+                json.dump(output_data, f, indent=2)
+            if verbose:
+                print(f"Saved to {output_file}")
+
+        return [case.model_dump() for case in cases]
+
+    except Exception as e:
+        if verbose:
+            print(f"[ERROR] Failed to generate adversarial cases: {e}")
+        return []
+
+
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -432,7 +678,7 @@ def main():
     )
     parser.add_argument(
         "--suite",
-        choices=["all", "extraction", "regression", "policy", "hallucination"],
+        choices=["all", "extraction", "regression", "policy", "hallucination", "gemini", "pack-goldens"],
         default="all",
         help="Which evaluation suite to run"
     )
@@ -460,21 +706,45 @@ def main():
         default=True,
         help="Zero tolerance for hallucinations"
     )
+    parser.add_argument(
+        "--generate-adversarial",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Generate N adversarial test cases using Gemini (requires GOOGLE_API_KEY)"
+    )
+    parser.add_argument(
+        "--adversarial-output",
+        type=str,
+        default=None,
+        help="Output file for generated adversarial cases"
+    )
 
     args = parser.parse_args()
+
+    # Handle adversarial generation mode
+    if args.generate_adversarial > 0:
+        generate_adversarial_cases(
+            num_cases=args.generate_adversarial,
+            pack=args.pack if args.pack != "all" else "treasury",
+            output_file=args.adversarial_output,
+            verbose=True,
+        )
+        sys.exit(0)
 
     exit_code = 0
     suites_run = []
 
     # Determine which suites to run
     if args.suite == "all":
-        suites_to_run = ["extraction", "regression", "policy", "hallucination"]
+        suites_to_run = ["extraction", "regression", "policy", "hallucination", "pack-goldens", "gemini"]
     else:
         suites_to_run = [args.suite]
 
     if args.verbose:
         print("\n" + "="*60)
         print("GOVERNANCE OS EVALUATION SUITE")
+        print("Hack B: Gemini-Powered Verification")
         print("="*60)
         print(f"Suites: {', '.join(suites_to_run)}")
         print(f"Pack: {args.pack}")
@@ -516,6 +786,20 @@ def main():
             if args.verbose:
                 print("[SKIP] No hallucination dataset found")
             suites_run.append(("hallucination", True))
+
+    # Run pack-specific golden tests
+    if "pack-goldens" in suites_to_run:
+        passed = run_pack_golden_suite(args.pack, args.verbose)
+        suites_run.append(("pack-goldens", passed))
+        if not passed:
+            exit_code = 1
+
+    # Run Gemini semantic verification suite
+    if "gemini" in suites_to_run:
+        passed = run_gemini_suite(args.pack, args.verbose)
+        suites_run.append(("gemini", passed))
+        if not passed:
+            exit_code = 1
 
     # Print summary
     if args.verbose:

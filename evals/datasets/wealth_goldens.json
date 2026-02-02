@@ -1,0 +1,676 @@
+{
+  "version": "1.0.0",
+  "pack": "wealth",
+  "description": "Golden test cases for wealth management domain narrative memos",
+  "test_cases": [
+    {
+      "id": "wealth_001",
+      "name": "Risk Tolerance Change - Properly Grounded",
+      "description": "Correctly formatted memo for client risk tolerance change",
+      "expected_result": "pass",
+      "memo": {
+        "decision_id": "dec_risk_001",
+        "title": "Client Risk Profile Update - Smith Family Trust",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "Client requested change from Aggressive to Moderate risk profile on January 5, 2025",
+                "evidence_refs": [
+                  {"evidence_id": "sig_risk_001", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "Current portfolio allocation is 80% equities, 15% fixed income, 5% alternatives",
+                "evidence_refs": [
+                  {"evidence_id": "sig_alloc_001", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "The Moderate profile requires maximum 60% equity allocation per IPS guidelines",
+                "evidence_refs": [
+                  {"evidence_id": "pol_ips_001", "evidence_type": "policy"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Policy Evaluation",
+            "claims": [
+              {
+                "text": "Governance kernel identified 20% equity over-allocation requiring rebalance",
+                "evidence_refs": [
+                  {"evidence_id": "eval_risk_001", "evidence_type": "evaluation"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Options Presented",
+            "claims": [
+              {
+                "text": "Option A: Immediate rebalance to 60/35/5 allocation",
+                "evidence_refs": [
+                  {"evidence_id": "opt_risk_001a", "evidence_type": "option"}
+                ]
+              },
+              {
+                "text": "Option B: Phased rebalance over 90 days to minimize tax impact",
+                "evidence_refs": [
+                  {"evidence_id": "opt_risk_001b", "evidence_type": "option"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Decision",
+            "claims": [
+              {
+                "text": "Advisor selected Option B for phased rebalance",
+                "evidence_refs": [
+                  {"evidence_id": "opt_risk_001b", "evidence_type": "chosen_option"},
+                  {"evidence_id": "dec_risk_001", "evidence_type": "decision"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_risk_001",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_risk_001",
+            "type": "signal",
+            "data": {
+              "signal_type": "risk_tolerance_change",
+              "client_id": "smith_family_trust",
+              "previous_profile": "aggressive",
+              "requested_profile": "moderate",
+              "request_date": "2025-01-05"
+            }
+          },
+          {
+            "evidence_id": "sig_alloc_001",
+            "type": "signal",
+            "data": {
+              "signal_type": "portfolio_allocation",
+              "equities_pct": 80,
+              "fixed_income_pct": 15,
+              "alternatives_pct": 5
+            }
+          },
+          {
+            "evidence_id": "pol_ips_001",
+            "type": "policy",
+            "data": {
+              "name": "Investment Policy Statement",
+              "moderate_profile": {
+                "max_equity_pct": 60,
+                "min_fixed_income_pct": 30
+              }
+            }
+          },
+          {
+            "evidence_id": "eval_risk_001",
+            "type": "evaluation",
+            "data": {
+              "result": "breach",
+              "equity_over_allocation_pct": 20
+            }
+          },
+          {
+            "evidence_id": "opt_risk_001a",
+            "type": "option",
+            "data": {
+              "label": "Immediate rebalance to 60/35/5",
+              "implications": ["Potential tax event", "Same-day execution"]
+            }
+          },
+          {
+            "evidence_id": "opt_risk_001b",
+            "type": "option",
+            "data": {
+              "label": "Phased rebalance over 90 days",
+              "implications": ["Tax-loss harvesting opportunity", "Gradual transition"]
+            }
+          },
+          {
+            "evidence_id": "dec_risk_001",
+            "type": "decision",
+            "data": {
+              "chosen_option": "opt_risk_001b",
+              "decided_by": "advisor_jones"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_002",
+      "name": "Concentration Risk - Wrong Percentage (Gemini-only)",
+      "description": "Memo states wrong concentration percentage (subtle hallucination). NOTE: Only Gemini judge can detect this semantic mismatch.",
+      "expected_result": "pass",
+      "gemini_expected_result": "fail",
+      "gemini_expected_error_type": "unsupported_claim",
+      "memo": {
+        "decision_id": "dec_conc_002",
+        "title": "Single Stock Concentration Alert",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "AAPL position represents 28% of portfolio, exceeding 25% limit",
+                "evidence_refs": [
+                  {"evidence_id": "sig_conc_002", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_conc_002",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_conc_002",
+            "type": "signal",
+            "data": {
+              "signal_type": "concentration_breach",
+              "security": "AAPL",
+              "concentration_pct": 32.5,
+              "limit_pct": 25
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_003",
+      "name": "Suitability Check - Hidden Recommendation",
+      "description": "Memo contains hidden recommendation using 'should' pattern",
+      "expected_result": "fail",
+      "expected_error_type": "recommendation",
+      "memo": {
+        "decision_id": "dec_suit_003",
+        "title": "Product Suitability Review",
+        "sections": [
+          {
+            "heading": "Analysis",
+            "claims": [
+              {
+                "text": "Client age is 72 with conservative risk profile",
+                "evidence_refs": [
+                  {"evidence_id": "sig_client_003", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "The advisor should recommend reducing equity exposure",
+                "evidence_refs": [
+                  {"evidence_id": "sig_client_003", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_suit_003",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_client_003",
+            "type": "signal",
+            "data": {
+              "signal_type": "client_profile",
+              "age": 72,
+              "risk_profile": "conservative",
+              "current_equity_pct": 55
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_004",
+      "name": "Fee Disclosure - Opinion Language",
+      "description": "Memo uses opinion language about fee structure",
+      "expected_result": "fail",
+      "expected_error_type": "opinion",
+      "memo": {
+        "decision_id": "dec_fee_004",
+        "title": "Fee Structure Review",
+        "sections": [
+          {
+            "heading": "Assessment",
+            "claims": [
+              {
+                "text": "Current fee is 1.25% AUM",
+                "evidence_refs": [
+                  {"evidence_id": "sig_fee_004", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "This fee structure is likely competitive for the service level provided",
+                "evidence_refs": [
+                  {"evidence_id": "sig_fee_004", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_fee_004",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_fee_004",
+            "type": "signal",
+            "data": {
+              "signal_type": "fee_review",
+              "fee_pct": 1.25,
+              "aum_usd": 5000000
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_005",
+      "name": "Rebalancing Alert - Severity Judgment",
+      "description": "Memo makes forbidden severity judgment about rebalancing",
+      "expected_result": "fail",
+      "expected_error_type": "severity_judgment",
+      "memo": {
+        "decision_id": "dec_rebal_005",
+        "title": "Quarterly Rebalancing Review",
+        "sections": [
+          {
+            "heading": "Status",
+            "claims": [
+              {
+                "text": "Portfolio drift from target allocation is 8%",
+                "evidence_refs": [
+                  {"evidence_id": "sig_drift_005", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "This is a critical situation requiring urgent rebalancing",
+                "evidence_refs": [
+                  {"evidence_id": "sig_drift_005", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_rebal_005",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_drift_005",
+            "type": "signal",
+            "data": {
+              "signal_type": "portfolio_drift",
+              "drift_pct": 8,
+              "threshold_pct": 5
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_006",
+      "name": "IPS Compliance - Policy Evaluation",
+      "description": "Memo evaluates IPS policy using 'threshold is too' pattern",
+      "expected_result": "fail",
+      "expected_error_type": "policy_evaluation",
+      "memo": {
+        "decision_id": "dec_ips_006",
+        "title": "IPS Annual Review",
+        "sections": [
+          {
+            "heading": "Review",
+            "claims": [
+              {
+                "text": "Current IPS limits bond allocation to 40%",
+                "evidence_refs": [
+                  {"evidence_id": "pol_ips_006", "evidence_type": "policy"}
+                ]
+              },
+              {
+                "text": "The threshold is too restrictive for current market conditions",
+                "evidence_refs": [
+                  {"evidence_id": "pol_ips_006", "evidence_type": "policy"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_ips_006",
+        "evidence_items": [
+          {
+            "evidence_id": "pol_ips_006",
+            "type": "policy",
+            "data": {
+              "name": "Investment Policy Statement",
+              "max_bond_allocation_pct": 40
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_007",
+      "name": "Beneficiary Change - Properly Grounded",
+      "description": "Complex beneficiary change with proper grounding",
+      "expected_result": "pass",
+      "memo": {
+        "decision_id": "dec_ben_007",
+        "title": "Beneficiary Designation Update",
+        "sections": [
+          {
+            "heading": "Request",
+            "claims": [
+              {
+                "text": "Client submitted beneficiary change request on January 10, 2025",
+                "evidence_refs": [
+                  {"evidence_id": "sig_ben_007", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "Change affects IRA account ending in 4521",
+                "evidence_refs": [
+                  {"evidence_id": "sig_ben_007", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Verification",
+            "claims": [
+              {
+                "text": "Identity verification completed via two-factor authentication",
+                "evidence_refs": [
+                  {"evidence_id": "sig_verify_007", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "Spousal consent obtained as required by ERISA",
+                "evidence_refs": [
+                  {"evidence_id": "sig_consent_007", "evidence_type": "signal"},
+                  {"evidence_id": "pol_erisa_007", "evidence_type": "policy"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Decision",
+            "claims": [
+              {
+                "text": "Operations approved the beneficiary change",
+                "evidence_refs": [
+                  {"evidence_id": "dec_ben_007", "evidence_type": "decision"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_ben_007",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_ben_007",
+            "type": "signal",
+            "data": {
+              "signal_type": "beneficiary_change_request",
+              "account_suffix": "4521",
+              "account_type": "IRA",
+              "request_date": "2025-01-10"
+            }
+          },
+          {
+            "evidence_id": "sig_verify_007",
+            "type": "signal",
+            "data": {
+              "signal_type": "identity_verification",
+              "method": "two_factor",
+              "status": "passed"
+            }
+          },
+          {
+            "evidence_id": "sig_consent_007",
+            "type": "signal",
+            "data": {
+              "signal_type": "spousal_consent",
+              "obtained": true,
+              "date": "2025-01-10"
+            }
+          },
+          {
+            "evidence_id": "pol_erisa_007",
+            "type": "policy",
+            "data": {
+              "name": "ERISA Compliance Policy",
+              "spousal_consent_required": true
+            }
+          },
+          {
+            "evidence_id": "dec_ben_007",
+            "type": "decision",
+            "data": {
+              "action": "approve_beneficiary_change",
+              "decided_by": "operations_team"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_008",
+      "name": "Tax Loss Harvesting - Ungrounded Claim",
+      "description": "Claim about tax savings has no evidence reference",
+      "expected_result": "fail",
+      "expected_error_type": "ungrounded_claim",
+      "memo": {
+        "decision_id": "dec_tax_008",
+        "title": "Tax Loss Harvesting Opportunity",
+        "sections": [
+          {
+            "heading": "Analysis",
+            "claims": [
+              {
+                "text": "Position in XYZ Fund has unrealized loss of $45,000",
+                "evidence_refs": [
+                  {"evidence_id": "sig_loss_008", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "Harvesting this loss could save approximately $15,000 in taxes",
+                "evidence_refs": []
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_tax_008",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_loss_008",
+            "type": "signal",
+            "data": {
+              "signal_type": "unrealized_loss",
+              "security": "XYZ Fund",
+              "loss_usd": 45000
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_009",
+      "name": "Invalid Evidence Reference",
+      "description": "Memo references evidence ID that doesn't exist",
+      "expected_result": "fail",
+      "expected_error_type": "invalid_evidence_ref",
+      "memo": {
+        "decision_id": "dec_rmd_009",
+        "title": "Required Minimum Distribution Alert",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "Client turns 73 in 2025, triggering RMD requirements",
+                "evidence_refs": [
+                  {"evidence_id": "sig_rmd_WRONG", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_rmd_009",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_rmd_009",
+            "type": "signal",
+            "data": {
+              "signal_type": "rmd_trigger",
+              "client_age_2025": 73,
+              "rmd_amount_usd": 125000
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wealth_010",
+      "name": "ESG Preference Change - Properly Grounded",
+      "description": "Client ESG preference update with full audit trail",
+      "expected_result": "pass",
+      "memo": {
+        "decision_id": "dec_esg_010",
+        "title": "ESG Investment Preference Update",
+        "sections": [
+          {
+            "heading": "Client Request",
+            "claims": [
+              {
+                "text": "Client requested ESG-focused portfolio transition on January 15, 2025",
+                "evidence_refs": [
+                  {"evidence_id": "sig_esg_010", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "Current portfolio has 15% ESG-aligned holdings",
+                "evidence_refs": [
+                  {"evidence_id": "sig_current_010", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Policy Check",
+            "claims": [
+              {
+                "text": "ESG transition complies with fiduciary duty requirements",
+                "evidence_refs": [
+                  {"evidence_id": "eval_fid_010", "evidence_type": "evaluation"},
+                  {"evidence_id": "pol_fid_010", "evidence_type": "policy"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Decision",
+            "claims": [
+              {
+                "text": "Advisor approved phased transition to 80% ESG alignment over 6 months",
+                "evidence_refs": [
+                  {"evidence_id": "dec_esg_010", "evidence_type": "decision"},
+                  {"evidence_id": "opt_esg_010", "evidence_type": "chosen_option"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_esg_010",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_esg_010",
+            "type": "signal",
+            "data": {
+              "signal_type": "preference_change",
+              "preference_type": "ESG",
+              "request_date": "2025-01-15"
+            }
+          },
+          {
+            "evidence_id": "sig_current_010",
+            "type": "signal",
+            "data": {
+              "signal_type": "portfolio_composition",
+              "esg_aligned_pct": 15
+            }
+          },
+          {
+            "evidence_id": "pol_fid_010",
+            "type": "policy",
+            "data": {
+              "name": "Fiduciary Duty Policy",
+              "esg_permitted": true
+            }
+          },
+          {
+            "evidence_id": "eval_fid_010",
+            "type": "evaluation",
+            "data": {
+              "result": "compliant",
+              "fiduciary_check": "passed"
+            }
+          },
+          {
+            "evidence_id": "opt_esg_010",
+            "type": "option",
+            "data": {
+              "label": "Phased transition to 80% ESG over 6 months",
+              "target_esg_pct": 80
+            }
+          },
+          {
+            "evidence_id": "dec_esg_010",
+            "type": "decision",
+            "data": {
+              "chosen_option": "opt_esg_010",
+              "decided_by": "advisor_smith"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "signal_types": [
+    "risk_tolerance_change",
+    "portfolio_allocation",
+    "concentration_breach",
+    "client_profile",
+    "fee_review",
+    "portfolio_drift",
+    "beneficiary_change_request",
+    "identity_verification",
+    "spousal_consent",
+    "unrealized_loss",
+    "rmd_trigger",
+    "preference_change",
+    "portfolio_composition"
+  ]
+}

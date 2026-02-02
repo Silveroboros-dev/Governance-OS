@@ -1,0 +1,576 @@
+{
+  "version": "1.0.0",
+  "pack": "treasury",
+  "description": "Golden test cases for treasury domain narrative memos",
+  "test_cases": [
+    {
+      "id": "treasury_001",
+      "name": "Position Limit Breach - Properly Grounded",
+      "description": "Correctly formatted memo for BTC position limit breach",
+      "expected_result": "pass",
+      "memo": {
+        "decision_id": "dec_pos_001",
+        "title": "BTC Position Limit Breach Resolution",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "The BTC position reached $152.3M at 14:32 UTC on 2025-01-15",
+                "evidence_refs": [
+                  {"evidence_id": "sig_pos_001", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "This exceeds the $100M single-asset limit defined in the Position Limits Policy v2.1",
+                "evidence_refs": [
+                  {"evidence_id": "pol_pos_001", "evidence_type": "policy"},
+                  {"evidence_id": "eval_pos_001", "evidence_type": "evaluation"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Options Presented",
+            "claims": [
+              {
+                "text": "Option A: Reduce position to $95M within 4 hours",
+                "evidence_refs": [
+                  {"evidence_id": "opt_pos_001a", "evidence_type": "option"}
+                ]
+              },
+              {
+                "text": "Option B: Request temporary limit increase to $175M pending review",
+                "evidence_refs": [
+                  {"evidence_id": "opt_pos_001b", "evidence_type": "option"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Decision",
+            "claims": [
+              {
+                "text": "The decision-maker selected Option A to reduce the position",
+                "evidence_refs": [
+                  {"evidence_id": "opt_pos_001a", "evidence_type": "chosen_option"}
+                ]
+              },
+              {
+                "text": "Rationale documented: favorable market conditions for liquidation",
+                "evidence_refs": [
+                  {"evidence_id": "dec_pos_001", "evidence_type": "decision"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_pos_001",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_pos_001",
+            "type": "signal",
+            "data": {
+              "signal_type": "position_breach",
+              "asset": "BTC",
+              "current_value_usd": 152300000,
+              "limit_usd": 100000000,
+              "breach_percentage": 52.3,
+              "timestamp": "2025-01-15T14:32:00Z"
+            }
+          },
+          {
+            "evidence_id": "pol_pos_001",
+            "type": "policy",
+            "data": {
+              "name": "Position Limits Policy",
+              "version": "2.1",
+              "single_asset_limit_usd": 100000000
+            }
+          },
+          {
+            "evidence_id": "eval_pos_001",
+            "type": "evaluation",
+            "data": {
+              "result": "breach",
+              "severity": "high",
+              "breach_amount_usd": 52300000
+            }
+          },
+          {
+            "evidence_id": "opt_pos_001a",
+            "type": "option",
+            "data": {
+              "label": "Reduce position to $95M within 4 hours",
+              "implications": ["Market impact ~0.5%", "Immediate compliance"]
+            }
+          },
+          {
+            "evidence_id": "opt_pos_001b",
+            "type": "option",
+            "data": {
+              "label": "Request temporary limit increase to $175M",
+              "implications": ["Requires CRO approval", "24-48 hour process"]
+            }
+          },
+          {
+            "evidence_id": "dec_pos_001",
+            "type": "decision",
+            "data": {
+              "chosen_option": "opt_pos_001a",
+              "rationale": "Favorable market conditions for liquidation",
+              "decided_by": "treasury_head"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_002",
+      "name": "Liquidity Threshold - Wrong Amount (Gemini-only)",
+      "description": "Memo claims different amount than evidence shows (subtle hallucination). NOTE: Only Gemini judge can detect this semantic mismatch.",
+      "expected_result": "pass",
+      "gemini_expected_result": "fail",
+      "gemini_expected_error_type": "unsupported_claim",
+      "memo": {
+        "decision_id": "dec_liq_002",
+        "title": "Liquidity Buffer Review",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "Available liquidity dropped to $45M, below the $50M minimum",
+                "evidence_refs": [
+                  {"evidence_id": "sig_liq_002", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_liq_002",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_liq_002",
+            "type": "signal",
+            "data": {
+              "signal_type": "liquidity_threshold",
+              "available_liquidity_usd": 42000000,
+              "minimum_required_usd": 50000000,
+              "shortfall_usd": 8000000
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_003",
+      "name": "FX Exposure - Causal Claim Without Support (Gemini-only)",
+      "description": "Memo makes causal claim not established by evidence. NOTE: Only Gemini judge can detect this semantic gap.",
+      "expected_result": "pass",
+      "gemini_expected_result": "fail",
+      "gemini_expected_error_type": "unsupported_claim",
+      "memo": {
+        "decision_id": "dec_fx_003",
+        "title": "EUR/USD Exposure Assessment",
+        "sections": [
+          {
+            "heading": "Analysis",
+            "claims": [
+              {
+                "text": "The EUR exposure increase caused the settlement failure on January 10th",
+                "evidence_refs": [
+                  {"evidence_id": "sig_fx_003", "evidence_type": "signal"},
+                  {"evidence_id": "sig_settle_003", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_fx_003",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_fx_003",
+            "type": "signal",
+            "data": {
+              "signal_type": "fx_exposure",
+              "currency_pair": "EUR/USD",
+              "exposure_usd": 25000000,
+              "limit_usd": 20000000,
+              "timestamp": "2025-01-09T10:00:00Z"
+            }
+          },
+          {
+            "evidence_id": "sig_settle_003",
+            "type": "signal",
+            "data": {
+              "signal_type": "settlement_failure",
+              "amount_usd": 5000000,
+              "counterparty": "Bank ABC",
+              "timestamp": "2025-01-10T16:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_004",
+      "name": "Counterparty Exposure - Hidden Recommendation",
+      "description": "Memo contains hidden recommendation language using 'should' pattern",
+      "expected_result": "fail",
+      "expected_error_type": "recommendation",
+      "memo": {
+        "decision_id": "dec_cp_004",
+        "title": "Counterparty Risk Assessment",
+        "sections": [
+          {
+            "heading": "Assessment",
+            "claims": [
+              {
+                "text": "Exposure to Bank XYZ reached $75M against a $70M limit",
+                "evidence_refs": [
+                  {"evidence_id": "sig_cp_004", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "The team should reduce exposure before month-end to maintain compliance",
+                "evidence_refs": [
+                  {"evidence_id": "sig_cp_004", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_cp_004",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_cp_004",
+            "type": "signal",
+            "data": {
+              "signal_type": "counterparty_exposure",
+              "counterparty": "Bank XYZ",
+              "exposure_usd": 75000000,
+              "limit_usd": 70000000
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_005",
+      "name": "Settlement Failure - Opinion Language",
+      "description": "Memo uses opinion language that sounds factual",
+      "expected_result": "fail",
+      "expected_error_type": "opinion",
+      "memo": {
+        "decision_id": "dec_settle_005",
+        "title": "Settlement Failure Investigation",
+        "sections": [
+          {
+            "heading": "Findings",
+            "claims": [
+              {
+                "text": "The failure seems to be related to a timing mismatch in the payment system",
+                "evidence_refs": [
+                  {"evidence_id": "sig_settle_005", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_settle_005",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_settle_005",
+            "type": "signal",
+            "data": {
+              "signal_type": "settlement_failure",
+              "amount_usd": 12000000,
+              "error_code": "TIMEOUT_001",
+              "timestamp": "2025-01-12T15:30:00Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_006",
+      "name": "Cash Buffer - Severity Judgment",
+      "description": "Memo makes forbidden severity judgment using 'critical' and 'immediately'",
+      "expected_result": "fail",
+      "expected_error_type": "severity_judgment",
+      "memo": {
+        "decision_id": "dec_cash_006",
+        "title": "Cash Buffer Breach",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "Cash reserves fell to $8M against $10M requirement",
+                "evidence_refs": [
+                  {"evidence_id": "sig_cash_006", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "This is critical and must be addressed immediately",
+                "evidence_refs": [
+                  {"evidence_id": "sig_cash_006", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_cash_006",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_cash_006",
+            "type": "signal",
+            "data": {
+              "signal_type": "cash_buffer",
+              "current_usd": 8000000,
+              "required_usd": 10000000,
+              "shortfall_usd": 2000000
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_007",
+      "name": "Interest Rate Hedge - Policy Evaluation",
+      "description": "Memo evaluates policy (kernel's job)",
+      "expected_result": "fail",
+      "expected_error_type": "policy_evaluation",
+      "memo": {
+        "decision_id": "dec_ir_007",
+        "title": "Interest Rate Hedge Review",
+        "sections": [
+          {
+            "heading": "Review",
+            "claims": [
+              {
+                "text": "Hedge ratio at 65% against 70% requirement",
+                "evidence_refs": [
+                  {"evidence_id": "sig_ir_007", "evidence_type": "signal"}
+                ]
+              },
+              {
+                "text": "The 70% threshold is too strict given current market volatility",
+                "evidence_refs": [
+                  {"evidence_id": "pol_ir_007", "evidence_type": "policy"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_ir_007",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_ir_007",
+            "type": "signal",
+            "data": {
+              "signal_type": "hedge_ratio",
+              "current_ratio": 0.65,
+              "required_ratio": 0.70
+            }
+          },
+          {
+            "evidence_id": "pol_ir_007",
+            "type": "policy",
+            "data": {
+              "name": "Interest Rate Hedging Policy",
+              "minimum_hedge_ratio": 0.70
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_008",
+      "name": "Complex Multi-Signal Decision - Properly Grounded",
+      "description": "Complex memo with multiple signals and decisions, all properly grounded",
+      "expected_result": "pass",
+      "memo": {
+        "decision_id": "dec_multi_008",
+        "title": "Quarterly Treasury Review Decision",
+        "sections": [
+          {
+            "heading": "Position Summary",
+            "claims": [
+              {
+                "text": "Total crypto holdings valued at $450M across BTC, ETH, and SOL",
+                "evidence_refs": [
+                  {"evidence_id": "sig_btc_008", "evidence_type": "signal"},
+                  {"evidence_id": "sig_eth_008", "evidence_type": "signal"},
+                  {"evidence_id": "sig_sol_008", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Policy Evaluation",
+            "claims": [
+              {
+                "text": "The governance kernel evaluated positions against Portfolio Diversification Policy v3.0",
+                "evidence_refs": [
+                  {"evidence_id": "eval_div_008", "evidence_type": "evaluation"},
+                  {"evidence_id": "pol_div_008", "evidence_type": "policy"}
+                ]
+              },
+              {
+                "text": "BTC concentration at 55% exceeds the 50% single-asset maximum",
+                "evidence_refs": [
+                  {"evidence_id": "eval_div_008", "evidence_type": "evaluation"}
+                ]
+              }
+            ]
+          },
+          {
+            "heading": "Decision",
+            "claims": [
+              {
+                "text": "The committee chose to rebalance over 2 weeks to minimize market impact",
+                "evidence_refs": [
+                  {"evidence_id": "dec_multi_008", "evidence_type": "decision"},
+                  {"evidence_id": "opt_rebal_008", "evidence_type": "chosen_option"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_multi_008",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_btc_008",
+            "type": "signal",
+            "data": {"asset": "BTC", "value_usd": 247500000, "percentage": 55}
+          },
+          {
+            "evidence_id": "sig_eth_008",
+            "type": "signal",
+            "data": {"asset": "ETH", "value_usd": 135000000, "percentage": 30}
+          },
+          {
+            "evidence_id": "sig_sol_008",
+            "type": "signal",
+            "data": {"asset": "SOL", "value_usd": 67500000, "percentage": 15}
+          },
+          {
+            "evidence_id": "pol_div_008",
+            "type": "policy",
+            "data": {"name": "Portfolio Diversification Policy", "version": "3.0", "max_single_asset_pct": 50}
+          },
+          {
+            "evidence_id": "eval_div_008",
+            "type": "evaluation",
+            "data": {"result": "breach", "btc_percentage": 55, "max_allowed": 50}
+          },
+          {
+            "evidence_id": "opt_rebal_008",
+            "type": "option",
+            "data": {"label": "Rebalance over 2 weeks", "target_btc_pct": 45}
+          },
+          {
+            "evidence_id": "dec_multi_008",
+            "type": "decision",
+            "data": {"chosen_option": "opt_rebal_008", "decided_by": "investment_committee"}
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_009",
+      "name": "Invalid Evidence ID Reference",
+      "description": "Memo references an evidence ID that doesn't exist",
+      "expected_result": "fail",
+      "expected_error_type": "invalid_evidence_ref",
+      "memo": {
+        "decision_id": "dec_inv_009",
+        "title": "Margin Call Response",
+        "sections": [
+          {
+            "heading": "Situation",
+            "claims": [
+              {
+                "text": "Received margin call for $5M from Prime Broker",
+                "evidence_refs": [
+                  {"evidence_id": "sig_margin_999", "evidence_type": "signal"}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_inv_009",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_margin_009",
+            "type": "signal",
+            "data": {"signal_type": "margin_call", "amount_usd": 5000000}
+          }
+        ]
+      }
+    },
+    {
+      "id": "treasury_010",
+      "name": "Ungrounded Claim - No Evidence Refs",
+      "description": "Claim has no evidence references",
+      "expected_result": "fail",
+      "expected_error_type": "ungrounded_claim",
+      "memo": {
+        "decision_id": "dec_ung_010",
+        "title": "Collateral Review",
+        "sections": [
+          {
+            "heading": "Summary",
+            "claims": [
+              {
+                "text": "Collateral posting increased significantly last week",
+                "evidence_refs": []
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_pack": {
+        "evidence_pack_id": "evp_ung_010",
+        "evidence_items": [
+          {
+            "evidence_id": "sig_coll_010",
+            "type": "signal",
+            "data": {"signal_type": "collateral_posting", "amount_usd": 25000000}
+          }
+        ]
+      }
+    }
+  ],
+  "signal_types": [
+    "position_breach",
+    "liquidity_threshold",
+    "fx_exposure",
+    "counterparty_exposure",
+    "settlement_failure",
+    "cash_buffer",
+    "hedge_ratio",
+    "margin_call",
+    "collateral_posting"
+  ]
+}
