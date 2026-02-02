@@ -226,3 +226,71 @@ Tests are passing if:
 - ✅ All service tests pass
 
 **If all tests pass, the backend kernel is production-ready!** 🎉
+
+---
+
+## Gemini Hackathon Features
+
+### Hack A: Context Caching Tests (66 tests)
+
+```bash
+# Run Gemini context caching tests
+pytest core/tests/test_gemini_cache.py -v
+```
+
+Tests cover:
+- ✅ GeminiClient initialization and API calls
+- ✅ Cache creation, retrieval, and deletion
+- ✅ CacheManager lifecycle management
+- ✅ Auto-invalidation on policy changes
+- ✅ Content hash change detection
+- ✅ Agent integration with caching
+
+### Hack B: Gemini-Powered Evals
+
+```bash
+# Run all eval suites
+make evals
+
+# Run pack-specific golden tests (treasury/wealth)
+make evals-pack
+
+# Run Gemini semantic verification (requires GOOGLE_API_KEY)
+make evals-gemini
+
+# Generate adversarial test cases
+make evals-adversarial PACK=treasury
+```
+
+Tests cover:
+- ✅ 8 base hallucination golden tests
+- ✅ 10 treasury domain test cases
+- ✅ 10 wealth domain test cases
+- ✅ Regex pattern detection (recommendations, opinions, severity, policy eval)
+- ✅ Gemini semantic verification (catches subtle hallucinations)
+
+---
+
+## Safety Check Demo (Hackathon Video)
+
+```bash
+# Interactive demo (press Enter to advance)
+make demo-safety
+
+# Auto-advancing demo (for video recording)
+make demo-safety-auto
+```
+
+The demo shows:
+1. **Setup** - The 4 forbidden pattern categories
+2. **Step 1** - A properly grounded memo passes validation ✓
+3. **Step 2** - A poisoned memo with 4 violations gets BLOCKED ✗
+   - `"recommend"` → RECOMMENDATION caught
+   - `"immediately"` → SEVERITY_JUDGMENT caught
+   - `"appears to be"` → OPINION caught
+   - `"This is critical"` → SEVERITY_JUDGMENT caught
+4. **Step 3** - Shows the regex patterns and explains reliability
+5. **Pitch** - Two-layer architecture + pitch line
+
+**The Pitch:**
+> "We use Gemini's reasoning to draft the memo, but we wrap it in a deterministic Regex safety layer to ensure compliance. Zero hallucinations. Guaranteed."
