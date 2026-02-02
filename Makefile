@@ -26,6 +26,10 @@ help:
 	@echo "  make evals-pack   - Run pack-specific golden tests (PACK=treasury|wealth|all)"
 	@echo "  make evals-gemini - Run Gemini semantic verification (requires GOOGLE_API_KEY)"
 	@echo "  make evals-adversarial - Generate adversarial test cases (requires GOOGLE_API_KEY)"
+	@echo ""
+	@echo "Hackathon Demo:"
+	@echo "  make demo-safety       - Run AI safety check demo (interactive)"
+	@echo "  make demo-safety-auto  - Run AI safety demo (auto-advance for video)"
 
 up:
 	docker compose up --build -d
@@ -114,6 +118,16 @@ evals-pack:
 	@echo "Running pack golden tests..."
 	python -m evals.runner --suite pack-goldens --pack $(or $(PACK),all) -v
 	@echo "Pack tests complete."
+
+# Safety check demo (for hackathon video)
+demo-safety:
+	@echo "Running AI Safety Demo..."
+	python demo_safety_check.py
+
+# Auto-advancing demo (for video recording)
+demo-safety-auto:
+	@echo "Running AI Safety Demo (auto-advance mode)..."
+	python demo_safety_check.py --auto
 
 # Load demo scenarios
 scenarios:
