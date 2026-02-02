@@ -25,7 +25,10 @@ jinja2>=3.1.2
 mcp>=1.0.0
 
 # Sprint 2: AI Coprocessor
-anthropic>=0.40.0
+# anthropic>=0.40.0  # Kept for reference, replaced by Gemini 3
+
+# Gemini 3 API (Context Caching support)
+google-genai>=1.0.0
 
 # Sprint 2: CSV Processing (optional)
 pandas>=2.0.0

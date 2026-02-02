@@ -4,6 +4,11 @@ NarrativeAgent v1 - Drafts memos strictly grounded to evidence IDs.
 This agent generates narrative summaries of decisions, but EVERY claim
 must reference evidence from the kernel. No unsupported claims allowed.
 
+Uses Gemini 3 with Context Caching for:
+- 90% cost reduction on cached prompts
+- 40-50% latency reduction
+- Automatic cache refresh on policy changes
+
 v1 Features:
 - Multi-template support (treasury/wealth-specific templates)
 - Short/standard/detailed length variants
@@ -31,6 +36,7 @@ from ..schemas.narrative import (
     MemoTemplateConfig,
     MemoLength,
 )
+from ..cache import GeminiClient, get_cache_manager
 
 
 class NarrativeAgent:
@@ -39,6 +45,7 @@ class NarrativeAgent:
 
     All outputs are schema-validated and grounding-checked.
     Supports multiple templates and length variants.
+    Uses Gemini 3 Context Caching for enterprise-grade efficiency.
     """
 
     # Valid templates per pack
@@ -62,18 +69,20 @@ class NarrativeAgent:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "claude-sonnet-4-20250514",
+        model: str = "gemini-3-flash-preview",
+        use_cache: bool = True,
     ):
         """
         Initialize the NarrativeAgent.
 
         Args:
-            api_key: Anthropic API key (defaults to ANTHROPIC_API_KEY env var)
-            model: Model to use for generation
+            api_key: Google API key (defaults to GOOGLE_API_KEY env var)
+            model: Gemini 3 model to use
+            use_cache: Whether to use context caching (default True)
         """
-        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        self.model = model
-        self._client = None
+        self._client = GeminiClient(api_key=api_key, model=model)
+        self._use_cache = use_cache
+        self._cache_manager = get_cache_manager() if use_cache else None
         self._template_configs: Dict[MemoTemplate, MemoTemplateConfig] = {}
 
         # Load system prompt
@@ -85,18 +94,6 @@ class NarrativeAgent:
 
         # Load template configurations
         self._load_template_configs()
-
-    def _get_client(self):
-        """Lazily initialize the Anthropic client."""
-        if self._client is None:
-            try:
-                import anthropic
-                self._client = anthropic.Anthropic(api_key=self.api_key)
-            except ImportError:
-                raise ImportError(
-                    "anthropic package required. Install with: pip install anthropic"
-                )
-        return self._client
 
     def _load_template_configs(self):
         """Load template configurations from pack modules."""
@@ -128,6 +125,17 @@ Output format:
 - Title: Brief summary title
 - Sections with claims, each claim referencing evidence IDs
 - No recommendations, predictions, or opinions"""
+
+    def _ensure_cache(self, pack: str) -> Optional[str]:
+        """Ensure cache exists for this pack, return cache name."""
+        if not self._use_cache or not self._cache_manager:
+            return None
+
+        cache_name = self._cache_manager.get_cache_name("narrative", pack)
+        if not cache_name:
+            cache_name = self._cache_manager.build_cache("narrative", pack)
+
+        return cache_name
 
     def get_available_templates(self, pack: str) -> List[MemoTemplate]:
         """Get available templates for a pack."""
@@ -256,19 +264,26 @@ Return a JSON object with this structure:
     "assumptions": ["Any assumptions made in interpreting the evidence"]
 }}"""
 
-        # Call the LLM
-        client = self._get_client()
-        response = client.messages.create(
-            model=self.model,
-            max_tokens=2000,
-            system=self.system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
+        # Generate response (with or without caching)
+        cache_name = self._ensure_cache(pack)
+
+        if cache_name:
+            response_text = self._client.generate_with_cache(
+                cache_name=cache_name,
+                user_prompt=user_prompt,
+                max_tokens=2000,
+                temperature=0.1,
+            )
+        else:
+            response_text = self._client.generate(
+                user_prompt=user_prompt,
+                system_prompt=self.system_prompt,
+                max_tokens=2000,
+                temperature=0.1,
+            )
 
         # Parse the response
-        response_text = response.content[0].text
-
-        # Extract JSON from response (handle markdown code blocks)
+        # Handle markdown code blocks
         if "```json" in response_text:
             json_start = response_text.find("```json") + 7
             json_end = response_text.find("```", json_start)

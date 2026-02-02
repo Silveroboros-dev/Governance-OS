@@ -26,9 +26,16 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "Governance OS"
 
+    # AI Coprocessor - Gemini 3 (primary)
+    google_api_key: str = ""
+
+    # AI Coprocessor - Anthropic (legacy, kept for reference)
+    anthropic_api_key: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # Ignore unknown env vars
 
 
 settings = Settings()

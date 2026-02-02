@@ -12,10 +12,13 @@ All modifications must go through the UI with human approval.
 """
 
 import os
+import json
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 from mcp.server import FastMCP
+from starlette.responses import JSONResponse, HTMLResponse
+from starlette.requests import Request
 
 # Initialize MCP server
 mcp = FastMCP(
@@ -45,6 +48,86 @@ mcp = FastMCP(
     - Confidence scores must be honest - don't inflate them
     """
 )
+
+
+# ============================================================================
+# INFO ENDPOINT (for browser access)
+# ============================================================================
+
+@mcp.custom_route("/", methods=["GET"])
+@mcp.custom_route("/info", methods=["GET"])
+async def mcp_info(request: Request) -> HTMLResponse:
+    """Return human-readable info page when accessed via browser."""
+    html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Governance OS - MCP API</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+               max-width: 800px; margin: 40px auto; padding: 20px;
+               background: #0a0a0b; color: #fafafa; }
+        h1 { color: #22c55e; }
+        code { background: #18181b; padding: 2px 8px; border-radius: 4px; }
+        pre { background: #18181b; padding: 16px; border-radius: 8px; overflow-x: auto; }
+        a { color: #22c55e; }
+        .tool { margin: 12px 0; padding: 12px; background: #111113; border-radius: 6px; }
+        .tool-name { font-weight: 600; color: #22c55e; }
+        .tool-desc { color: #a1a1aa; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>Governance OS MCP Server</h1>
+    <p>This is an <a href="https://modelcontextprotocol.io">MCP (Model Context Protocol)</a> server
+       that exposes the Governance OS kernel to AI agents.</p>
+
+    <h2>Connection</h2>
+    <p>Connect using any MCP client with Streamable HTTP transport:</p>
+    <pre>URL: https://govos-mcp-1064412167254.europe-west4.run.app/mcp
+Transport: Streamable HTTP</pre>
+
+    <h2>Available Tools</h2>
+    <div class="tool">
+        <div class="tool-name">get_open_exceptions</div>
+        <div class="tool-desc">List exceptions requiring human decisions</div>
+    </div>
+    <div class="tool">
+        <div class="tool-name">get_exception_detail</div>
+        <div class="tool-desc">Get full context for a specific exception</div>
+    </div>
+    <div class="tool">
+        <div class="tool-name">get_policies</div>
+        <div class="tool-desc">List active policies</div>
+    </div>
+    <div class="tool">
+        <div class="tool-name">get_policy_detail</div>
+        <div class="tool-desc">Get full details for a specific policy</div>
+    </div>
+    <div class="tool">
+        <div class="tool-name">get_evidence_pack</div>
+        <div class="tool-desc">Get complete evidence pack for a decision</div>
+    </div>
+    <div class="tool">
+        <div class="tool-name">search_decisions</div>
+        <div class="tool-desc">Search decision history</div>
+    </div>
+    <div class="tool">
+        <div class="tool-name">get_recent_signals</div>
+        <div class="tool-desc">Get recent signals</div>
+    </div>
+
+    <h2>Resources</h2>
+    <ul>
+        <li><a href="https://github.com/Silveroboros-dev/Governance-OS">GitHub Repository</a></li>
+        <li><a href="https://governance-os.web.app">Landing Page</a></li>
+        <li><a href="https://web--governance-os.europe-west4.hosted.app">Interactive Demo</a></li>
+    </ul>
+
+    <p style="color: #71717a; margin-top: 40px; font-size: 14px;">
+        v0 is read-only. Write tools coming in Sprint 3.
+    </p>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
 
 
 def get_db_session():
@@ -637,8 +720,33 @@ def create_server():
 
 
 def main():
-    """Run the MCP server."""
-    mcp.run()
+    """Run the MCP server.
+
+    Supports multiple transports:
+    - stdio (default): For local Claude Desktop integration
+    - http: For Cloud Run deployment (Streamable HTTP via uvicorn)
+    - sse: Legacy SSE transport (via uvicorn)
+
+    Set MCP_TRANSPORT env var to control transport.
+    Set MCP_HOST and MCP_PORT for network transports.
+    """
+    transport = os.environ.get("MCP_TRANSPORT", "stdio")
+    host = os.environ.get("MCP_HOST", "0.0.0.0")
+    port = int(os.environ.get("MCP_PORT", "8080"))
+
+    if transport in ("http", "streamable-http"):
+        # Streamable HTTP for Cloud Run - serve ASGI app with uvicorn
+        import uvicorn
+        app = mcp.streamable_http_app()
+        uvicorn.run(app, host=host, port=port)
+    elif transport == "sse":
+        # Legacy SSE transport - serve ASGI app with uvicorn
+        import uvicorn
+        app = mcp.sse_app()
+        uvicorn.run(app, host=host, port=port)
+    else:
+        # Default stdio for local Claude Desktop
+        mcp.run()
 
 
 if __name__ == "__main__":
