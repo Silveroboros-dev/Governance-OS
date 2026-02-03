@@ -1,160 +1,191 @@
 # Governance OS
 
-> **Governance OS is a policy-driven exception/decision engine with a deterministic core and an integrated, evaluated agent layer.**
+> **Deterministic policy engine for high-stakes finance. Gemini drafts, but never decides. Zero hallucinations verified.**
 
-Governance OS is a policy-driven coordination layer for high-stakes professional work (starting with **Corporate Treasury** and **Wealth Management**).
+A policy-driven coordination layer for Corporate Treasury and Wealth Management. Converts signals into policy evaluations, raises exceptions when human judgment is required, and produces audit-grade evidence packs.
 
-It converts continuous signals into deterministic policy evaluations, raises exceptions only when **human judgment** is required, captures accountable decisions (with rationale and assumptions), and produces audit-grade evidence packs. The core is **replayable** on historical data to tune precision and reduce coordination overhead.
-
-**Core loop:** Signal → Policy Evaluation → Exception → Decision → Evidence/Outcome
+**Core principle:** AI is a coprocessor, not a decision-maker. The kernel is deterministic and replayable.
 
 ---
 
-## Why this exists
+## Gemini 3 Features
 
-Modern exec workflows are continuous, but decision-making is episodic (meetings, decks, month-end rituals). That creates:
-- late detection of risk/regime shifts  
-- false certainty from dashboards  
-- brittle automation without accountability  
-- loss of institutional memory  
-
-Governance OS is built as a **control-plane**: autonomous where safe, interruption-driven where judgment is required.
-
----
-
-## Code-first proof points
-
-| Artifact | Path |
-|----------|------|
-| Eval runner (CI-gated) | [`evals/runner.py`](evals/runner.py) |
-| Agent prompts (versioned) | [`coprocessor/prompts/`](coprocessor/prompts/) |
-| Core determinism tests | [`core/tests/test_determinism.py`](core/tests/test_determinism.py) |
-| Structured logging | [`core/logging.py`](core/logging.py) |
-| Runbook | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) |
-| MCP Setup Guide | [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md) |
-
-**Planned:**
-- MCP tool contracts: `mcp/schemas/*.json`
-- Trace viewer: `coprocessor/traces/`
-- Demo scripts: `make demo-treasury`, `make demo-wealth`
+| Feature | What It Does | Benefit |
+|---------|--------------|---------|
+| **Context Caching** | Caches agent prompts + vocabularies | 50-60% cost reduction at scale |
+| **Thinking Mode** | Exposes reasoning chain for extractions | Audit-grade AI transparency |
+| **Semantic Eval Judge** | Gemini validates grounding to evidence | Zero hallucinations (CI-verified) |
+| **Native JSON + Conflicts** | Detects when sources disagree | Surfaces contradictions for review |
 
 ---
 
-## AI Engineering Proof (verifiable, not vibes)
+## Try It
 
-This repo is designed to demonstrate **responsible agentic engineering**: tool contracts, schema discipline, eval gates, and traces.
-
-### 1) Deterministic governance kernel (shipped first)
-- Replayable policy evaluation (same inputs → same outputs)
-- Exception → decision → audit trail
-- Deterministic evidence packs (“why did we do this?”)
-
-### 2) Agentic coprocessor (LLM layer; gated, traced, eval-tested)
-- Agents operate only through **tool contracts** (MCP)
-- Agent outputs are **schema-validated**
-- Narrative outputs must be **grounded to evidence IDs** (eval-gated)
-
-### 3) Evals (fail CI on hallucinations)
-- Narrative faithfulness: zero unsupported claims
-- Kernel regression: replay determinism
-
-
-
-### ✅ Implemented (Sprint 1)
-- Deterministic governance kernel (policy → evaluation → exception → decision)
-- Immutable decision recording with rationale and assumptions
-- Evidence packs for defensibility and audit
-- One-screen decision UI (no recommendations, symmetric options)
-- Treasury pack with realistic policies, signals, and demo scenarios
-
-### ✅ Implemented (Sprint 2)
-- **Wealth Pack**: 8 signal types, 8 policies, 7 demo scenarios
-- **Replay Harness**: CSV ingestion with provenance, deterministic replay, comparison tools
-- **MCP Server (read-only tools)**: Exposes kernel state safely for AI agents
-- **NarrativeAgent v0**: Drafts memos strictly grounded to evidence IDs
-- **Evals v0**: CI fails on unsupported claims (anti-hallucination gate)
-- **Exception Metrics**: Budget tracking and replay analytics
-
-### ✅ Implemented (Sprint 3)
-- **MCP Write Tools**: Gated write operations (propose_signal, propose_policy_draft, dismiss_exception) with approval queue
-- **IntakeAgent**: Extract candidate signals from unstructured documents with provenance, confidence scores, and source spans
-- **PolicyDraftAgent**: Generate policy drafts from natural language descriptions with test scenarios
-- **Approval Queue**: Human-in-the-loop gating for all agent-proposed writes
-- **Agent Tracing**: Full observability for agent executions (tool calls, timing, errors)
-- **Trace Viewer UI**: Browse agent runs, inspect tool calls, approve/reject proposals
-- **Expanded Evals**: Extraction accuracy (precision/recall/F1), kernel regression, policy draft validation
-- **CI Eval Gate**: GitHub Actions workflow fails on eval regressions
-
-## AI safety boundaries (non-negotiable)
-
-The kernel is deterministic. LLMs are optional coprocessors and never the source of truth for policy evaluation, escalation, or evidence.
-
-Allowed:
-- unstructured → candidate signals (with provenance + confidence + source spans)
-- memo drafts grounded to evidence IDs
-- policy draft generation (never auto-publish)
-
-Not allowed:
-- policy evaluation
-- severity/escalation decisions
-- “recommended option” in the commitment UI
-- silent writes without approvals/audit events
-
-
----
-
-## What this is (and is not)
-
-### This is
-- A **governance kernel**: policies, evaluations, exceptions, decisions, audit trail
-- A **one-screen decision surface** (no chat, no “AI recommends”)
-- A **system of record for judgment** with deterministic evidence packs
-- A **replay harness** for tuning policies without production risk
-
-### This is not
-- A BI dashboard
-- A copilot/chat-first experience
-- RPA that executes without explicit boundaries
-- A model showcase
-
----
-
-## Key concepts
-
-- **Policy / PolicyVersion**: explicit, versioned rules with change control
-- **Signal**: timestamped facts with provenance (source, reliability)
-- **Evaluation**: deterministic result of applying policy to signals
-- **Exception**: interruption when judgment is required (deduped, severity-tagged)
-- **Decision**: immutable commitment with rationale + assumptions
-- **AuditEvent**: append-only trail of meaningful state changes
-- **Evidence Pack**: deterministic bundle answering “why did we do this?”
-
----
-
-## Repo layout
 ```bash
-  /core        FastAPI backend (deterministic governance kernel)
-  /ui          Next.js frontend (one-screen exception UI + supporting views)
-  /db          Migrations, schema, seed hooks
-  /packs       Domain packs (treasury, wealth): templates + fixtures + vocabulary
-  /replay      Replay harness: CSV import + scenario runner + metrics
-  /tests       Comprehensive test suite (302 tests)
+# Clone and start
+git clone https://github.com/Silveroboros-dev/Governance-OS.git
+cd Governance-OS
+docker compose up -d
 
-  # AI engineering layer
-  /mcp_server  MCP server exposing kernel tools (read-only + gated writes via approval queue)
-  /coprocessor Agents + tools + prompts + schemas + traces
-  /evals       Datasets + goldens + eval runner (CI-gated)
+# Run the demos
+make demo-safety-auto    # Watch AI hallucinations get BLOCKED
+make demo-thinking-auto  # See Gemini's reasoning chain exposed
+
+# Run evaluations (CI gate)
+make evals               # Zero tolerance for unsupported claims
 ```
 
-### Domain packs (Treasury + Wealth)
-Treasury and Wealth are implemented as **packs** (configuration), not forks:
-- signal types
-- policy templates
-- option templates
-- UI copy / vocabulary
-- fixtures for demos and replay
+**Live endpoints:**
+- UI: http://localhost:3000
+- API: http://localhost:8000/docs
 
-#### Treasury Pack (included)
+---
+
+## How It Works
+
+```
+Signal → Policy Evaluation → Exception → Human Decision → Evidence Pack
+           (deterministic)     (AI drafts)    (human owns)    (audit-grade)
+```
+
+**The AI layer (Gemini 3):**
+- **IntakeAgent**: Extracts signals from documents with source spans + confidence scores
+- **NarrativeAgent**: Drafts memos grounded to evidence IDs (never invents facts)
+- **PolicyDraftAgent**: Generates policy drafts from natural language (human-approved only)
+
+**All agent outputs are schema-validated and eval-gated. CI fails on any hallucination.**
+
+---
+
+## Gemini 3 Integration Details
+
+### 1. Context Caching (50-60% Cost Reduction)
+
+```python
+from coprocessor.cache import get_cache_manager
+
+manager = get_cache_manager()
+manager.build_all_caches()  # Cache prompts + vocabularies
+
+# Cached tokens cost 90% less; overall savings 50-60% per request
+```
+
+Caches auto-invalidate when policies change. No stale context.
+
+### 2. Thinking Mode (Audit-Grade Transparency)
+
+```python
+from coprocessor.agents.intake_agent import IntakeAgent
+
+agent = IntakeAgent(use_thinking=True, thinking_level="high")
+result = agent.extract_signals_sync(content, pack="treasury", document_source="report.pdf")
+
+print(result.thinking_summary)
+# "I identified a position limit breach because EUR/USD exposure
+#  of $45.2M exceeds the stated limit of $40M..."
+```
+
+Compliance officers can review *why* each signal was extracted.
+
+### 3. Semantic Eval Judge (Zero Hallucinations)
+
+```bash
+make evals-gemini  # Gemini validates narrative grounding
+
+# Catches what regex can't:
+# - Wrong numbers ("$50M" when evidence says "$45M")
+# - Unsupported causal claims
+# - Fabricated evidence references
+```
+
+Two-stage pipeline: fast regex first, then Gemini semantic verification.
+
+### 4. Conflict Detection (When Sources Disagree)
+
+```python
+# ExtractionResult now includes:
+result.conflicts  # List of source disagreements
+result.drops      # What couldn't be extracted (with reason)
+
+# Example conflict:
+# C1: Cash Position
+#   - weekly-pack.pdf: "$85,240" (internal_reported)
+#   - bank-statement.pdf: "$62,184" (ledger)
+#   - Flags: [VALUE_DATE_MISMATCH, BLOCKER]
+```
+
+Contradictions are surfaced, not silently resolved.
+
+---
+
+## AI Safety Boundaries (Non-Negotiable)
+
+| Allowed | Not Allowed |
+|---------|-------------|
+| Extract candidate signals (with provenance) | Policy evaluation |
+| Draft memos (grounded to evidence) | Severity/escalation decisions |
+| Generate policy drafts (human-approved) | "Recommended option" in UI |
+| Surface conflicts between sources | Silent writes without audit |
+
+**The kernel is deterministic. LLMs are optional coprocessors.**
+
+---
+
+## Architecture
+
+```
+/core         FastAPI backend (deterministic governance kernel)
+/ui           Next.js frontend (one-screen decision UI)
+/coprocessor  Gemini-powered agents + prompts + schemas
+/evals        Datasets + goldens + CI-gated eval runner
+/mcp_server   MCP server for AI agent integration
+/packs        Domain packs (treasury, wealth)
+```
+
+**Test coverage:** 302 tests | **Eval coverage:** 28 golden test cases
+
+---
+
+## Quick Commands
+
+```bash
+make up              # Start all services
+make demo-safety     # AI safety demo (interactive)
+make demo-thinking   # Thinking mode demo (interactive)
+make evals           # Run full eval suite
+make evals-gemini    # Run Gemini semantic verification
+```
+
+---
+
+<details>
+<summary><strong>Full Documentation</strong> (click to expand)</summary>
+
+## Why This Exists
+
+Modern exec workflows are continuous, but decision-making is episodic (meetings, decks, month-end rituals). That creates:
+- Late detection of risk/regime shifts
+- False certainty from dashboards
+- Brittle automation without accountability
+- Loss of institutional memory
+
+Governance OS is a **control-plane**: autonomous where safe, interruption-driven where judgment is required.
+
+## Key Concepts
+
+- **Policy / PolicyVersion**: Explicit, versioned rules with change control
+- **Signal**: Timestamped facts with provenance (source, reliability)
+- **Evaluation**: Deterministic result of applying policy to signals
+- **Exception**: Interruption when judgment is required (deduped, severity-tagged)
+- **Decision**: Immutable commitment with rationale + assumptions
+- **AuditEvent**: Append-only trail of meaningful state changes
+- **Evidence Pack**: Deterministic bundle answering "why did we do this?"
+
+## Domain Packs
+
+Treasury and Wealth are implemented as **packs** (configuration), not forks.
+
+### Treasury Pack
 
 **Signal Types (8):**
 - `position_limit_breach` - Asset position exceeds limit
@@ -166,27 +197,7 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks:
 - `covenant_breach` - Financial covenant violated
 - `settlement_failure` - Trade settlement failed
 
-**Policies (8):**
-- Position Limit Policy
-- Market Volatility Policy
-- Counterparty Credit Risk Policy
-- Liquidity Management Policy
-- FX Exposure Policy
-- Cash Forecasting Policy
-- Covenant Monitoring Policy
-- Settlement Risk Policy
-
-**Demo Scenarios (7):** Realistic treasury scenarios in `packs/treasury/fixtures/scenarios.json`
-
-```bash
-# Load realistic demo scenarios
-docker compose exec backend python -m core.scripts.seed_fixtures --scenarios
-
-# Load specific scenario
-docker compose exec backend python -m core.scripts.seed_fixtures --scenario=btc_position_breach_critical
-```
-
-#### Wealth Pack (Sprint 2)
+### Wealth Pack
 
 **Signal Types (8):**
 - `portfolio_drift` - Allocation drifted from target
@@ -198,119 +209,22 @@ docker compose exec backend python -m core.scripts.seed_fixtures --scenario=btc_
 - `market_correlation_spike` - Portfolio correlation risk
 - `fee_schedule_change` - Fee changes affecting client
 
-**Policies (8):**
-- Portfolio Drift Policy
-- Rebalancing Policy
-- Suitability Policy
-- Concentration Policy
-- Tax Loss Harvesting Policy
-- Withdrawal Policy
-- Correlation Risk Policy
-- Fee Change Policy
-
-**Demo Scenarios (7):** Realistic wealth management scenarios in `packs/wealth/fixtures/scenarios.json`
-
----
-
-## Quick start (local)
-
-### Prerequisites
-- Docker + Docker Compose (required)
-- Python 3.11+ (optional, for local development)
-
-### Run the system
-
-```bash
-# Start all services (postgres + backend + frontend)
-docker compose up -d
-
-# View logs
-docker compose logs -f
-```
-
-The system will automatically:
-- Start PostgreSQL database
-- Run Alembic migrations
-- Seed treasury fixtures (policies)
-- Start the FastAPI backend
-- Start the Next.js frontend
-
-### Access the application
-
-- **Frontend UI:** http://localhost:3000
-- **API Documentation:** http://localhost:8000/docs
-- **API Base URL:** http://localhost:8000/api/v1
-- **Health Check:** http://localhost:8000/health
-
-### Frontend pages
-
-- `/exceptions` - View open exceptions requiring decisions
-- `/exceptions/[id]` - One-screen decision UI (no recommendations)
-- `/decisions` - Decision history with audit trail
-- `/decisions/[id]` - Evidence viewer with export
-- `/policies` - Policy list (read-only)
-
-### Common commands
-
-```bash
-make up           # Start all services
-make down         # Stop all services
-make logs         # View logs
-make shell        # Open backend shell
-make db           # Open postgres shell
-make clean        # Remove all containers and volumes
-```
-
-### Sprint 2 commands
-
-```bash
-# Replay harness (policy tuning)
-make replay PACK=treasury FROM=2025-01-01 TO=2025-03-31
-
-# MCP server (for Claude Desktop integration)
-make mcp
-
-# Run evaluations (CI gate - fails on hallucinations)
-make evals
-
-# Load demo scenarios
-make scenarios
-```
-
-### MCP Server (AI Agent Integration)
+## MCP Server (AI Agent Integration)
 
 The MCP server exposes the governance kernel to AI agents via Model Context Protocol.
-
-#### Available Tools
 
 **Read Tools:**
 - `get_open_exceptions` - List exceptions requiring decisions
 - `get_exception_detail` - Full context for an exception
 - `get_policies` - List active policies
-- `get_policy_detail` - Full policy with rule definition
 - `get_evidence_pack` - Complete evidence for a decision
-- `search_decisions` - Search decision history
-- `get_recent_signals` - Recent signals
 
-**Write Tools (Sprint 3 - all require human approval):**
+**Write Tools (all require human approval):**
 - `propose_signal` - Propose candidate signal → approval queue
 - `propose_policy_draft` - Propose policy draft → approval queue
 - `dismiss_exception` - Propose dismissal → approval queue
-- `add_exception_context` - Enrich exception (no approval needed)
 
-#### Testing with MCP Inspector
-
-```bash
-# Start MCP Inspector (requires postgres running)
-docker compose up -d postgres
-
-DATABASE_URL="postgresql://govos:local_dev_password@localhost:5432/governance_os" \
-  npx @modelcontextprotocol/inspector python -m mcp_server.server
-
-# Opens browser at http://localhost:6274 with tools panel
-```
-
-#### Claude Desktop Integration
+### Claude Desktop Integration
 
 Add to `~/.config/claude/claude_desktop_config.json`:
 
@@ -329,224 +243,62 @@ Add to `~/.config/claude/claude_desktop_config.json`:
 }
 ```
 
-### Manual workflow
-
-If you prefer to run steps manually:
+## Replay Harness (Policy Tuning)
 
 ```bash
-# Start services
-docker compose up -d
-
-# Apply migrations
-docker compose exec backend alembic upgrade head
-
-# Load fixtures
-docker compose exec backend python -m scripts.seed_fixtures
-
-# Run demo
-docker compose exec backend python -m scripts.demo_kernel
+make replay PACK=treasury FROM=2025-01-01 TO=2025-03-31
 ```
 
-### Replay (policy tuning without production risk)
+- Import historical signals (CSV)
+- Evaluate against current policy set
+- Generate exceptions deterministically
+- Tune thresholds and compare before/after
 
-Replay is the core development and pilot workflow:
+## Implementation Status
 
-import historical signals (CSV)
+### Sprint 1: Kernel (Complete)
+- Deterministic governance kernel
+- Immutable decision recording
+- Evidence packs
+- One-screen decision UI
+- Treasury pack
 
-evaluate against current policy set
+### Sprint 2: Packs + Replay + AI (Complete)
+- Wealth Pack
+- Replay Harness
+- MCP Server (read-only)
+- NarrativeAgent v0
+- Evals v0
 
-generate exceptions deterministically
+### Sprint 3: Agentic Coprocessor (Complete)
+- MCP Write Tools with approval gates
+- IntakeAgent (document → signals)
+- PolicyDraftAgent
+- Agent Tracing
+- Expanded Evals
 
-tune thresholds and compare before/after
+### Gemini 3 Hackathon (Current)
+- Context Caching (50-60% savings)
+- Thinking Mode (audit transparency)
+- Semantic Eval Judge
+- Conflict Detection
 
-export evidence packs for decisions
+## Contributing
 
-```bash
-# Example; implement in /replay
-docker compose exec core bash -lc "python -m replay.run --pack treasury --from 2025-01-01 --to 2025-03-31"
-``` 
-### Product doctrine (non-negotiable)
-
-Deterministic core: policy evaluation, exceptioning, and evidence packs are code, testable, replayable.
-
-No recommendations in the decision layer: options are symmetric; user owns trade-offs.
-
-One-screen commitment surface: no scrolling, no rabbit holes, no “UX-washing”.
-
-Uncertainty is visible: confidence gaps and unknowns are first-class.
-
-Memory is not logging: decisions link to evidence and outcomes; the graph compounds.
-
-### Roadmap (high level)
-#### ✅ Sprint 1: Kernel vertical slice (end-to-end loop) — COMPLETE
-
-- ✅ Policy versioning with temporal validity
-- ✅ Signal ingestion with provenance
-- ✅ Deterministic evaluator with input hashing
-- ✅ Exception engine with fingerprint deduplication
-- ✅ One-screen decision UI (symmetric options, no recommendations)
-- ✅ Immutable decision log with rationale/assumptions
-- ✅ Evidence pack generation and export
-- ✅ Treasury pack with sample policies
-- ✅ Full Docker Compose setup (postgres + backend + frontend)
-
-#### ✅ Sprint 2: Packs + replay (pilot-grade) + AI thin-slice — COMPLETE
-
-- ✅ Treasury + Wealth packs (8 signal types, 8 policies each)
-- ✅ CSV ingestion with SHA256 provenance tracking
-- ✅ Replay harness with isolated namespaces + determinism verification
-- ✅ Replay comparison tools (before/after policy changes)
-- ✅ Exception budgets + metrics dashboard
-- ✅ MCP v0 (read-only tools for AI agent integration)
-- ✅ NarrativeAgent v0 (grounded memos with evidence references)
-- ✅ Evals v0 (CI gate - fails on unsupported claims)
-- ✅ Comprehensive test suite (187 tests)
-
-#### ✅ Sprint 3: Agentic coprocessor (portfolio-grade AI engineering) — COMPLETE
-
-- ✅ MCP write tools with approval gates + audit events
-- ✅ IntakeAgent (unstructured → candidate signals with provenance + source spans)
-- ✅ PolicyDraftAgent (natural language → policy drafts with test scenarios)
-- ✅ Approval queue with human-in-the-loop gating
-- ✅ Agent tracing viewer (runs → tool calls → audit events)
-- ✅ Expanded eval suites (extraction, regression, policy draft) + CI gates
-- ✅ Comprehensive test suite (302 tests)
-
----
-
-## Gemini 3 Integration (Hackathon Features)
-
-### Hack A: Context Caching (90% Cost Reduction)
-
-The agent layer uses Gemini 3's context caching for massive cost savings:
-
-```
-coprocessor/cache/
-├── gemini_client.py   # Gemini 3 API client with caching
-├── manager.py         # Cache lifecycle management
-└── __init__.py        # Public API
-```
-
-**Key Features:**
-- **90% cost reduction** on cached tokens (system prompts + vocabularies)
-- **Auto-refresh on policy changes** - caches invalidate when policies update
-- **Per-agent caching** - IntakeAgent, NarrativeAgent, PolicyDraftAgent each have optimized caches
-- **TTL management** - 1-hour default with auto-renewal
-
-**Usage:**
-```python
-from coprocessor.cache import get_cache_manager, invalidate_on_policy_change
-
-# Build caches for all agents
-manager = get_cache_manager()
-manager.build_all_caches()
-
-# Auto-invalidate on policy change
-invalidate_on_policy_change("treasury", "v2")
-```
-
-### Hack B: Gemini-Powered Evals (Zero Hallucinations Verified)
-
-Beyond regex-based hallucination detection, we use Gemini as a semantic judge:
-
-```
-evals/
-├── validators/
-│   ├── gemini_judge.py      # Gemini-powered semantic verification
-│   ├── hallucination.py     # Regex-based pattern detection
-│   └── grounding.py         # Evidence ID validation
-├── datasets/
-│   ├── treasury_goldens.json  # 10 treasury test cases
-│   └── wealth_goldens.json    # 10 wealth test cases
-└── runner.py                  # CI-integrated eval runner
-```
-
-**Key Features:**
-- **Semantic verification** - Gemini catches hallucinations regex can't (wrong numbers, causal claims without support)
-- **Two-stage pipeline** - Fast regex checks first, then deep Gemini verification
-- **Adversarial generation** - Use Gemini to generate tricky test cases
-- **CI badge** - "Zero hallucinations verified" for credibility
-
-**Usage:**
-```bash
-# Run all evals (regex + Gemini if API key available)
-make evals
-
-# Run Gemini semantic verification only
-make evals-gemini
-
-# Generate adversarial test cases
-make evals-adversarial PACK=treasury
-```
-
-**CI Integration:**
-- Stage 1: Fast deterministic checks (no API calls)
-- Stage 2: Gemini semantic verification (requires `GOOGLE_API_KEY` secret)
-- Fails CI on ANY hallucination (zero tolerance)
-
-### Hack C: AI Safety Demo
-
-Interactive demo showing the HallucinationDetector blocking poisoned AI output:
-
-```bash
-make demo-safety       # Interactive mode
-make demo-safety-auto  # Auto-advance for video recording
-```
-
-### Hack D: Thinking Mode for Transparent Reasoning
-
-Gemini 3's Thinking Mode exposes the model's reasoning chain, providing audit-grade transparency for AI-extracted signals:
-
-```
-coprocessor/cache/gemini_client.py   # generate_with_thinking()
-coprocessor/agents/intake_agent.py   # use_thinking=True (default)
-coprocessor/schemas/extraction.py    # ExtractionResult.thinking_summary
-```
-
-**Key Features:**
-- **Audit-grade transparency** - See WHY each signal was extracted
-- **Compliance-ready** - Reasoning chain stored with evidence pack
-- **Configurable depth** - thinking_level: "low", "medium", "high"
-- **Combined with caching** - 90% cost savings + transparent reasoning
-
-**Usage:**
-```python
-from coprocessor.agents.intake_agent import IntakeAgent
-
-agent = IntakeAgent(use_thinking=True, thinking_level="high")
-result = agent.extract_signals_sync(content, pack="treasury", document_source="report.pdf")
-
-# Access the reasoning chain
-print(result.thinking_summary)
-# "I identified a position limit breach because the EUR/USD exposure
-#  of $45.2M exceeds the stated limit of $40M..."
-```
-
-**Demo:**
-```bash
-make demo-thinking       # Interactive mode
-make demo-thinking-auto  # Auto-advance for video recording
-```
-
-### Contributing
-
-This repo is early-stage and moving fast. Contributions are welcome:
-
-improvements to policy schemas and evaluators
-
-replay harness features (imports, comparisons, metrics)
-
-UI rigor (one-screen exception surface)
-
-connectors (read-only first)
+Contributions welcome:
+- Policy schemas and evaluators
+- Replay harness features
+- UI improvements
+- Connectors (read-only first)
 
 Please open an issue first for non-trivial changes.
 
-### License
+## License
 
 MIT (see LICENSE).
 
-### Disclaimer
+## Disclaimer
 
 Governance OS is decision-support tooling. It does not provide financial, investment, tax, or legal advice.
 
+</details>
