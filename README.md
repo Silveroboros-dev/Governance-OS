@@ -211,7 +211,7 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks.
 
 ## MCP Server (AI Agent Integration)
 
-The MCP server exposes the governance kernel to AI agents via Model Context Protocol.
+The MCP server exposes the governance kernel to AI agents via Model Context Protocol. The server itself is **LLM-agnostic**—it exposes database tools without any LLM dependency.
 
 **Read Tools:**
 - `get_open_exceptions` - List exceptions requiring decisions
