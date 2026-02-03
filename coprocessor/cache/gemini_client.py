@@ -7,7 +7,7 @@ context caching for agent calls using Gemini 3 models.
 Gemini 3 provides:
 - 90% cost reduction on cached tokens
 - 1M token context window
-- Thought Signatures for reasoning context
+- Thinking Mode for transparent reasoning (Hack D)
 
 Usage:
     from google import genai
@@ -25,15 +25,31 @@ Usage:
         system_prompt="You are...",
         user_prompt="...",
     )
+
+    # With thinking mode (returns reasoning chain)
+    text, thoughts = client.generate_with_thinking(
+        user_prompt="Extract signals from...",
+        system_prompt="You are...",
+        thinking_level="high",
+    )
 """
 
 import os
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
 from google import genai
 from google.genai import types
+
+
+@dataclass
+class ThinkingResponse:
+    """Response from a thinking-enabled generation."""
+    text: str
+    thoughts: Optional[str] = None
+    usage: Optional[Dict[str, Any]] = None
 
 
 class GeminiClient:
@@ -260,3 +276,124 @@ class GeminiClient:
                 "output_tokens": getattr(meta, 'candidates_token_count', 0),
             }
         return {}
+
+    def generate_with_thinking(
+        self,
+        user_prompt: str,
+        system_prompt: Optional[str] = None,
+        max_tokens: int = 4000,
+        temperature: float = 0.1,
+        thinking_level: str = "high",
+    ) -> ThinkingResponse:
+        """
+        Generate a response with Thinking Mode enabled.
+
+        Gemini 3's Thinking Mode shows the model's reasoning process,
+        providing audit-grade transparency for signal extraction.
+
+        Args:
+            user_prompt: The user's prompt/question
+            system_prompt: Optional system instructions
+            max_tokens: Maximum tokens in response
+            temperature: Sampling temperature
+            thinking_level: "low", "medium" (Flash only), or "high"
+
+        Returns:
+            ThinkingResponse with text, thoughts, and usage metadata
+        """
+        config = types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            max_output_tokens=max_tokens,
+            temperature=temperature,
+            response_mime_type="application/json",
+            thinking_config=types.ThinkingConfig(
+                include_thoughts=True,
+                thinking_level=thinking_level,
+            ),
+        )
+
+        response = self._client.models.generate_content(
+            model=self.model,
+            contents=user_prompt,
+            config=config,
+        )
+
+        # Extract thoughts and text from response parts
+        thoughts = None
+        text = None
+
+        if response.candidates and response.candidates[0].content:
+            for part in response.candidates[0].content.parts:
+                if hasattr(part, 'thought') and part.thought:
+                    thoughts = part.text
+                elif hasattr(part, 'text'):
+                    if text is None:
+                        text = part.text
+                    else:
+                        text += part.text
+
+        return ThinkingResponse(
+            text=text or "",
+            thoughts=thoughts,
+            usage=self.get_usage_metadata(response),
+        )
+
+    def generate_with_cache_and_thinking(
+        self,
+        cache_name: str,
+        user_prompt: str,
+        max_tokens: int = 4000,
+        temperature: float = 0.1,
+        thinking_level: str = "high",
+    ) -> ThinkingResponse:
+        """
+        Generate with both caching AND thinking mode.
+
+        Combines 90% cost savings from caching with transparent reasoning.
+
+        Args:
+            cache_name: Full cache name (e.g., "caches/abc123xyz")
+            user_prompt: The user's prompt/question
+            max_tokens: Maximum tokens in response
+            temperature: Sampling temperature
+            thinking_level: "low", "medium" (Flash only), or "high"
+
+        Returns:
+            ThinkingResponse with text, thoughts, and usage metadata
+        """
+        config = types.GenerateContentConfig(
+            cached_content=cache_name,
+            max_output_tokens=max_tokens,
+            temperature=temperature,
+            response_mime_type="application/json",
+            thinking_config=types.ThinkingConfig(
+                include_thoughts=True,
+                thinking_level=thinking_level,
+            ),
+        )
+
+        response = self._client.models.generate_content(
+            model=self.model,
+            contents=user_prompt,
+            config=config,
+        )
+
+        # Extract thoughts and text from response parts
+        thoughts = None
+        text = None
+
+        if response.candidates and response.candidates[0].content:
+            for part in response.candidates[0].content.parts:
+                if hasattr(part, 'thought') and part.thought:
+                    thoughts = part.text
+                elif hasattr(part, 'text'):
+                    if text is None:
+                        text = part.text
+                    else:
+                        text += part.text
+
+        return ThinkingResponse(
+            text=text or "",
+            thoughts=thoughts,
+            usage=self.get_usage_metadata(response),
+        )

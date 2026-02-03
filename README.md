@@ -484,6 +484,50 @@ make evals-adversarial PACK=treasury
 - Stage 2: Gemini semantic verification (requires `GOOGLE_API_KEY` secret)
 - Fails CI on ANY hallucination (zero tolerance)
 
+### Hack C: AI Safety Demo
+
+Interactive demo showing the HallucinationDetector blocking poisoned AI output:
+
+```bash
+make demo-safety       # Interactive mode
+make demo-safety-auto  # Auto-advance for video recording
+```
+
+### Hack D: Thinking Mode for Transparent Reasoning
+
+Gemini 3's Thinking Mode exposes the model's reasoning chain, providing audit-grade transparency for AI-extracted signals:
+
+```
+coprocessor/cache/gemini_client.py   # generate_with_thinking()
+coprocessor/agents/intake_agent.py   # use_thinking=True (default)
+coprocessor/schemas/extraction.py    # ExtractionResult.thinking_summary
+```
+
+**Key Features:**
+- **Audit-grade transparency** - See WHY each signal was extracted
+- **Compliance-ready** - Reasoning chain stored with evidence pack
+- **Configurable depth** - thinking_level: "low", "medium", "high"
+- **Combined with caching** - 90% cost savings + transparent reasoning
+
+**Usage:**
+```python
+from coprocessor.agents.intake_agent import IntakeAgent
+
+agent = IntakeAgent(use_thinking=True, thinking_level="high")
+result = agent.extract_signals_sync(content, pack="treasury", document_source="report.pdf")
+
+# Access the reasoning chain
+print(result.thinking_summary)
+# "I identified a position limit breach because the EUR/USD exposure
+#  of $45.2M exceeds the stated limit of $40M..."
+```
+
+**Demo:**
+```bash
+make demo-thinking       # Interactive mode
+make demo-thinking-auto  # Auto-advance for video recording
+```
+
 ### Contributing
 
 This repo is early-stage and moving fast. Contributions are welcome:

@@ -25,7 +25,14 @@ Usage:
     )
 """
 
-from .gemini_client import GeminiClient
+from .gemini_client import GeminiClient, ThinkingResponse
 from .manager import CacheManager, CacheConfig, get_cache_manager, invalidate_on_policy_change
 
-__all__ = ["GeminiClient", "CacheManager", "CacheConfig", "get_cache_manager", "invalidate_on_policy_change"]
+__all__ = [
+    "GeminiClient",
+    "ThinkingResponse",
+    "CacheManager",
+    "CacheConfig",
+    "get_cache_manager",
+    "invalidate_on_policy_change",
+]

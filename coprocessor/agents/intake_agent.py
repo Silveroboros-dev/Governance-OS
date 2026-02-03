@@ -9,6 +9,11 @@ Uses Gemini 3 with Context Caching for:
 - 40-50% latency reduction
 - Automatic cache refresh on policy changes
 
+Hack D: Thinking Mode for Transparent Reasoning
+- Shows Gemini's reasoning chain for each extraction
+- Audit-grade transparency: WHY was each signal extracted?
+- Enables compliance review of AI decision-making
+
 SAFETY INVARIANTS:
 1. Only output signal types from pack vocabulary
 2. Every extracted value must have source_span reference
@@ -30,7 +35,7 @@ from ..schemas.extraction import (
     get_valid_signal_types,
     validate_signal_type_for_pack,
 )
-from ..cache import GeminiClient, CacheManager, get_cache_manager
+from ..cache import GeminiClient, CacheManager, get_cache_manager, ThinkingResponse
 
 
 class IntakeAgent:
@@ -46,6 +51,8 @@ class IntakeAgent:
         api_key: Optional[str] = None,
         model: str = "gemini-3-flash-preview",
         use_cache: bool = True,
+        use_thinking: bool = True,
+        thinking_level: str = "high",
     ):
         """
         Initialize the IntakeAgent.
@@ -54,9 +61,13 @@ class IntakeAgent:
             api_key: Google API key (defaults to GOOGLE_API_KEY env var)
             model: Gemini 3 model to use
             use_cache: Whether to use context caching (default True)
+            use_thinking: Whether to use Thinking Mode for transparent reasoning (default True)
+            thinking_level: Thinking depth - "low", "medium" (Flash only), or "high"
         """
         self._client = GeminiClient(api_key=api_key, model=model)
         self._use_cache = use_cache
+        self._use_thinking = use_thinking
+        self._thinking_level = thinking_level
         self._cache_manager = get_cache_manager() if use_cache else None
 
         # Load prompts (for fallback/reference)
@@ -141,27 +152,54 @@ Extract all relevant signals. For each signal:
 Return a JSON array of candidate signals. If no signals found, return empty array [].
 """
 
-        # Generate response (with or without caching)
+        # Generate response (with or without caching, with or without thinking)
         cache_name = self._ensure_cache(pack)
+        thinking_summary = None
 
-        if cache_name:
-            # Use cached context (90% cost savings)
-            response_text = self._client.generate_with_cache(
-                cache_name=cache_name,
-                user_prompt=user_prompt,
-                max_tokens=4000,
-                temperature=0.1,
-            )
+        if self._use_thinking:
+            # Use Thinking Mode for transparent reasoning (Hack D)
+            if cache_name:
+                # Cache + Thinking: 90% cost savings + audit transparency
+                thinking_response = self._client.generate_with_cache_and_thinking(
+                    cache_name=cache_name,
+                    user_prompt=user_prompt,
+                    max_tokens=4000,
+                    temperature=0.1,
+                    thinking_level=self._thinking_level,
+                )
+            else:
+                # Thinking only (no cache)
+                pack_prompt = self._get_pack_prompt(pack)
+                full_system = f"{self.system_prompt}\n\n{pack_prompt}"
+                thinking_response = self._client.generate_with_thinking(
+                    user_prompt=user_prompt,
+                    system_prompt=full_system,
+                    max_tokens=4000,
+                    temperature=0.1,
+                    thinking_level=self._thinking_level,
+                )
+            response_text = thinking_response.text
+            thinking_summary = thinking_response.thoughts
         else:
-            # Fallback: no caching
-            pack_prompt = self._get_pack_prompt(pack)
-            full_system = f"{self.system_prompt}\n\n{pack_prompt}"
-            response_text = self._client.generate(
-                user_prompt=user_prompt,
-                system_prompt=full_system,
-                max_tokens=4000,
-                temperature=0.1,
-            )
+            # No thinking mode
+            if cache_name:
+                # Use cached context (90% cost savings)
+                response_text = self._client.generate_with_cache(
+                    cache_name=cache_name,
+                    user_prompt=user_prompt,
+                    max_tokens=4000,
+                    temperature=0.1,
+                )
+            else:
+                # Fallback: no caching
+                pack_prompt = self._get_pack_prompt(pack)
+                full_system = f"{self.system_prompt}\n\n{pack_prompt}"
+                response_text = self._client.generate(
+                    user_prompt=user_prompt,
+                    system_prompt=full_system,
+                    max_tokens=4000,
+                    temperature=0.1,
+                )
 
         # Parse the response
         candidates_data = self._parse_json_response(response_text)
@@ -173,6 +211,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
             document_source=document_source,
             document_metadata=document_metadata or {},
             content=content,
+            thinking_summary=thinking_summary,
         )
 
     def _parse_json_response(self, response_text: str) -> List[Dict[str, Any]]:
@@ -205,6 +244,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
         document_source: str,
         document_metadata: Dict[str, Any],
         content: str,
+        thinking_summary: Optional[str] = None,
     ) -> ExtractionResult:
         """Build and validate ExtractionResult from parsed data."""
         candidates = []
@@ -262,6 +302,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
             pack=pack,
             candidates=candidates,
             extraction_notes="\n".join(validation_notes) if validation_notes else None,
+            thinking_summary=thinking_summary,
         )
 
     def extract_signals_sync(

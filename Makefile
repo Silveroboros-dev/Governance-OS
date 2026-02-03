@@ -27,9 +27,11 @@ help:
 	@echo "  make evals-gemini - Run Gemini semantic verification (requires GOOGLE_API_KEY)"
 	@echo "  make evals-adversarial - Generate adversarial test cases (requires GOOGLE_API_KEY)"
 	@echo ""
-	@echo "Hackathon Demo:"
+	@echo "Hackathon Demos:"
 	@echo "  make demo-safety       - Run AI safety check demo (interactive)"
 	@echo "  make demo-safety-auto  - Run AI safety demo (auto-advance for video)"
+	@echo "  make demo-thinking     - Run Thinking Mode demo (interactive)"
+	@echo "  make demo-thinking-auto - Run Thinking Mode demo (auto-advance for video)"
 
 up:
 	docker compose up --build -d
@@ -128,6 +130,16 @@ demo-safety:
 demo-safety-auto:
 	@echo "Running AI Safety Demo (auto-advance mode)..."
 	python demo_safety_check.py --auto
+
+# Thinking Mode demo (Hack D)
+demo-thinking:
+	@echo "Running Thinking Mode Demo..."
+	python demo_thinking_mode.py
+
+# Auto-advancing Thinking Mode demo (for video recording)
+demo-thinking-auto:
+	@echo "Running Thinking Mode Demo (auto-advance mode)..."
+	python demo_thinking_mode.py --auto
 
 # Load demo scenarios
 scenarios:
