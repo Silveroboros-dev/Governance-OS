@@ -1,6 +1,6 @@
 # Governance OS
 
-> **Deterministic policy engine for high-stakes finance. Gemini drafts, but never decides. Zero hallucinations verified.**
+> **Deterministic policy engine for high-stakes finance. Gemini drafts, but never decides.**
 
 A policy-driven coordination layer for Corporate Treasury and Wealth Management. Converts signals into policy evaluations, raises exceptions when human judgment is required, and produces audit-grade evidence packs.
 
@@ -14,7 +14,7 @@ A policy-driven coordination layer for Corporate Treasury and Wealth Management.
 |---------|--------------|---------|
 | **Context Caching** | Caches agent prompts + vocabularies | 50-60% cost reduction at scale |
 | **Thinking Mode** | Exposes reasoning chain for extractions | Audit-grade AI transparency |
-| **Semantic Eval Judge** | Gemini validates grounding to evidence | Zero hallucinations (CI-verified) |
+| **Semantic Eval Judge** | Gemini validates grounding to evidence | All claims grounded (CI-verified) |
 | **Native JSON + Conflicts** | Detects when sources disagree | Surfaces contradictions for review |
 
 ---
@@ -77,7 +77,7 @@ Caches auto-invalidate when policies change. No stale context.
 ```python
 from coprocessor.agents.intake_agent import IntakeAgent
 
-agent = IntakeAgent(use_thinking=True, thinking_level="high")
+agent = IntakeAgent(use_thinking=True, thinking_budget=8192)
 result = agent.extract_signals_sync(content, pack="treasury", document_source="report.pdf")
 
 print(result.thinking_summary)
