@@ -52,7 +52,7 @@ class IntakeAgent:
         model: str = "gemini-3-flash-preview",
         use_cache: bool = True,
         use_thinking: bool = True,
-        thinking_level: str = "high",
+        thinking_budget: int = 8192,
     ):
         """
         Initialize the IntakeAgent.
@@ -62,12 +62,12 @@ class IntakeAgent:
             model: Gemini 3 model to use
             use_cache: Whether to use context caching (default True)
             use_thinking: Whether to use Thinking Mode for transparent reasoning (default True)
-            thinking_level: Thinking depth - "low", "medium" (Flash only), or "high"
+            thinking_budget: Token budget for thinking (default 8192)
         """
         self._client = GeminiClient(api_key=api_key, model=model)
         self._use_cache = use_cache
         self._use_thinking = use_thinking
-        self._thinking_level = thinking_level
+        self._thinking_budget = thinking_budget
         self._cache_manager = get_cache_manager() if use_cache else None
 
         # Load prompts (for fallback/reference)
@@ -159,13 +159,13 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
         if self._use_thinking:
             # Use Thinking Mode for transparent reasoning (Hack D)
             if cache_name:
-                # Cache + Thinking: 90% cost savings + audit transparency
+                # Cache + Thinking: 50-60% cost savings + audit transparency
                 thinking_response = self._client.generate_with_cache_and_thinking(
                     cache_name=cache_name,
                     user_prompt=user_prompt,
                     max_tokens=4000,
                     temperature=0.1,
-                    thinking_level=self._thinking_level,
+                    thinking_budget=self._thinking_budget,
                 )
             else:
                 # Thinking only (no cache)
@@ -176,7 +176,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                     system_prompt=full_system,
                     max_tokens=4000,
                     temperature=0.1,
-                    thinking_level=self._thinking_level,
+                    thinking_budget=self._thinking_budget,
                 )
             response_text = thinking_response.text
             thinking_summary = thinking_response.thoughts

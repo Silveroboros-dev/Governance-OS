@@ -27,10 +27,10 @@ Usage:
     )
 
     # With thinking mode (returns reasoning chain)
-    text, thoughts = client.generate_with_thinking(
+    response = client.generate_with_thinking(
         user_prompt="Extract signals from...",
         system_prompt="You are...",
-        thinking_level="high",
+        thinking_budget=8192,
     )
 """
 
@@ -283,7 +283,7 @@ class GeminiClient:
         system_prompt: Optional[str] = None,
         max_tokens: int = 4000,
         temperature: float = 0.1,
-        thinking_level: str = "high",
+        thinking_budget: int = 8192,
     ) -> ThinkingResponse:
         """
         Generate a response with Thinking Mode enabled.
@@ -296,7 +296,7 @@ class GeminiClient:
             system_prompt: Optional system instructions
             max_tokens: Maximum tokens in response
             temperature: Sampling temperature
-            thinking_level: "low", "medium" (Flash only), or "high"
+            thinking_budget: Token budget for thinking (default 8192)
 
         Returns:
             ThinkingResponse with text, thoughts, and usage metadata
@@ -308,7 +308,7 @@ class GeminiClient:
             response_mime_type="application/json",
             thinking_config=types.ThinkingConfig(
                 include_thoughts=True,
-                thinking_level=thinking_level,
+                thinking_budget=thinking_budget,
             ),
         )
 
@@ -327,10 +327,8 @@ class GeminiClient:
                 if hasattr(part, 'thought') and part.thought:
                     thoughts = part.text
                 elif hasattr(part, 'text'):
-                    if text is None:
-                        text = part.text
-                    else:
-                        text += part.text
+                    # Take the latest text part (the final JSON output)
+                    text = part.text
 
         return ThinkingResponse(
             text=text or "",
@@ -344,19 +342,19 @@ class GeminiClient:
         user_prompt: str,
         max_tokens: int = 4000,
         temperature: float = 0.1,
-        thinking_level: str = "high",
+        thinking_budget: int = 8192,
     ) -> ThinkingResponse:
         """
         Generate with both caching AND thinking mode.
 
-        Combines 90% cost savings from caching with transparent reasoning.
+        Combines 50-60% cost savings from caching with transparent reasoning.
 
         Args:
             cache_name: Full cache name (e.g., "caches/abc123xyz")
             user_prompt: The user's prompt/question
             max_tokens: Maximum tokens in response
             temperature: Sampling temperature
-            thinking_level: "low", "medium" (Flash only), or "high"
+            thinking_budget: Token budget for thinking (default 8192)
 
         Returns:
             ThinkingResponse with text, thoughts, and usage metadata
@@ -368,7 +366,7 @@ class GeminiClient:
             response_mime_type="application/json",
             thinking_config=types.ThinkingConfig(
                 include_thoughts=True,
-                thinking_level=thinking_level,
+                thinking_budget=thinking_budget,
             ),
         )
 
@@ -387,10 +385,8 @@ class GeminiClient:
                 if hasattr(part, 'thought') and part.thought:
                     thoughts = part.text
                 elif hasattr(part, 'text'):
-                    if text is None:
-                        text = part.text
-                    else:
-                        text += part.text
+                    # Take the latest text part (the final JSON output)
+                    text = part.text
 
         return ThinkingResponse(
             text=text or "",
