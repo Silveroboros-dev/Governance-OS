@@ -513,7 +513,8 @@ class TestAgentCacheIntegration:
 
                 from coprocessor.agents.intake_agent import IntakeAgent
 
-                agent = IntakeAgent(use_cache=True)
+                # Disable thinking mode - this test is for cache behavior
+                agent = IntakeAgent(use_cache=True, use_thinking=False)
 
                 # Extract signals - should use cache
                 result = agent.extract_signals_sync(
@@ -538,8 +539,8 @@ class TestAgentCacheIntegration:
 
                 from coprocessor.agents.intake_agent import IntakeAgent
 
-                # Disable caching
-                agent = IntakeAgent(use_cache=False)
+                # Disable caching and thinking - this test is for fallback behavior
+                agent = IntakeAgent(use_cache=False, use_thinking=False)
 
                 result = agent.extract_signals_sync(
                     content="Test document content",

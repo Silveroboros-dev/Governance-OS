@@ -704,7 +704,8 @@ class TestAgentCacheIntegration:
         mock_gemini_client.models.generate_content.return_value.text = '[]'
 
         from coprocessor.agents.intake_agent import IntakeAgent
-        agent = IntakeAgent(use_cache=True)
+        # Disable thinking mode - this test is for cache behavior
+        agent = IntakeAgent(use_cache=True, use_thinking=False)
 
         result = agent.extract_signals_sync(
             content="Test document",
