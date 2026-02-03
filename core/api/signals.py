@@ -13,6 +13,7 @@ from core.models import Signal, SignalReliability, AuditEvent, AuditEventType
 from core.models.signal import compute_signal_content_hash
 from core.schemas.signal import SignalCreate, SignalResponse, SignalCreateResponse
 from core.validation import SignalValidator, ValidationError, get_signal_validator
+from core.services import PolicyEngine, Evaluator, ExceptionEngine
 
 router = APIRouter(prefix="/signals", tags=["signals"])
 
@@ -132,6 +133,11 @@ def create_signal(
     db.commit()
     db.refresh(signal)
 
+    # Auto-evaluate policies against the new signal
+    # This is deterministic: the kernel decides IF a breach occurred
+    # Humans decide WHAT TO DO about the resulting exception
+    _evaluate_signal(db, signal)
+
     return SignalCreateResponse(
         id=signal.id,
         pack=signal.pack,
@@ -204,3 +210,35 @@ def get_signal_types(pack: str):
         "pack": pack,
         "signal_types": pack_schemas.get(pack, {})
     }
+
+
+def _evaluate_signal(db: Session, signal: Signal) -> None:
+    """
+    Evaluate all active policies against a newly ingested signal.
+
+    This is the core loop: Signal → Policy Evaluation → Exception (if breach).
+    The evaluation is deterministic. Exceptions surface automatically when
+    policy thresholds are breached. Humans decide what to do about exceptions.
+    """
+    # Get active policies for this pack
+    policy_engine = PolicyEngine(db)
+    policies = policy_engine.get_active_policies(signal.pack)
+
+    if not policies:
+        return
+
+    # Evaluate each policy against this signal
+    evaluator = Evaluator(db)
+    exception_engine = ExceptionEngine(db)
+
+    for policy_version in policies:
+        # Evaluate policy against the single new signal
+        evaluation = evaluator.evaluate(
+            policy_version,
+            [signal],  # Evaluate against just this signal
+            replay_namespace=None
+        )
+
+        # Generate exception if policy breach detected
+        if evaluation:
+            exception_engine.generate_exception(evaluation, policy_version)
