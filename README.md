@@ -142,7 +142,7 @@ Contradictions are surfaced, not silently resolved.
 /packs        Domain packs (treasury, wealth)
 ```
 
-**Test coverage:** 302 tests | **Eval coverage:** 28 golden test cases
+**Test coverage:** 421 tests | **Eval coverage:** 28 golden test cases
 
 ---
 
