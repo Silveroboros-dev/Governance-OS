@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { Loader2, FileText, CheckCircle, AlertTriangle, ArrowRight, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { usePack } from '@/lib/pack-context'
+import { useUser } from '@/lib/user-context'
 import { api, ApiError } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { IntakeProcessResponse, ExtractedSignal } from '@/lib/types'
@@ -30,19 +31,41 @@ function getConfidenceBorderColor(confidence: number): string {
 
 export default function IngestPage() {
   const { pack } = usePack()
+  const { userEmail, setUserEmail } = useUser()
   const [documentText, setDocumentText] = useState('')
   const [documentSource, setDocumentSource] = useState('')
+  const [emailInput, setEmailInput] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<IntakeProcessResponse | null>(null)
 
+  // Initialize email input from context
+  useEffect(() => {
+    if (userEmail && !emailInput) {
+      setEmailInput(userEmail)
+    }
+  }, [userEmail])
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!emailInput.trim() || !emailInput.includes('@')) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    if (emailInput.trim().endsWith('@example.com')) {
+      setError('Please enter your real email, not a placeholder')
+      return
+    }
 
     if (documentText.trim().length < 50) {
       setError('Please enter at least 50 characters')
       return
     }
+
+    // Save email to context for use in decision pages
+    setUserEmail(emailInput.trim())
 
     setStatus('processing')
     setError(null)
@@ -70,6 +93,7 @@ export default function IngestPage() {
   function handleReset() {
     setDocumentText('')
     setDocumentSource('')
+    // Keep email - don't reset it
     setStatus('idle')
     setError(null)
     setResult(null)
@@ -103,6 +127,24 @@ export default function IngestPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Your Email (required) */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Your Email <span className="text-destructive">*</span></Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="you@company.com"
+                  disabled={isProcessing || status === 'success'}
+                  maxLength={255}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used for decision attribution and audit trail
+                </p>
+              </div>
+
               {/* Document Source (optional) */}
               <div className="space-y-2">
                 <Label htmlFor="source">Document Source (optional)</Label>

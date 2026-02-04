@@ -157,6 +157,14 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
   const signals = evidence.signals || []
   const evaluation = evidence.evaluation || {}
   const policy = evidence.policy || {}
+  const exceptionFromEvidence = evidence.exception || {}
+
+  // Resolve severity from multiple sources (evidence exception > evaluation details > decision exception)
+  const resolvedSeverity = exceptionFromEvidence.severity
+    || exceptionFromEvidence.context?.evaluation_details?.severity
+    || evaluation.details?.severity
+    || decision.exception?.severity
+    || null
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -262,8 +270,8 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
                   <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <span className="text-xs font-medium mt-1">Exception</span>
-                <Badge className={`text-xs mt-0.5 ${getSeverityColor(decision.exception?.severity || 'medium')}`}>
-                  {decision.exception?.severity || 'unknown'}
+                <Badge className={`text-xs mt-0.5 ${getSeverityColor(resolvedSeverity || 'medium')}`}>
+                  {resolvedSeverity || 'pending'}
                 </Badge>
               </div>
 
@@ -332,7 +340,7 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
         </Card>
 
         {/* Exception Context */}
-        {decision.exception && (
+        {(decision.exception || exceptionFromEvidence.title) && (
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -340,16 +348,16 @@ export default function DecisionTracePage({ params }: { params: { id: string } }
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <CardTitle className="text-lg">Exception</CardTitle>
                 </div>
-                <Badge className={getSeverityColor(decision.exception.severity)}>
-                  {decision.exception.severity}
+                <Badge className={getSeverityColor(resolvedSeverity || 'medium')}>
+                  {resolvedSeverity}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="font-medium">{decision.exception.title}</p>
-              {decision.exception.context && (
+              <p className="font-medium">{exceptionFromEvidence.title || decision.exception?.title}</p>
+              {(exceptionFromEvidence.context || decision.exception?.context) && (
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {Object.entries(decision.exception.context).slice(0, 6).map(([key, value]) => (
+                  {Object.entries(exceptionFromEvidence.context || decision.exception?.context || {}).slice(0, 6).map(([key, value]) => (
                     <div key={key} className="flex justify-between">
                       <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
                       <span className="font-mono text-xs">{String(value)}</span>

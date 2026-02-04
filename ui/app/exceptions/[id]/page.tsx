@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertCircle, AlertTriangle, Shield, Clock, Info } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
+import { useUser } from '@/lib/user-context'
 import type { ExceptionDetail, ExceptionOption } from '@/lib/types'
 import { formatDate, getSeverityColor } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +29,7 @@ import {
  */
 export default function ExceptionDecisionPage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const { userEmail } = useUser()
   const [exception, setException] = useState<ExceptionDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -61,13 +63,18 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
   const handleSubmit = async () => {
     if (!selectedOption || !rationale.trim()) return
 
+    if (!userEmail || userEmail.endsWith('@example.com')) {
+      alert('Please set your real email in the header before making a decision')
+      return
+    }
+
     try {
       setSubmitting(true)
       const decision = await api.decisions.create({
         exception_id: params.id,
         chosen_option_id: selectedOption,
         rationale: rationale.trim(),
-        decided_by: 'user@example.com', // TODO: Get from auth context
+        decided_by: userEmail,
       })
 
       router.push(`/decisions/${decision.id}`)
@@ -138,7 +145,7 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
     uncertainties.push(`Evaluation confidence: ${(exception.evaluation.details.confidence * 100).toFixed(0)}%`)
   }
 
-  const canSubmit = selectedOption && rationale.trim().length > 0
+  const canSubmit = selectedOption && rationale.trim().length > 0 && userEmail
 
   return (
     <TooltipProvider>
@@ -330,7 +337,7 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
 
               {!canSubmit && (
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  {!selectedOption ? 'Select an option' : 'Enter rationale'} to continue
+                  {!userEmail ? 'Set your email in header' : !selectedOption ? 'Select an option' : 'Enter rationale'} to continue
                 </p>
               )}
             </div>
