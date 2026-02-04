@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { PackSelector } from '@/components/pack-selector'
+import { UserEmailInput } from '@/components/user-email-input'
 
 export function Header() {
   return (
@@ -14,7 +15,7 @@ export function Header() {
             </Link>
             <PackSelector />
           </div>
-          <div className="flex gap-6">
+          <div className="flex items-center gap-6">
             <Link href="/ingest" className="hover:underline">
               Ingest
             </Link>
@@ -36,6 +37,8 @@ export function Header() {
             <Link href="/traces" className="hover:underline">
               Traces
             </Link>
+            <div className="h-4 w-px bg-border" />
+            <UserEmailInput />
           </div>
         </nav>
       </div>

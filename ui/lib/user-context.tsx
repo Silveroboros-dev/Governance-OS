@@ -39,7 +39,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
 export function useUser() {
   const context = useContext(UserContext)
   if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider')
+    // Return safe defaults during SSR prerender (no provider available)
+    return { userEmail: '', setUserEmail: () => {} }
   }
   return context
 }
