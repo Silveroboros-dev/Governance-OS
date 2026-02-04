@@ -124,10 +124,10 @@ TREASURY_POLICY_TEMPLATES = {
                 {
                     "signal_type": "cash_forecast_variance",
                     "threshold": {
-                        # Trigger on material variance amounts
+                        # Trigger on material negative variance (actual < forecast)
                         "field": "payload.variance_amount",
-                        "operator": ">",
-                        "value": 10000,  # $10K variance threshold
+                        "operator": "<",
+                        "value": -10000,  # -$10K variance threshold
                     },
                     "severity_mapping": {
                         "default": "high"

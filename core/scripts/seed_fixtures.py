@@ -39,8 +39,14 @@ PACK_CONFIGS = {
 }
 
 
-def seed_policies(db: Session, pack: str = None):
-    """Seed policies for specified pack(s)."""
+def seed_policies(db: Session, pack: str = None, force_update: bool = False):
+    """Seed policies for specified pack(s).
+
+    Args:
+        db: Database session
+        pack: Pack name to seed (or None for all packs)
+        force_update: If True, update existing policy rules to match templates
+    """
     packs_to_seed = [pack] if pack else list(PACK_CONFIGS.keys())
 
     for pack_name in packs_to_seed:
@@ -59,8 +65,19 @@ def seed_policies(db: Session, pack: str = None):
             ).first()
 
             if existing:
-                print(f"  Policy '{template['name']}' already exists, skipping")
-                continue
+                if force_update:
+                    # Update existing policy's active version rule_definition
+                    active_version = db.query(PolicyVersion).filter(
+                        PolicyVersion.policy_id == existing.id,
+                        PolicyVersion.status == PolicyStatus.ACTIVE
+                    ).first()
+                    if active_version:
+                        active_version.rule_definition = template["rule_definition"]
+                        print(f"  Updated policy rules: {template['name']}")
+                    continue
+                else:
+                    print(f"  Policy '{template['name']}' already exists, skipping")
+                    continue
 
             # Create policy
             policy = Policy(
@@ -313,13 +330,14 @@ def print_usage():
     print("Usage: python -m core.scripts.seed_fixtures [OPTIONS]")
     print()
     print("Options:")
-    print("  --pack=NAME    Seed specific pack (treasury, wealth). Default: all packs")
-    print("  --basic        Seed basic signals only (default)")
-    print("  --scenarios    Seed from scenarios.json (realistic demo data)")
-    print("  --all          Seed both basic signals and all scenarios")
-    print("  --scenario=ID  Seed specific scenario by ID")
-    print("  --evaluate     Trigger evaluations after seeding (default)")
-    print("  --no-evaluate  Skip evaluation triggering")
+    print("  --pack=NAME     Seed specific pack (treasury, wealth). Default: all packs")
+    print("  --basic         Seed basic signals only (default)")
+    print("  --scenarios     Seed from scenarios.json (realistic demo data)")
+    print("  --all           Seed both basic signals and all scenarios")
+    print("  --scenario=ID   Seed specific scenario by ID")
+    print("  --evaluate      Trigger evaluations after seeding (default)")
+    print("  --no-evaluate   Skip evaluation triggering")
+    print("  --force-update  Update existing policy rules to match templates")
     print()
     print("Available packs and scenarios:")
     for pack_name, config in PACK_CONFIGS.items():
@@ -347,6 +365,7 @@ def main():
     specific_scenarios = []
     target_pack = None  # None means all packs
     run_evaluate = True  # Default: trigger evaluations after seeding
+    force_update = False  # If True, update existing policy rules
 
     if "--help" in args or "-h" in args:
         print_usage()
@@ -368,13 +387,15 @@ def main():
             run_evaluate = False
         elif arg == "--evaluate":
             run_evaluate = True
+        elif arg == "--force-update":
+            force_update = True
 
     # Create database session
     db = SessionLocal()
 
     try:
         # Always seed policies first (for specified pack or all packs)
-        seed_policies(db, pack=target_pack)
+        seed_policies(db, pack=target_pack, force_update=force_update)
 
         # Seed signals based on options
         if use_basic:
