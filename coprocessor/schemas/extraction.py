@@ -349,39 +349,36 @@ class ExtractionValidationResult(BaseModel):
     candidates_checked: int = Field(default=0, description="Number of candidates validated")
 
 
-# Pack-specific signal type definitions (used for validation)
-TREASURY_SIGNAL_TYPES = [
-    "position_limit_breach",
-    "concentration_threshold",
-    "market_volatility_spike",
-    "counterparty_exposure_change",
-    "counterparty_credit_downgrade",
-    "regulatory_filing_received",
-    "collateral_margin_call",
-    "fx_hedge_expiration",
-    "fx_exposure_breach",
-    "credit_rating_change",
-    "liquidity_threshold_breach",
-    "cash_forecast_variance",
-    "covenant_breach",
-    "settlement_failure",
-    "settlement_rail_shortfall",
-]
+# =============================================================================
+# Signal Type Registry - Import from pack definitions
+# =============================================================================
 
-WEALTH_SIGNAL_TYPES = [
-    "risk_tolerance_change",
-    "large_transaction_alert",
-    "beneficiary_update",
-    "tax_event",
-    "estate_document_update",
-    "investment_objective_change",
-    "account_ownership_change",
-    "compliance_violation_flag",
-]
+# Import canonical signal types from packs (single source of truth)
+from packs.treasury.signal_types import (
+    TREASURY_SIGNAL_TYPES as TREASURY_SIGNAL_REGISTRY,
+    generate_signal_title as generate_treasury_title,
+    get_required_fields as get_treasury_required_fields,
+    validate_payload as validate_treasury_payload,
+)
+from packs.wealth.signal_types import (
+    WEALTH_SIGNAL_TYPES as WEALTH_SIGNAL_REGISTRY,
+    generate_signal_title as generate_wealth_title,
+    get_required_fields as get_wealth_required_fields,
+    validate_payload as validate_wealth_payload,
+)
+
+# Extract signal type names for validation
+TREASURY_SIGNAL_TYPES = list(TREASURY_SIGNAL_REGISTRY.keys())
+WEALTH_SIGNAL_TYPES = list(WEALTH_SIGNAL_REGISTRY.keys())
 
 PACK_SIGNAL_TYPES = {
     "treasury": TREASURY_SIGNAL_TYPES,
     "wealth": WEALTH_SIGNAL_TYPES,
+}
+
+PACK_SIGNAL_REGISTRIES = {
+    "treasury": TREASURY_SIGNAL_REGISTRY,
+    "wealth": WEALTH_SIGNAL_REGISTRY,
 }
 
 
@@ -395,3 +392,49 @@ def validate_signal_type_for_pack(signal_type: str, pack: str) -> bool:
 def get_valid_signal_types(pack: str) -> List[str]:
     """Get valid signal types for a pack."""
     return PACK_SIGNAL_TYPES.get(pack, [])
+
+
+def get_signal_type_definitions(pack: str) -> Dict[str, Any]:
+    """
+    Get full signal type definitions for a pack.
+
+    Returns dict of {signal_type: {description, title_template, required_fields, payload_schema, ...}}
+    """
+    return PACK_SIGNAL_REGISTRIES.get(pack, {})
+
+
+def generate_signal_title(pack: str, signal_type: str, payload: Dict[str, Any]) -> str:
+    """
+    Generate deterministic title from signal type and payload.
+
+    Uses the title_template from pack signal type definitions.
+    NEVER let LLM invent titles - always use this function.
+    """
+    if pack == "treasury":
+        return generate_treasury_title(signal_type, payload)
+    elif pack == "wealth":
+        return generate_wealth_title(signal_type, payload)
+    else:
+        return f"{signal_type.upper()}: Unknown pack '{pack}'"
+
+
+def get_required_fields(pack: str, signal_type: str) -> List[str]:
+    """Get required payload fields for a signal type."""
+    if pack == "treasury":
+        return get_treasury_required_fields(signal_type)
+    elif pack == "wealth":
+        return get_wealth_required_fields(signal_type)
+    return []
+
+
+def validate_signal_payload(pack: str, signal_type: str, payload: Dict[str, Any]) -> List[str]:
+    """
+    Validate payload has required fields.
+
+    Returns list of missing field names (empty if valid).
+    """
+    if pack == "treasury":
+        return validate_treasury_payload(signal_type, payload)
+    elif pack == "wealth":
+        return validate_wealth_payload(signal_type, payload)
+    return []

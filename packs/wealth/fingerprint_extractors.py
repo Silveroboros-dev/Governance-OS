@@ -93,6 +93,30 @@ def _fee_schedule_change(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _risk_tolerance_change(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Risk tolerance change: dedupe by client + new tolerance."""
+    return {
+        "client_id": payload.get("client_id"),
+        "new_tolerance": payload.get("new_tolerance"),
+    }
+
+
+def _investment_objective_change(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Investment objective change: dedupe by client + new objective."""
+    return {
+        "client_id": payload.get("client_id"),
+        "new_objective": payload.get("new_objective"),
+    }
+
+
+def _compliance_violation_flag(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Compliance violation: dedupe by client + violation type."""
+    return {
+        "client_id": payload.get("client_id"),
+        "violation_type": payload.get("violation_type"),
+    }
+
+
 def _default_extractor(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Default: use client_id and portfolio_id if available."""
     result = {}
@@ -113,4 +137,7 @@ EXTRACTORS = {
     "client_cash_withdrawal": _client_cash_withdrawal,
     "market_correlation_spike": _market_correlation_spike,
     "fee_schedule_change": _fee_schedule_change,
+    "risk_tolerance_change": _risk_tolerance_change,
+    "investment_objective_change": _investment_objective_change,
+    "compliance_violation_flag": _compliance_violation_flag,
 }

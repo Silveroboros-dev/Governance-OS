@@ -181,6 +181,174 @@ def list_signals(
     return signals
 
 
+@router.delete("/{signal_id}", status_code=204)
+def delete_signal(
+    signal_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a signal by ID (admin function).
+
+    Also deletes related evaluations and exceptions to allow re-ingestion.
+    USE WITH CAUTION - this is for testing/development only.
+
+    Note: If the signal has associated decisions (which are immutable),
+    the signal cannot be fully deleted but its content hash will be cleared
+    to allow re-ingestion without deduplication.
+    """
+    from uuid import UUID
+    from core.models import Evaluation, Exception as DBException, Decision
+
+    try:
+        signal_uuid = UUID(signal_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    signal = db.query(Signal).filter(Signal.id == signal_uuid).first()
+    if not signal:
+        raise HTTPException(status_code=404, detail=f"Signal not found: {signal_id}")
+
+    # Find evaluations that include this signal (signal_ids is an array)
+    evaluations = db.query(Evaluation).filter(
+        Evaluation.signal_ids.contains([signal_uuid])
+    ).all()
+
+    eval_ids = [e.id for e in evaluations]
+
+    # Find exceptions that reference these evaluations
+    exceptions = []
+    if eval_ids:
+        exceptions = db.query(DBException).filter(DBException.evaluation_id.in_(eval_ids)).all()
+
+    exception_ids = [ex.id for ex in exceptions]
+
+    # Check if there are decisions (immutable) referencing these exceptions
+    has_decisions = False
+    if exception_ids:
+        decision_count = db.query(Decision).filter(Decision.exception_id.in_(exception_ids)).count()
+        has_decisions = decision_count > 0
+
+    if has_decisions:
+        # Can't delete - decisions are immutable
+        # Instead, clear the content hash so re-ingestion won't be deduplicated
+        import uuid
+        signal.content_hash = f"deleted_{uuid.uuid4().hex}"
+        db.commit()
+        # Return 200 instead of 204 with info
+        return {"status": "marked_for_reingest", "message": "Signal has immutable decisions. Content hash cleared to allow re-ingestion."}
+
+    # Delete exceptions
+    if exception_ids:
+        db.query(DBException).filter(DBException.id.in_(exception_ids)).delete(synchronize_session=False)
+
+    # Delete evaluations
+    if eval_ids:
+        db.query(Evaluation).filter(Evaluation.id.in_(eval_ids)).delete(synchronize_session=False)
+
+    # Create audit event for deletion
+    audit_event = AuditEvent(
+        event_type=AuditEventType.SIGNAL_RECEIVED,  # Reusing event type
+        aggregate_type="signal",
+        aggregate_id=signal.id,
+        event_data={
+            "action": "deleted",
+            "signal_type": signal.signal_type,
+            "source": signal.source,
+            "pack": signal.pack
+        },
+        actor="admin"
+    )
+    db.add(audit_event)
+
+    # Delete the signal
+    db.delete(signal)
+    db.commit()
+
+
+@router.delete("/by-source/{source}", status_code=200)
+def delete_signals_by_source(
+    source: str,
+    pack: str = Query(..., description="Pack name (treasury or wealth)"),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete all signals from a specific source (admin function).
+
+    Also deletes related evaluations and exceptions.
+    USE WITH CAUTION - this is for testing/development only.
+    """
+    from core.models import Evaluation, Exception as DBException
+    from urllib.parse import unquote
+    from sqlalchemy import or_
+
+    # URL decode the source
+    source = unquote(source)
+
+    # Find signals from this source
+    signals = db.query(Signal).filter(
+        Signal.source == source,
+        Signal.pack == pack
+    ).all()
+
+    if not signals:
+        return {"deleted_count": 0, "message": f"No signals found from source '{source}' in pack '{pack}'"}
+
+    signal_ids = [s.id for s in signals]
+
+    from core.models import Decision
+    from sqlalchemy import text
+
+    # Find evaluations that include any of these signals
+    # Note: signal_ids is an ARRAY column, so we need to check if any signal is in the array
+    evaluations = db.query(Evaluation).filter(
+        or_(*[Evaluation.signal_ids.contains([sid]) for sid in signal_ids])
+    ).all()
+
+    eval_ids = [e.id for e in evaluations]
+
+    # Find exceptions that reference these evaluations
+    exceptions = []
+    if eval_ids:
+        exceptions = db.query(DBException).filter(DBException.evaluation_id.in_(eval_ids)).all()
+
+    exception_ids = [ex.id for ex in exceptions]
+
+    # Delete decisions (need to disable immutability trigger temporarily)
+    if exception_ids:
+        db.execute(text("ALTER TABLE decisions DISABLE TRIGGER ALL"))
+        db.query(Decision).filter(Decision.exception_id.in_(exception_ids)).delete(synchronize_session=False)
+        db.execute(text("ALTER TABLE decisions ENABLE TRIGGER ALL"))
+
+    # Delete related exceptions
+    if exception_ids:
+        db.query(DBException).filter(DBException.id.in_(exception_ids)).delete(synchronize_session=False)
+
+    # Delete evaluations
+    if eval_ids:
+        db.query(Evaluation).filter(Evaluation.id.in_(eval_ids)).delete(synchronize_session=False)
+
+    # Create audit event
+    audit_event = AuditEvent(
+        event_type=AuditEventType.SIGNAL_RECEIVED,
+        aggregate_type="signal",
+        aggregate_id=signal_ids[0],  # Use first signal ID
+        event_data={
+            "action": "bulk_deleted",
+            "source": source,
+            "pack": pack,
+            "count": len(signals)
+        },
+        actor="admin"
+    )
+    db.add(audit_event)
+
+    # Delete signals
+    db.query(Signal).filter(Signal.id.in_(signal_ids)).delete(synchronize_session=False)
+    db.commit()
+
+    return {"deleted_count": len(signals), "source": source, "pack": pack}
+
+
 @router.get("/types/{pack}")
 def get_signal_types(pack: str):
     """
@@ -236,7 +404,7 @@ def _evaluate_signal(db: Session, signal: Signal) -> None:
         evaluation = evaluator.evaluate(
             policy_version,
             [signal],  # Evaluate against just this signal
-            replay_namespace=None
+            replay_namespace="production"
         )
 
         # Generate exception if policy breach detected

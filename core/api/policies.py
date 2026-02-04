@@ -474,3 +474,188 @@ def _compute_rule_diff(baseline: Dict[str, Any], comparison: Dict[str, Any]) -> 
 
     diff["has_changes"] = bool(diff["added"] or diff["removed"] or diff["changed"])
     return diff
+
+
+# =============================================================================
+# Admin Endpoints
+# =============================================================================
+
+@router.post("/sync-from-templates")
+def sync_policies_from_templates(
+    pack: str = Depends(get_required_pack),
+    db: Session = Depends(get_db)
+):
+    """
+    Sync policies from pack templates.
+
+    Creates any missing policies from the pack's policy templates.
+    Does not modify existing policies.
+    """
+    from datetime import timedelta
+    from packs.treasury.policy_templates import TREASURY_POLICY_TEMPLATES
+    from packs.wealth.policy_templates import WEALTH_POLICY_TEMPLATES
+
+    PACK_TEMPLATES = {
+        "treasury": TREASURY_POLICY_TEMPLATES,
+        "wealth": WEALTH_POLICY_TEMPLATES,
+    }
+
+    templates = PACK_TEMPLATES.get(pack)
+    if not templates:
+        raise HTTPException(status_code=400, detail=f"Unknown pack: {pack}")
+
+    created = []
+    skipped = []
+
+    for key, template in templates.items():
+        # Check if policy exists
+        existing = db.query(Policy).filter(
+            Policy.name == template["name"],
+            Policy.pack == pack
+        ).first()
+
+        if existing:
+            skipped.append(template["name"])
+            continue
+
+        # Create policy
+        policy = Policy(
+            name=template["name"],
+            pack=pack,
+            description=template["description"],
+            created_by="sync_api"
+        )
+        db.add(policy)
+        db.flush()
+
+        # Create active version
+        policy_version = PolicyVersion(
+            policy_id=policy.id,
+            version_number=1,
+            status=PolicyStatus.ACTIVE,
+            rule_definition=template["rule_definition"],
+            valid_from=datetime.now(timezone.utc) - timedelta(days=30),
+            valid_to=None,
+            changelog="Initial version (synced from template)",
+            created_by="sync_api"
+        )
+        db.add(policy_version)
+
+        # Audit event
+        audit_event = AuditEvent(
+            event_type=AuditEventType.POLICY_CREATED,
+            aggregate_type="policy",
+            aggregate_id=policy.id,
+            event_data={
+                "policy_name": template["name"],
+                "pack": pack,
+                "source": "template_sync"
+            },
+            actor="sync_api"
+        )
+        db.add(audit_event)
+
+        created.append(template["name"])
+
+    db.commit()
+
+    return {
+        "pack": pack,
+        "created": created,
+        "skipped": skipped,
+        "total_templates": len(templates)
+    }
+
+
+@router.post("/force-sync-from-templates")
+def force_sync_policies_from_templates(
+    pack: str = Depends(get_required_pack),
+    db: Session = Depends(get_db)
+):
+    """
+    Force sync policies from pack templates.
+
+    Creates missing policies AND updates existing policies to match templates.
+    Updates the rule_definition of existing active versions.
+    """
+    from datetime import timedelta
+    from packs.treasury.policy_templates import TREASURY_POLICY_TEMPLATES
+    from packs.wealth.policy_templates import WEALTH_POLICY_TEMPLATES
+
+    PACK_TEMPLATES = {
+        "treasury": TREASURY_POLICY_TEMPLATES,
+        "wealth": WEALTH_POLICY_TEMPLATES,
+    }
+
+    templates = PACK_TEMPLATES.get(pack)
+    if not templates:
+        raise HTTPException(status_code=400, detail=f"Unknown pack: {pack}")
+
+    created = []
+    updated = []
+
+    for key, template in templates.items():
+        # Check if policy exists (use joinedload for force-sync to get versions)
+        existing = db.query(Policy).options(joinedload(Policy.versions)).filter(
+            Policy.name == template["name"],
+            Policy.pack == pack
+        ).first()
+
+        if existing:
+            # Find active version and update its rule_definition
+            now = datetime.now(timezone.utc)
+            for version in existing.versions:
+                if version.status == PolicyStatus.ACTIVE:
+                    if version.valid_from <= now and (version.valid_to is None or version.valid_to > now):
+                        version.rule_definition = template["rule_definition"]
+                        updated.append(template["name"])
+                        break
+            continue
+
+        # Create policy
+        policy = Policy(
+            name=template["name"],
+            pack=pack,
+            description=template["description"],
+            created_by="force_sync_api"
+        )
+        db.add(policy)
+        db.flush()
+
+        # Create active version
+        policy_version = PolicyVersion(
+            policy_id=policy.id,
+            version_number=1,
+            status=PolicyStatus.ACTIVE,
+            rule_definition=template["rule_definition"],
+            valid_from=datetime.now(timezone.utc) - timedelta(days=30),
+            valid_to=None,
+            changelog="Initial version (force synced from template)",
+            created_by="force_sync_api"
+        )
+        db.add(policy_version)
+
+        # Audit event
+        audit_event = AuditEvent(
+            event_type=AuditEventType.POLICY_CREATED,
+            aggregate_type="policy",
+            aggregate_id=policy.id,
+            event_data={
+                "policy_name": template["name"],
+                "pack": pack,
+                "source": "force_template_sync"
+            },
+            actor="force_sync_api"
+        )
+        db.add(audit_event)
+
+        created.append(template["name"])
+
+    db.commit()
+
+    return {
+        "pack": pack,
+        "created": created,
+        "updated": updated,
+        "total_templates": len(templates)
+    }

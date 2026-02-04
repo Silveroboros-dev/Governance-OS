@@ -310,4 +310,118 @@ WEALTH_OPTION_TEMPLATES = {
             ],
         },
     ],
+    "risk_tolerance_change": [
+        {
+            "label": "Update Portfolio Allocation",
+            "description": "Adjust portfolio to match new risk tolerance",
+            "implications": [
+                "Portfolio composition will change",
+                "Trading costs incurred",
+                "Client risk profile aligned",
+            ],
+        },
+        {
+            "label": "Schedule Review Meeting",
+            "description": "Meet with client to discuss implications of change",
+            "implications": [
+                "Better understanding of client situation",
+                "Opportunity to confirm change",
+                "Delays portfolio adjustment",
+            ],
+        },
+        {
+            "label": "Document and Monitor",
+            "description": "Document change and monitor for consistency",
+            "implications": [
+                "Change recorded in client file",
+                "Verify change is sustained",
+                "Gradual transition possible",
+            ],
+        },
+        {
+            "label": "Request Compliance Review",
+            "description": "Escalate to compliance for suitability review",
+            "implications": [
+                "Formal review of change appropriateness",
+                "Additional documentation",
+                "Regulatory compliance ensured",
+            ],
+        },
+    ],
+    "investment_objective_change": [
+        {
+            "label": "Rebalance to New Objective",
+            "description": "Restructure portfolio to align with new objective",
+            "implications": [
+                "Significant portfolio changes likely",
+                "New investment strategy implemented",
+                "Trading costs and tax implications",
+            ],
+        },
+        {
+            "label": "Phased Transition",
+            "description": "Gradually transition portfolio over time",
+            "implications": [
+                "Reduces market timing risk",
+                "Spreads trading costs",
+                "Takes longer to achieve alignment",
+            ],
+        },
+        {
+            "label": "Update IPS and Document",
+            "description": "Update Investment Policy Statement with new objective",
+            "implications": [
+                "Formal documentation update",
+                "Client signature required",
+                "Guides future investment decisions",
+            ],
+        },
+        {
+            "label": "Request Additional Information",
+            "description": "Gather more details about objective change reasons",
+            "implications": [
+                "Better understanding of client needs",
+                "May reveal other planning opportunities",
+                "Delays implementation",
+            ],
+        },
+    ],
+    "compliance_violation_flag": [
+        {
+            "label": "Investigate Immediately",
+            "description": "Begin formal investigation of the violation",
+            "implications": [
+                "Compliance team engaged",
+                "Documentation of findings",
+                "Potential client contact",
+            ],
+        },
+        {
+            "label": "Escalate to Chief Compliance Officer",
+            "description": "Refer matter to CCO for review",
+            "implications": [
+                "Senior oversight",
+                "Formal escalation documented",
+                "May trigger regulatory reporting",
+            ],
+        },
+        {
+            "label": "Implement Remediation",
+            "description": "Take corrective action to address the violation",
+            "implications": [
+                "Issue resolved proactively",
+                "Documentation of corrective steps",
+                "May require client notification",
+            ],
+        },
+        {
+            "label": "Document and Monitor",
+            "description": "Document finding and implement enhanced monitoring",
+            "implications": [
+                "Increased surveillance on account",
+                "Pattern tracking initiated",
+                "Early warning if behavior continues",
+            ],
+        },
+    ],
 }

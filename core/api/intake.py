@@ -131,6 +131,9 @@ def process_document(
                 "extraction_notes": candidate.extraction_notes,
             }
 
+            # Use deterministic title from payload, or fallback to signal type
+            signal_title = candidate.payload.get("_generated_title") or candidate.signal_type.replace("_", " ").title()
+
             # Create approval queue entry
             approval = ApprovalQueue(
                 action_type=ApprovalActionType.SIGNAL,
@@ -138,7 +141,7 @@ def process_document(
                 proposed_by="intake_agent",
                 confidence=candidate.confidence,
                 trace_id=trace.id,
-                summary=f"Extract {candidate.signal_type.replace('_', ' ')} from {document_source}",
+                summary=signal_title,
             )
             db.add(approval)
             db.flush()  # Get ID without committing

@@ -10,6 +10,9 @@ Defines reusable policy templates for wealth management:
 - Withdrawal Policy
 - Correlation Risk Policy
 - Fee Change Policy
+- Risk Tolerance Change Policy
+- Investment Objective Change Policy
+- Compliance Violation Policy
 """
 
 WEALTH_POLICY_TEMPLATES = {
@@ -75,19 +78,16 @@ WEALTH_POLICY_TEMPLATES = {
         "name": "Suitability Policy",
         "description": "Ensure portfolio risk matches client risk profile",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
-                    "signal_type": "suitability_mismatch",
+                    "signal_type": "suitability_drift",
                     "threshold": {
-                        "field": "payload.risk_delta",
-                        "operator": "abs>",
-                        "value": 1.5,  # 1.5 point risk delta threshold
+                        "field": "payload.current_risk",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
-                        "risk_delta > 3": "critical",
-                        "risk_delta > 2": "high",
-                        "risk_delta < -2": "high",  # Too conservative also matters
                         "default": "high",
                     },
                 }
@@ -99,19 +99,17 @@ WEALTH_POLICY_TEMPLATES = {
         "name": "Concentration Policy",
         "description": "Monitor single position concentration limits",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "concentration_breach",
                     "threshold": {
-                        "field": "payload.current_weight_percent",
-                        "operator": ">",
-                        "value": "payload.limit_percent",
+                        "field": "payload.current_value",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
-                        "current_weight_percent > 25": "critical",
-                        "current_weight_percent > 15": "high",
-                        "default": "medium",
+                        "default": "high",
                     },
                 }
             ],
@@ -245,6 +243,155 @@ WEALTH_POLICY_TEMPLATES = {
                         "default": "low",
                     },
                 },
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "risk_tolerance_change_policy": {
+        "name": "Risk Tolerance Change Policy",
+        "description": "Review and action client risk tolerance changes",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "risk_tolerance_change",
+                    "threshold": {
+                        "field": "payload.new_tolerance",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "high",  # All risk tolerance changes require review
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "investment_objective_change_policy": {
+        "name": "Investment Objective Change Policy",
+        "description": "Review and action client investment objective changes",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "investment_objective_change",
+                    "threshold": {
+                        "field": "payload.new_objective",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "high",  # All objective changes require review
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "compliance_violation_policy": {
+        "name": "Compliance Violation Policy",
+        "description": "Escalate potential compliance violations for review",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "compliance_violation_flag",
+                    "threshold": {
+                        "field": "payload.violation_type",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "severity == critical": "critical",
+                        "severity == high": "high",
+                        "default": "high",  # Compliance violations are always high priority
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "mandate_breach_policy": {
+        "name": "Mandate Breach Policy",
+        "description": "Escalate when investments violate client mandate or IPS constraints",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "mandate_breach",
+                    "threshold": {
+                        "field": "payload.constraint",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "critical",  # Mandate breaches are critical
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "lookthrough_missing_policy": {
+        "name": "Lookthrough Missing Policy",
+        "description": "Escalate when required lookthrough data is unavailable for compliance",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "lookthrough_missing",
+                    "threshold": {
+                        "field": "payload.missing_data",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "medium",
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "fee_discrepancy_policy": {
+        "name": "Fee Discrepancy Policy",
+        "description": "Escalate when charged fees differ from expected fee schedule",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "fee_discrepancy",
+                    "threshold": {
+                        "field": "payload.charged",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "medium",
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "settlement_pending_cash_policy": {
+        "name": "Settlement Pending Cash Policy",
+        "description": "Escalate when pending settlement proceeds are included in cash calculations",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "settlement_pending_cash",
+                    "threshold": {
+                        "field": "payload.amount",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "medium",
+                    },
+                }
             ],
             "evaluation_logic": "any_condition_met",
         },

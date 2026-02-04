@@ -34,6 +34,8 @@ from ..schemas.extraction import (
     SourceSpan,
     get_valid_signal_types,
     validate_signal_type_for_pack,
+    generate_signal_title,
+    validate_signal_payload,
 )
 from ..cache import GeminiClient, CacheManager, get_cache_manager, ThinkingResponse
 
@@ -293,9 +295,27 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 confidence = float(candidate_data.get("confidence", 0.5))
                 confidence = max(0.0, min(1.0, confidence))  # Clamp to valid range
 
+                payload = candidate_data.get("payload", {})
+
+                # Validate payload has required fields
+                missing_fields = validate_signal_payload(pack, signal_type, payload)
+                if missing_fields:
+                    validation_notes.append(
+                        f"Candidate {i} ({signal_type}): missing required fields {missing_fields}"
+                    )
+                    # Don't skip - still include with lower confidence
+                    confidence = min(confidence, 0.6)
+
+                # Generate deterministic title from payload
+                # CRITICAL: Never use LLM-invented titles
+                deterministic_title = generate_signal_title(pack, signal_type, payload)
+
+                # Add title to payload so it's stored with the signal
+                payload["_generated_title"] = deterministic_title
+
                 candidates.append(CandidateSignal(
                     signal_type=signal_type,
-                    payload=candidate_data.get("payload", {}),
+                    payload=payload,
                     confidence=confidence,
                     source_spans=source_spans,
                     extraction_notes=candidate_data.get("extraction_notes"),

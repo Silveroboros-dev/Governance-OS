@@ -2,6 +2,9 @@
 Treasury Pack - Policy Templates.
 
 Defines reusable policy templates for treasury management.
+
+All policies use event_trigger type: the signal itself represents
+the breach/event. Policies trigger on signal existence to generate exceptions.
 """
 
 TREASURY_POLICY_TEMPLATES = {
@@ -9,38 +12,35 @@ TREASURY_POLICY_TEMPLATES = {
         "name": "Position Limit Policy",
         "description": "Enforce position limits per asset with escalation on breach",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "position_limit_breach",
                     "threshold": {
                         "field": "payload.current_position",
-                        "operator": ">",
-                        "value": "payload.limit",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
-                        "duration_hours < 1": "medium",
-                        "duration_hours >= 1 and duration_hours < 4": "high",
-                        "duration_hours >= 4": "critical",
-                        "default": "medium"
+                        "default": "high",
                     },
                 }
             ],
-            "evaluation_logic": "any_condition_met",  # 'any' or 'all'
+            "evaluation_logic": "any_condition_met",
         },
     },
     "volatility_policy": {
         "name": "Market Volatility Policy",
         "description": "Monitor and escalate on volatility spikes",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "market_volatility_spike",
                     "threshold": {
                         "field": "payload.volatility",
-                        "operator": ">",
-                        "value": "payload.threshold",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
                         "default": "high",
@@ -54,14 +54,14 @@ TREASURY_POLICY_TEMPLATES = {
         "name": "Counterparty Credit Risk Policy",
         "description": "Monitor counterparty credit ratings and exposure",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "counterparty_credit_downgrade",
                     "threshold": {
-                        "field": "payload.exposure_usd",
-                        "operator": ">",
-                        "value": 1000000,  # $1M threshold
+                        "field": "payload.counterparty",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
                         "default": "high",
@@ -75,18 +75,17 @@ TREASURY_POLICY_TEMPLATES = {
         "name": "Liquidity Management Policy",
         "description": "Ensure adequate liquidity across asset classes",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "liquidity_threshold_breach",
                     "threshold": {
-                        # Supports both ratio-based and amount-based signals
-                        "field": "payload.current_amount",
-                        "operator": "<",
-                        "value": "payload.threshold_amount",
+                        "field": "payload.current_ratio",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
-                        "default": "high"
+                        "default": "high",
                     },
                 }
             ],
@@ -97,18 +96,17 @@ TREASURY_POLICY_TEMPLATES = {
         "name": "FX Exposure Policy",
         "description": "Monitor and control foreign exchange exposure limits",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "fx_exposure_breach",
                     "threshold": {
-                        # Trigger on any unhedged FX exposure with material notional
-                        "field": "payload.notional",
-                        "operator": ">",
-                        "value": 50000,  # $50K threshold for unhedged exposure
+                        "field": "payload.current_exposure",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
-                        "default": "high"
+                        "default": "high",
                     },
                 }
             ],
@@ -119,18 +117,17 @@ TREASURY_POLICY_TEMPLATES = {
         "name": "Cash Forecasting Policy",
         "description": "Monitor cash position variances from forecasts",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "cash_forecast_variance",
                     "threshold": {
-                        # Trigger on material negative variance (actual < forecast)
-                        "field": "payload.variance_amount",
-                        "operator": "<",
-                        "value": -10000,  # -$10K variance threshold
+                        "field": "payload.variance_percent",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
-                        "default": "high"
+                        "default": "high",
                     },
                 }
             ],
@@ -141,18 +138,17 @@ TREASURY_POLICY_TEMPLATES = {
         "name": "Covenant Monitoring Policy",
         "description": "Monitor financial covenant compliance",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "covenant_breach",
                     "threshold": {
-                        # Supports value-based covenant signals
-                        "field": "payload.actual_value",
-                        "operator": "<",
-                        "value": "payload.required_value",
+                        "field": "payload.covenant_name",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
-                        "default": "critical"  # Covenant breaches are always critical
+                        "default": "critical",
                     },
                 }
             ],
@@ -163,19 +159,101 @@ TREASURY_POLICY_TEMPLATES = {
         "name": "Settlement Risk Policy",
         "description": "Monitor and escalate trade settlement failures",
         "rule_definition": {
-            "type": "threshold_breach",
+            "type": "event_trigger",
             "conditions": [
                 {
                     "signal_type": "settlement_failure",
                     "threshold": {
-                        "field": "payload.amount_usd",
-                        "operator": ">",
-                        "value": 100000,  # Escalate failures > $100K
+                        "field": "payload.failure_reason",
+                        "operator": "exists",
+                        "value": True,
                     },
                     "severity_mapping": {
-                        "amount_usd > 1000000": "critical",
-                        "amount_usd > 500000": "high",
-                        "default": "medium"
+                        "default": "high",
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "settlement_rail_policy": {
+        "name": "Settlement Rail Policy",
+        "description": "Escalate settlement rail shortfalls",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "settlement_rail_shortfall",
+                    "threshold": {
+                        "field": "payload.shortfall",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "high",
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "debt_maturity_policy": {
+        "name": "Debt Maturity Policy",
+        "description": "Escalate approaching debt maturities for refinancing review",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "debt_maturity_approaching",
+                    "threshold": {
+                        "field": "payload.maturity_date",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "high",
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "interest_rate_reset_policy": {
+        "name": "Interest Rate Reset Policy",
+        "description": "Escalate approaching interest rate resets",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "interest_rate_reset",
+                    "threshold": {
+                        "field": "payload.reset_date",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "medium",
+                    },
+                }
+            ],
+            "evaluation_logic": "any_condition_met",
+        },
+    },
+    "bank_account_anomaly_policy": {
+        "name": "Bank Account Anomaly Policy",
+        "description": "Escalate unusual bank account activity",
+        "rule_definition": {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "bank_account_anomaly",
+                    "threshold": {
+                        "field": "payload.anomaly_type",
+                        "operator": "exists",
+                        "value": True,
+                    },
+                    "severity_mapping": {
+                        "default": "high",
                     },
                 }
             ],

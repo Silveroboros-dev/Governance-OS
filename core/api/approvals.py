@@ -382,7 +382,7 @@ def _evaluate_signal_against_policies(signal: Signal, db: Session):
         evaluation = evaluator.evaluate(
             policy_version,
             [signal],  # Only the new signal that triggered this evaluation
-            replay_namespace=None
+            replay_namespace="production"
         )
 
         # Generate exception if policy breach detected

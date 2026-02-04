@@ -16,6 +16,7 @@ class RuleType(str, Enum):
     THRESHOLD_BREACH = "threshold_breach"
     PATTERN_MATCH = "pattern_match"
     AGGREGATION = "aggregation"
+    EVENT_TRIGGER = "event_trigger"
 
 
 class ConditionOperator(str, Enum):
@@ -72,6 +73,8 @@ def evaluate_policy(
         return _evaluate_pattern_match(rule_definition, signals)
     elif rule_type == RuleType.AGGREGATION:
         return _evaluate_aggregation(rule_definition, signals)
+    elif rule_type == RuleType.EVENT_TRIGGER:
+        return _evaluate_event_trigger(rule_definition, signals)
     else:
         return "inconclusive", {"error": f"Unknown rule type: {rule_type}"}
 
@@ -264,3 +267,122 @@ def _evaluate_aggregation(
     Placeholder for Sprint 2+.
     """
     return "inconclusive", {"error": "Aggregation rules not yet implemented"}
+
+
+def _evaluate_event_trigger(
+    rule_definition: Dict[str, Any],
+    signals: List[Dict[str, Any]]
+) -> Tuple[str, Dict[str, Any]]:
+    """
+    Evaluate event trigger rules.
+
+    Triggers on the existence of specific signal types, optionally checking
+    that a field exists. Used for policies like "any risk_tolerance_change
+    signal requires review".
+
+    Example rule_definition:
+        {
+            "type": "event_trigger",
+            "conditions": [
+                {
+                    "signal_type": "risk_tolerance_change",
+                    "threshold": {
+                        "field": "payload.new_tolerance",
+                        "operator": "exists",
+                        "value": True
+                    },
+                    "severity_mapping": {
+                        "default": "high"
+                    }
+                }
+            ],
+            "evaluation_logic": "any_condition_met"
+        }
+    """
+    conditions = rule_definition.get("conditions", [])
+    evaluation_logic = rule_definition.get("evaluation_logic", "any_condition_met")
+
+    matched_conditions = []
+    matched_signals = []
+
+    for condition in conditions:
+        signal_type = condition["signal_type"]
+        threshold = condition.get("threshold", {})
+
+        # Filter signals by type
+        relevant_signals = [s for s in signals if s["signal_type"] == signal_type]
+
+        for signal in relevant_signals:
+            # Check if signal matches trigger condition
+            if _check_event_trigger(signal, threshold):
+                matched_conditions.append(condition)
+                matched_signals.append(signal)
+                break  # One match per condition
+
+    # Determine result based on evaluation logic
+    if evaluation_logic == "any_condition_met":
+        result = "fail" if matched_conditions else "pass"
+    elif evaluation_logic == "all_conditions_met":
+        result = "fail" if len(matched_conditions) == len(conditions) else "pass"
+    else:
+        result = "inconclusive"
+
+    details = {
+        "rule_type": "event_trigger",
+        "evaluation_logic": evaluation_logic,
+        "conditions_evaluated": len(conditions),
+        "conditions_matched": len(matched_conditions),
+        "matched_signals": [{"id": str(s["id"]), "type": s["signal_type"]} for s in matched_signals],
+        "severity": _determine_event_severity(matched_signals, conditions) if matched_signals else None
+    }
+
+    return result, details
+
+
+def _check_event_trigger(signal: Dict[str, Any], threshold: Dict[str, Any]) -> bool:
+    """
+    Check if signal meets event trigger condition.
+
+    For event triggers, the main operators are:
+    - "exists": Check if a field exists and is truthy
+    - "not_exists": Check if a field doesn't exist or is falsy
+    """
+    if not threshold:
+        # No threshold means signal existence alone is enough
+        return True
+
+    field_path = threshold.get("field", "")
+    operator = threshold.get("operator", "exists")
+    expected = threshold.get("value", True)
+
+    # Extract field value
+    field_value = _extract_field_value(signal, field_path)
+
+    if operator == "exists":
+        # Check if field exists and is truthy (or matches expected value)
+        if expected is True:
+            return field_value is not None
+        else:
+            return field_value is None
+
+    # Fall back to regular comparison for other operators
+    return _compare_values(field_value, operator, expected)
+
+
+def _determine_event_severity(
+    matched_signals: List[Dict[str, Any]],
+    conditions: List[Dict[str, Any]]
+) -> str:
+    """
+    Determine severity for event trigger policies.
+
+    Event triggers typically use "default" severity from the mapping.
+    """
+    if not matched_signals or not conditions:
+        return "medium"
+
+    condition = conditions[0]
+    severity_mapping = condition.get("severity_mapping", {})
+
+    # For event triggers, use default severity
+    return severity_mapping.get("default", "high")

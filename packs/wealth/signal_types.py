@@ -1,176 +1,268 @@
 """
 Wealth Pack - Signal Types.
 
-Defines the 8 signal types for wealth management:
-- portfolio_drift
-- rebalancing_required
-- suitability_mismatch
-- concentration_breach
-- tax_loss_harvest_opportunity
-- client_cash_withdrawal
-- market_correlation_spike
-- fee_schedule_change
+Defines canonical signal types for wealth management with:
+- Required payload fields for deterministic extraction
+- Title templates for consistent, auditable naming
+- Severity rules for policy evaluation
+
+IMPORTANT: LLM extracts structured facts into payload fields.
+Titles are generated deterministically from templates - never LLM-invented.
 """
 
 WEALTH_SIGNAL_TYPES = {
-    "portfolio_drift": {
-        "description": "Portfolio allocation has drifted from target allocation",
+    "concentration_breach": {
+        "description": "Single position or sector exceeds concentration limit",
+        "title_template": "CONCENTRATION_BREACH: {subject} ({current_value} vs {threshold} limit)",
+        "required_fields": ["subject", "metric", "threshold", "current_value"],
         "payload_schema": {
+            "subject": "string",  # security name, fund, sector
+            "metric": "string",  # % of TPV, % of AUM, etc.
+            "threshold": "string",  # limit value with unit
+            "current_value": "string",  # actual value with unit
             "client_id": "string",
             "portfolio_id": "string",
-            "asset_class": "string",  # equities, fixed_income, alternatives, cash
-            "target_allocation_percent": "number",
-            "current_allocation_percent": "number",
-            "drift_percent": "number",  # absolute difference
-            "drift_direction": "string",  # over, under
-            "portfolio_value_usd": "number",
+            "evidence_text": "string",  # source quote
+        },
+        "severity_default": "high",
+        "escalation_rules": {
+            "numeric(current_value) > 25": "critical",
+            "numeric(current_value) > 20": "high",
+        },
+    },
+    "lookthrough_missing": {
+        "description": "Required lookthrough data unavailable for compliance check",
+        "title_template": "LOOKTHROUGH_MISSING: {subject} ({missing_data})",
+        "required_fields": ["subject", "rule", "missing_data"],
+        "payload_schema": {
+            "subject": "string",  # fund, ETF, vehicle name
+            "rule": "string",  # regulatory rule requiring lookthrough
+            "missing_data": "string",  # what data is missing
+            "impact": "string",  # what can't be verified
+            "client_id": "string",
+            "portfolio_id": "string",
         },
         "severity_default": "medium",
         "escalation_rules": {
-            "drift_percent > 10": "high",
-            "drift_percent > 15": "critical",
-            "portfolio_value_usd > 10000000 and drift_percent > 5": "high",
+            "rule contains 'regulatory'": "high",
         },
     },
-    "rebalancing_required": {
-        "description": "Portfolio rebalancing threshold has been triggered",
+    "fee_discrepancy": {
+        "description": "Charged fee differs from expected fee schedule",
+        "title_template": "FEE_DISCREPANCY: {charged} charged vs {expected} expected",
+        "required_fields": ["charged", "expected"],
         "payload_schema": {
+            "charged": "string",  # actual fee with unit (e.g., "0.35%")
+            "expected": "string",  # expected fee with unit
+            "fee_type": "string",  # management, custody, trading
+            "period": "string",  # billing period
+            "amount_impact": "string",  # dollar impact if known
+            "missing_doc": "string",  # missing fee schedule reference
             "client_id": "string",
             "portfolio_id": "string",
-            "trigger_type": "string",  # calendar, threshold, tax_event
-            "last_rebalance_date": "string",
+        },
+        "severity_default": "medium",
+        "escalation_rules": {
+            "amount_impact > 10000": "high",
+        },
+    },
+    "settlement_pending_cash": {
+        "description": "Pending settlement proceeds included in cash calculations",
+        "title_template": "SETTLEMENT_PENDING_CASH: {amount} ({impact})",
+        "required_fields": ["amount", "impact"],
+        "payload_schema": {
+            "amount": "string",  # pending amount with currency
+            "impact": "string",  # what calculation is affected
+            "settlement_date": "string",
+            "value_date": "string",
+            "affects_liquidity": "boolean",
+            "client_id": "string",
+            "portfolio_id": "string",
+        },
+        "severity_default": "medium",
+        "escalation_rules": {
+            "affects_liquidity == true": "high",
+        },
+    },
+    "suitability_drift": {
+        "description": "Portfolio risk profile drifted from client's stated tolerance",
+        "title_template": "SUITABILITY_DRIFT: {client} ({current_risk} vs {target_risk} target)",
+        "required_fields": ["client", "current_risk", "target_risk"],
+        "payload_schema": {
+            "client": "string",  # client name/ID
+            "current_risk": "string",  # current risk level
+            "target_risk": "string",  # target/agreed risk level
+            "drift_direction": "string",  # more_aggressive, more_conservative
+            "contributing_factors": "string",  # what caused drift
+            "client_id": "string",
+            "portfolio_id": "string",
+        },
+        "severity_default": "high",
+        "escalation_rules": {
+            "drift_direction == 'more_aggressive'": "critical",
+        },
+    },
+    "mandate_breach": {
+        "description": "Investment violates client mandate or IPS constraints",
+        "title_template": "MANDATE_BREACH: {constraint} ({current} vs {limit} allowed)",
+        "required_fields": ["constraint", "current", "limit"],
+        "payload_schema": {
+            "constraint": "string",  # what mandate rule
+            "current": "string",  # current exposure/value
+            "limit": "string",  # mandated limit
+            "asset_class": "string",  # affected asset class
+            "ips_reference": "string",  # IPS section if known
+            "client_id": "string",
+            "portfolio_id": "string",
+        },
+        "severity_default": "critical",
+        "escalation_rules": {},
+    },
+    "rebalancing_required": {
+        "description": "Portfolio allocation drifted beyond rebalancing threshold",
+        "title_template": "REBALANCING_REQUIRED: {portfolio} ({max_drift} max drift)",
+        "required_fields": ["portfolio", "max_drift"],
+        "payload_schema": {
+            "portfolio": "string",  # portfolio identifier
+            "max_drift": "string",  # largest drift percentage
+            "trigger_type": "string",  # threshold, calendar, tax_event
             "days_since_rebalance": "number",
-            "max_drift_percent": "number",  # largest drift across asset classes
-            "estimated_trades": "number",
-            "estimated_tax_impact_usd": "number",
+            "asset_classes_affected": "string",
+            "client_id": "string",
+            "portfolio_id": "string",
         },
         "severity_default": "medium",
         "escalation_rules": {
             "days_since_rebalance > 365": "high",
-            "estimated_tax_impact_usd > 50000": "high",
         },
     },
-    "suitability_mismatch": {
-        "description": "Client's holdings do not match their risk profile",
-        "payload_schema": {
-            "client_id": "string",
-            "portfolio_id": "string",
-            "client_risk_score": "number",  # 1-10
-            "portfolio_risk_score": "number",  # 1-10
-            "risk_delta": "number",  # portfolio - client
-            "mismatch_direction": "string",  # too_aggressive, too_conservative
-            "top_contributing_holdings": "array",  # list of holdings causing mismatch
-            "last_profile_update": "string",
-        },
-        "severity_default": "high",
-        "escalation_rules": {
-            "abs(risk_delta) > 3": "critical",
-            "mismatch_direction == 'too_aggressive' and risk_delta > 2": "critical",
-        },
-    },
-    "concentration_breach": {
-        "description": "Single position exceeds concentration limit",
-        "payload_schema": {
-            "client_id": "string",
-            "portfolio_id": "string",
-            "security_id": "string",
-            "security_name": "string",
-            "sector": "string",
-            "current_weight_percent": "number",
-            "limit_percent": "number",
-            "breach_amount_percent": "number",
-            "position_value_usd": "number",
-            "is_restricted_security": "boolean",
-        },
-        "severity_default": "high",
-        "escalation_rules": {
-            "current_weight_percent > 20": "critical",
-            "is_restricted_security == true": "critical",
-            "position_value_usd > 1000000": "high",
-        },
-    },
-    "tax_loss_harvest_opportunity": {
+    "tax_harvest_opportunity": {
         "description": "Tax-loss harvesting opportunity identified",
+        "title_template": "TAX_HARVEST_OPPORTUNITY: {security} ({unrealized_loss} loss)",
+        "required_fields": ["security", "unrealized_loss"],
         "payload_schema": {
-            "client_id": "string",
-            "portfolio_id": "string",
-            "security_id": "string",
-            "security_name": "string",
-            "cost_basis_usd": "number",
-            "current_value_usd": "number",
-            "unrealized_loss_usd": "number",
-            "holding_period_days": "number",
-            "is_short_term": "boolean",
+            "security": "string",  # security name
+            "unrealized_loss": "string",  # loss amount
+            "cost_basis": "string",
+            "current_value": "string",
+            "holding_period": "string",  # short-term, long-term
             "wash_sale_risk": "boolean",
-            "replacement_security_id": "string",
-            "estimated_tax_savings_usd": "number",
+            "estimated_tax_savings": "string",
+            "client_id": "string",
+            "portfolio_id": "string",
         },
         "severity_default": "low",
         "escalation_rules": {
-            "estimated_tax_savings_usd > 10000": "medium",
-            "estimated_tax_savings_usd > 50000": "high",
-            "is_short_term == false and unrealized_loss_usd > 25000": "medium",
+            "estimated_tax_savings > 50000": "high",
         },
     },
-    "client_cash_withdrawal": {
-        "description": "Large cash withdrawal request from client",
+    "withdrawal_request": {
+        "description": "Client withdrawal request requiring review",
+        "title_template": "WITHDRAWAL_REQUEST: {client} ({amount}, {percent_of_portfolio})",
+        "required_fields": ["client", "amount", "percent_of_portfolio"],
         "payload_schema": {
-            "client_id": "string",
-            "portfolio_id": "string",
-            "withdrawal_amount_usd": "number",
-            "withdrawal_percent": "number",  # percent of portfolio
-            "available_cash_usd": "number",
+            "client": "string",
+            "amount": "string",  # withdrawal amount with currency
+            "percent_of_portfolio": "string",
             "liquidation_required": "boolean",
-            "liquidation_amount_usd": "number",
-            "withdrawal_reason": "string",
+            "reason": "string",
             "requested_date": "string",
+            "client_id": "string",
+            "portfolio_id": "string",
         },
         "severity_default": "medium",
         "escalation_rules": {
-            "withdrawal_percent > 25": "high",
-            "withdrawal_percent > 50": "critical",
-            "liquidation_required == true and liquidation_amount_usd > 500000": "high",
+            "percent_of_portfolio > 25": "high",
+            "percent_of_portfolio > 50": "critical",
         },
     },
-    "market_correlation_spike": {
-        "description": "Portfolio correlation with market has spiked unexpectedly",
+    "risk_tolerance_change": {
+        "description": "Client's risk tolerance has changed",
+        "title_template": "RISK_TOLERANCE_CHANGE: {client} ({previous} → {new_tolerance})",
+        "required_fields": ["client", "previous", "new_tolerance"],
         "payload_schema": {
+            "client": "string",
+            "previous": "string",  # previous tolerance level
+            "new_tolerance": "string",  # new tolerance level
+            "reason": "string",  # reason for change
             "client_id": "string",
-            "portfolio_id": "string",
-            "benchmark": "string",  # SP500, ACWI, etc.
-            "current_correlation": "number",  # -1 to 1
-            "historical_correlation": "number",
-            "correlation_change": "number",
-            "lookback_days": "number",
-            "diversification_ratio": "number",
-            "risk_parity_breach": "boolean",
         },
-        "severity_default": "medium",
-        "escalation_rules": {
-            "current_correlation > 0.95": "high",
-            "correlation_change > 0.2": "high",
-            "risk_parity_breach == true": "high",
-        },
+        "severity_default": "high",
+        "escalation_rules": {},
     },
-    "fee_schedule_change": {
-        "description": "Fee schedule change affecting client",
+    "objective_change": {
+        "description": "Client's investment objective has changed",
+        "title_template": "OBJECTIVE_CHANGE: {client} ({previous} → {new_objective})",
+        "required_fields": ["client", "previous", "new_objective"],
         "payload_schema": {
+            "client": "string",
+            "previous": "string",  # previous objective
+            "new_objective": "string",  # new objective
+            "reason": "string",
             "client_id": "string",
-            "portfolio_id": "string",
-            "fee_type": "string",  # management, custody, trading, performance
-            "current_rate_bps": "number",
-            "new_rate_bps": "number",
-            "change_bps": "number",
-            "effective_date": "string",
-            "annual_impact_usd": "number",
-            "requires_client_notification": "boolean",
-            "requires_consent": "boolean",
         },
-        "severity_default": "low",
-        "escalation_rules": {
-            "change_bps > 25": "medium",
-            "annual_impact_usd > 5000": "medium",
-            "requires_consent == true": "high",
+        "severity_default": "high",
+        "escalation_rules": {},
+    },
+    "compliance_flag": {
+        "description": "Potential compliance issue requiring review",
+        "title_template": "COMPLIANCE_FLAG: {issue_type} ({subject})",
+        "required_fields": ["issue_type", "subject", "regulation"],
+        "payload_schema": {
+            "issue_type": "string",  # specific compliance concern
+            "subject": "string",  # what entity/transaction
+            "regulation": "string",  # applicable regulation
+            "details": "string",
+            "evidence_text": "string",
+            "client_id": "string",
         },
+        "severity_default": "high",
+        "escalation_rules": {},
     },
 }
+
+
+def generate_signal_title(signal_type: str, payload: dict) -> str:
+    """
+    Generate deterministic title from signal type and payload.
+
+    Args:
+        signal_type: Canonical signal type
+        payload: Extracted payload fields
+
+    Returns:
+        Formatted title string
+    """
+    if signal_type not in WEALTH_SIGNAL_TYPES:
+        return f"{signal_type.upper()}: Unknown signal type"
+
+    spec = WEALTH_SIGNAL_TYPES[signal_type]
+    template = spec.get("title_template", "{signal_type}")
+
+    # Build template variables from payload
+    template_vars = {k: str(v) for k, v in payload.items() if v is not None}
+    template_vars["signal_type"] = signal_type
+
+    try:
+        return template.format(**template_vars)
+    except KeyError as e:
+        # Missing field - return partial title
+        return f"{signal_type.upper()}: (missing {e})"
+
+
+def get_required_fields(signal_type: str) -> list:
+    """Get required payload fields for a signal type."""
+    if signal_type not in WEALTH_SIGNAL_TYPES:
+        return []
+    return WEALTH_SIGNAL_TYPES[signal_type].get("required_fields", [])
+
+
+def validate_payload(signal_type: str, payload: dict) -> list:
+    """
+    Validate payload has required fields.
+
+    Returns:
+        List of missing field names (empty if valid)
+    """
+    required = get_required_fields(signal_type)
+    return [f for f in required if f not in payload or payload[f] is None]

@@ -1,103 +1,124 @@
 TREASURY PACK - Signal Type Vocabulary
 
-Valid signal types for treasury pack:
+CRITICAL: Extract structured FACTS into payload fields. DO NOT invent titles.
+Titles are generated deterministically from templates after extraction.
+
+=== CANONICAL SIGNAL TYPES ===
 
 1. position_limit_breach
-   - Triggered when a position exceeds defined limits
-   - Payload: { asset: string, current_position: number, limit: number, breach_percent: number }
-   - Example: "USD position of $15M exceeds $10M limit"
+   - Description: Asset position exceeds configured limit
+   - REQUIRED fields: asset, current_position, limit
+   - Optional: duration_hours, breach_percent, entity, evidence_text
+   - Example source: "USD cash position stands at $15.2 million, exceeding our $10M limit"
+   - Extract: { asset: "USD cash", current_position: "$15.2M", limit: "$10M" }
 
-2. concentration_threshold
-   - Triggered when concentration in a single asset/counterparty exceeds threshold
-   - Payload: { entity: string, concentration_percent: number, threshold: number }
-   - Example: "Exposure to Counterparty X at 12% of portfolio exceeds 10% threshold"
+2. market_volatility_spike
+   - Description: Market volatility exceeds threshold
+   - REQUIRED fields: asset, volatility, threshold
+   - Optional: window_hours, measure_type, evidence_text
+   - Example source: "VIX at 35, significantly above 20 threshold"
+   - Extract: { asset: "VIX", volatility: "35", threshold: "20" }
 
-3. market_volatility_spike
-   - Triggered by significant market volatility
-   - Payload: { market: string, volatility_measure: string, current_value: number, baseline: number }
-   - Example: "VIX at 35, significantly above 30-day average of 18"
+3. counterparty_credit_downgrade
+   - Description: Counterparty credit rating downgraded
+   - REQUIRED fields: counterparty, previous_rating, new_rating
+   - Optional: rating_agency, exposure_usd, evidence_text
+   - Example source: "Moody's downgraded Bank ABC from A2 to Baa1"
+   - Extract: { counterparty: "Bank ABC", previous_rating: "A2", new_rating: "Baa1", rating_agency: "Moody's" }
 
-4. counterparty_exposure_change
-   - Material change in exposure to a counterparty
-   - Payload: { counterparty: string, previous_exposure: number, current_exposure: number, change_percent: number }
-   - Example: "Exposure to Bank ABC increased from $5M to $8M (60% increase)"
+4. liquidity_threshold_breach
+   - Description: Asset liquidity falls below required threshold
+   - REQUIRED fields: entity, current_ratio, threshold
+   - Optional: asset, shortfall_usd, currency, evidence_text
+   - Example source: "Operating liquidity ratio at 0.12, below 0.20 minimum"
+   - Extract: { entity: "Operating Account", current_ratio: "0.12", threshold: "0.20" }
 
-5. regulatory_filing_received
-   - Receipt of regulatory filing or notice
-   - Payload: { regulator: string, filing_type: string, filing_date: string, summary: string }
-   - Example: "SEC Form 13F received from XYZ Corp dated 2026-01-10"
+5. fx_exposure_breach
+   - Description: Foreign exchange exposure exceeds approved limit
+   - REQUIRED fields: currency_pair, current_exposure, limit, direction
+   - Optional: breach_percent, hedge_recommendation, evidence_text
+   - Example source: "EUR/USD long exposure of $12M exceeds $10M limit"
+   - Extract: { currency_pair: "EUR/USD", current_exposure: "$12M", limit: "$10M", direction: "long" }
 
-6. collateral_margin_call
-   - Margin call or collateral requirement notification
-   - Payload: { counterparty: string, amount: number, deadline: string, reason: string }
-   - Example: "Margin call of $2M from Prime Broker due by EOD"
+6. cash_forecast_variance
+   - Description: Actual cash position deviates significantly from forecast
+   - REQUIRED fields: account, actual, forecast, variance_percent
+   - Optional: variance_direction, forecast_date, root_cause, evidence_text
+   - Example source: "Actual cash $3.2M vs forecast $5M, -36% variance"
+   - Extract: { account: "Main Operating", actual: "$3.2M", forecast: "$5M", variance_percent: "-36%" }
 
-7. fx_hedge_expiration
-   - FX hedge approaching expiration
-   - Payload: { currency_pair: string, notional: number, expiration_date: string, current_rate: number }
-   - Example: "EUR/USD hedge of €5M expires 2026-02-15"
+7. covenant_breach
+   - Description: Financial covenant threshold breached or at risk
+   - REQUIRED fields: covenant_name, actual_ratio, required_ratio
+   - Optional: covenant_type, lender, facility, cure_period_days, evidence_text
+   - Example source: "DSCR at 1.18x versus 1.25x covenant requirement"
+   - Extract: { covenant_name: "DSCR", actual_ratio: "1.18x", required_ratio: "1.25x" }
 
-8. credit_rating_change
-   - Credit rating change for counterparty or issuer
-   - Payload: { entity: string, agency: string, previous_rating: string, new_rating: string }
-   - Example: "Moody's downgraded XYZ Corp from A2 to A3"
+8. settlement_failure
+   - Description: Trade settlement failed or is at risk of failure
+   - REQUIRED fields: counterparty, amount, failure_reason
+   - Optional: trade_id, asset, settlement_date, evidence_text
+   - Example source: "Trade #12345 with Broker XYZ failed, $1.5M, insufficient funds"
+   - Extract: { counterparty: "Broker XYZ", amount: "$1.5M", failure_reason: "insufficient_funds", trade_id: "12345" }
 
-9. counterparty_credit_downgrade
-   - Counterparty has been downgraded, affecting credit risk
-   - Payload: { counterparty: string, previous_rating: string, new_rating: string, exposure_usd: number }
-   - Example: "Bank ABC downgraded from A to BBB, current exposure $5M"
+9. settlement_rail_shortfall
+   - Description: Insufficient funds available on a settlement rail
+   - REQUIRED fields: rail, shortfall, coverage_ratio
+   - Optional: required, available, fragmentation_ratio, restricted_cash, root_cause, evidence_text
+   - Example source: "Fedwire balance $12M insufficient for $15M payments, 0.80 coverage"
+   - Extract: { rail: "Fedwire", shortfall: "$3M", coverage_ratio: "0.80", available: "$12M", required: "$15M" }
 
-10. liquidity_threshold_breach
-    - Cash or liquidity position falls below required threshold
-    - Payload: { asset: string, threshold_name: string, currency: string, current_amount: number, threshold_amount: number }
-    - Example: "Operating cash of $2M falls below minimum threshold of $5M"
+10. debt_maturity_approaching
+    - Description: Debt facility approaching maturity requiring refinancing decision
+    - REQUIRED fields: facility, amount, maturity_date
+    - Optional: lender, days_to_maturity, current_rate, refinance_status, evidence_text
+    - Example source: "Term Loan A of $50M matures March 15, 2026"
+    - Extract: { facility: "Term Loan A", amount: "$50M", maturity_date: "2026-03-15" }
 
-11. fx_exposure_breach
-    - Foreign exchange exposure exceeds risk limits
-    - Payload: { currency_pair: string, direction: string, notional: number, limit: number }
-    - Example: "EUR/USD long exposure of $8M exceeds $5M limit"
+11. interest_rate_reset
+    - Description: Variable rate debt approaching reset date
+    - REQUIRED fields: facility, current_rate, reset_date
+    - Optional: lender, projected_rate, notional_amount, annual_impact, evidence_text
+    - Example source: "Revolving facility resets Feb 1, currently at SOFR+150bps"
+    - Extract: { facility: "Revolving Credit", current_rate: "SOFR+150bps", reset_date: "2026-02-01" }
 
-12. cash_forecast_variance
-    - Actual cash position materially differs from forecast
-    - Payload: { account: string, currency: string, forecast_amount: number, actual_amount: number, variance_amount: number, variance: number }
-    - Example: "Actual cash $3M vs forecast $5M, variance of -$2M (-40%)"
+12. bank_account_anomaly
+    - Description: Unusual activity detected in bank account
+    - REQUIRED fields: account, anomaly_type, amount
+    - Optional: bank, expected_pattern, transaction_date, evidence_text
+    - Example source: "$2.5M wire received from unknown sender on Operating Account"
+    - Extract: { account: "Operating Account", anomaly_type: "unknown_sender", amount: "$2.5M" }
 
-13. covenant_breach
-    - Financial covenant violation or near-breach
-    - Payload: { covenant_name: string, covenant_description: string, covenant_id: string, facility: string, actual_value: number, required_value: number }
-    - Example: "Debt-to-EBITDA ratio of 4.5x exceeds covenant limit of 4.0x"
+=== EXTRACTION RULES ===
 
-14. settlement_failure
-    - Trade settlement has failed or is at risk
-    - Payload: { trade_id: string, counterparty: string, asset: string, amount_usd: number, failure_reason: string, settlement_date: string }
-    - Example: "Trade #12345 failed to settle, $1.5M exposure with Broker XYZ"
+1. ONLY use signal types from the list above
+2. ALWAYS extract ALL required fields - use null if not explicitly stated
+3. Preserve exact values with units as stated in document
+4. Include source_spans pointing to exact quoted text
+5. Be honest with confidence scores - lower is better than guessing
 
-15. settlement_rail_shortfall
-    - Insufficient funds on a settlement rail to cover required payments
-    - Payload: { rail: string, required_usd: number, available_usd: number, shortfall_usd: number, coverage_ratio: number, fragmentation_ratio: number, restricted_cash_usd: number, root_cause: string }
-    - Example: "Fedwire balance of $12M insufficient to cover $15M in required payments, $3M shortfall with 0.80 coverage ratio"
+=== OUTPUT FORMAT ===
 
-EXTRACTION EXAMPLES:
-
-Document text: "As of January 14, 2026, our USD cash position stands at $15.2 million, which exceeds our internal limit of $10 million by 52%."
-
-Extraction:
-{
-  "signal_type": "position_limit_breach",
-  "payload": {
-    "asset": "USD cash",
-    "current_position": 15200000,
-    "limit": 10000000,
-    "breach_percent": 52
-  },
-  "confidence": 0.95,
-  "source_spans": [
-    {
-      "start_char": 0,
-      "end_char": 124,
-      "text": "As of January 14, 2026, our USD cash position stands at $15.2 million, which exceeds our internal limit of $10 million by 52%.",
-      "page": 1
-    }
-  ],
-  "extraction_notes": "Clear position breach with exact numbers stated"
-}
+Return JSON array:
+[
+  {
+    "signal_type": "covenant_breach",
+    "payload": {
+      "covenant_name": "Debt Service Coverage Ratio",
+      "actual_ratio": "1.18x",
+      "required_ratio": "1.25x",
+      "lender": "Bank of America",
+      "facility": "Term Loan A"
+    },
+    "confidence": 0.95,
+    "source_spans": [
+      {
+        "start_char": 150,
+        "end_char": 250,
+        "text": "DSCR at 1.18x falls below the 1.25x covenant requirement under our Term Loan A with Bank of America",
+        "page": 1
+      }
+    ],
+    "extraction_notes": "Clear covenant breach with all required ratios and parties stated"
+  }
+]

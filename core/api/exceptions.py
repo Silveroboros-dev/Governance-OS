@@ -74,6 +74,53 @@ def list_exceptions(
     return exceptions
 
 
+@router.get("/debug/all")
+def debug_all_exceptions(
+    limit: int = Query(default=50, le=200),
+    db: Session = Depends(get_db)
+):
+    """
+    Debug: List all exceptions without pack filtering.
+    Returns raw exception data to diagnose missing exceptions.
+    """
+    from core.models import Evaluation, PolicyVersion, Policy
+    exceptions = db.query(Exception).order_by(Exception.raised_at.desc()).limit(limit).all()
+
+    results = []
+    for exc in exceptions:
+        # Try to resolve pack through join chain
+        pack = None
+        eval_info = None
+        try:
+            evaluation = db.query(Evaluation).filter(Evaluation.id == exc.evaluation_id).first()
+            if evaluation:
+                pv = db.query(PolicyVersion).filter(PolicyVersion.id == evaluation.policy_version_id).first()
+                if pv:
+                    policy = db.query(Policy).filter(Policy.id == pv.policy_id).first()
+                    if policy:
+                        pack = policy.pack
+                eval_info = {
+                    "id": str(evaluation.id),
+                    "result": evaluation.result.value,
+                    "replay_namespace": evaluation.replay_namespace,
+                    "policy_version_id": str(evaluation.policy_version_id),
+                }
+        except Exception:
+            pass
+
+        results.append({
+            "id": str(exc.id),
+            "title": exc.title,
+            "severity": exc.severity.value,
+            "status": exc.status.value,
+            "raised_at": exc.raised_at.isoformat(),
+            "pack": pack,
+            "evaluation": eval_info,
+        })
+
+    return results
+
+
 @router.get("/{exception_id}", response_model=ExceptionDetail)
 def get_exception(
     exception_id: str,

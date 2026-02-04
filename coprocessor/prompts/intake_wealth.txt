@@ -1,91 +1,126 @@
 WEALTH PACK - Signal Type Vocabulary
 
-Valid signal types for wealth pack:
+CRITICAL: Extract structured FACTS into payload fields. DO NOT invent titles.
+Titles are generated deterministically from templates after extraction.
 
-1. risk_tolerance_change
-   - Client's risk tolerance has changed
-   - Payload: { client_id: string, previous_tolerance: string, new_tolerance: string, reason: string }
-   - Example: "Client moved from Aggressive to Moderate following retirement"
+=== CANONICAL SIGNAL TYPES ===
 
-2. large_transaction_alert
-   - Significant transaction that may require review
-   - Payload: { client_id: string, transaction_type: string, amount: number, description: string }
-   - Example: "Client withdrew $500,000 for real estate purchase"
+1. concentration_breach
+   - Description: Single position or sector exceeds concentration limit
+   - REQUIRED fields: subject, metric, threshold, current_value
+   - Optional: client_id, portfolio_id, evidence_text
+   - Example source: "AAPL position at 18% of portfolio exceeds 10% single-stock limit"
+   - Extract: { subject: "AAPL", metric: "% of portfolio", threshold: "10%", current_value: "18%" }
 
-3. beneficiary_update
-   - Change to beneficiary designations
-   - Payload: { client_id: string, account: string, change_type: string, details: string }
-   - Example: "Added spouse as primary beneficiary on IRA"
+2. lookthrough_missing
+   - Description: Required lookthrough data unavailable for compliance check
+   - REQUIRED fields: subject, rule, missing_data
+   - Optional: impact, client_id, portfolio_id
+   - Example source: "Unable to verify Rule 144A compliance - missing XYZ Fund holdings"
+   - Extract: { subject: "XYZ Fund", rule: "Rule 144A compliance", missing_data: "underlying holdings" }
 
-4. tax_event
-   - Significant tax event requiring action
-   - Payload: { client_id: string, event_type: string, estimated_impact: number, deadline: string }
-   - Example: "Capital gains distribution of $75,000 expected in December"
+3. fee_discrepancy
+   - Description: Charged fee differs from expected fee schedule
+   - REQUIRED fields: charged, expected
+   - Optional: fee_type, period, amount_impact, missing_doc, client_id, portfolio_id
+   - Example source: "Q4 management fee of 0.35% charged vs 0.25% in fee schedule"
+   - Extract: { charged: "0.35%", expected: "0.25%", fee_type: "management", period: "Q4" }
 
-5. estate_document_update
-   - Estate planning document has been updated
-   - Payload: { client_id: string, document_type: string, update_date: string, summary: string }
-   - Example: "Trust agreement amended to add grandchildren"
+4. settlement_pending_cash
+   - Description: Pending settlement proceeds included in cash calculations
+   - REQUIRED fields: amount, impact
+   - Optional: settlement_date, value_date, affects_liquidity, client_id, portfolio_id
+   - Example source: "$250K pending settlement included in available cash for margin"
+   - Extract: { amount: "$250K", impact: "available cash for margin calculation" }
 
-6. investment_objective_change
-   - Client investment objectives have changed
-   - Payload: { client_id: string, previous_objective: string, new_objective: string, reason: string }
-   - Example: "Shifted from growth to income focus"
+5. suitability_drift
+   - Description: Portfolio risk profile drifted from client's stated tolerance
+   - REQUIRED fields: client, current_risk, target_risk
+   - Optional: drift_direction, contributing_factors, client_id, portfolio_id
+   - Example source: "Johnson portfolio now Aggressive vs Moderate target"
+   - Extract: { client: "Johnson", current_risk: "Aggressive", target_risk: "Moderate", drift_direction: "more_aggressive" }
 
-7. account_ownership_change
-   - Change in account ownership or structure
-   - Payload: { client_id: string, account: string, previous_ownership: string, new_ownership: string }
-   - Example: "Converted individual account to joint with spouse"
+6. mandate_breach
+   - Description: Investment violates client mandate or IPS constraints
+   - REQUIRED fields: constraint, current, limit
+   - Optional: asset_class, ips_reference, client_id, portfolio_id
+   - Example source: "Real estate allocation at 25% exceeds 15% IPS maximum"
+   - Extract: { constraint: "Real estate allocation", current: "25%", limit: "15% maximum" }
 
-8. compliance_violation_flag
-   - Potential compliance issue identified
-   - Payload: { client_id: string, violation_type: string, details: string, severity: string }
-   - Example: "Pattern trading detected in client account"
+7. rebalancing_required
+   - Description: Portfolio allocation drifted beyond rebalancing threshold
+   - REQUIRED fields: portfolio, max_drift
+   - Optional: trigger_type, days_since_rebalance, asset_classes_affected, client_id, portfolio_id
+   - Example source: "Smith IRA - 12% max drift, 180 days since last rebalance"
+   - Extract: { portfolio: "Smith IRA", max_drift: "12%", days_since_rebalance: 180 }
 
-EXTRACTION EXAMPLES:
+8. tax_harvest_opportunity
+   - Description: Tax-loss harvesting opportunity identified
+   - REQUIRED fields: security, unrealized_loss
+   - Optional: cost_basis, current_value, holding_period, wash_sale_risk, estimated_tax_savings, client_id, portfolio_id
+   - Example source: "TSLA shows $45K unrealized loss, potential $13.5K tax savings"
+   - Extract: { security: "TSLA", unrealized_loss: "$45K", estimated_tax_savings: "$13.5K" }
 
-Document text: "Per our meeting on January 12, 2026, John Smith (Client ID: WM-12345) has requested to change his investment objective from Growth to Income Generation. He cited his upcoming retirement in June 2026 as the primary reason."
+9. withdrawal_request
+   - Description: Client withdrawal request requiring review
+   - REQUIRED fields: client, amount, percent_of_portfolio
+   - Optional: liquidation_required, reason, requested_date, client_id, portfolio_id
+   - Example source: "Williams requesting $250K withdrawal (15% of portfolio) for home purchase"
+   - Extract: { client: "Williams", amount: "$250K", percent_of_portfolio: "15%", reason: "home purchase" }
 
-Extraction:
-{
-  "signal_type": "investment_objective_change",
-  "payload": {
-    "client_id": "WM-12345",
-    "previous_objective": "Growth",
-    "new_objective": "Income Generation",
-    "reason": "Upcoming retirement in June 2026"
-  },
-  "confidence": 0.92,
-  "source_spans": [
-    {
-      "start_char": 0,
-      "end_char": 220,
-      "text": "Per our meeting on January 12, 2026, John Smith (Client ID: WM-12345) has requested to change his investment objective from Growth to Income Generation. He cited his upcoming retirement in June 2026 as the primary reason.",
-      "page": 1
-    }
-  ],
-  "extraction_notes": "Clear objective change with client ID and reason stated"
-}
+10. risk_tolerance_change
+    - Description: Client's risk tolerance has changed
+    - REQUIRED fields: client, previous, new_tolerance
+    - Optional: reason, client_id
+    - Example source: "Chen moved from Aggressive to Moderate following retirement announcement"
+    - Extract: { client: "Chen", previous: "Aggressive", new_tolerance: "Moderate", reason: "retirement" }
 
-Document text: "This is to notify you that Mrs. Sarah Johnson (Account #98765) would like to add her daughter, Emily Johnson, as a beneficiary on her Roth IRA, effective immediately."
+11. objective_change
+    - Description: Client's investment objective has changed
+    - REQUIRED fields: client, previous, new_objective
+    - Optional: reason, client_id
+    - Example source: "Davis shifted from Growth to Income Generation, cites retirement planning"
+    - Extract: { client: "Davis", previous: "Growth", new_objective: "Income Generation", reason: "retirement planning" }
 
-Extraction:
-{
-  "signal_type": "beneficiary_update",
-  "payload": {
-    "client_id": "98765",
-    "account": "Roth IRA",
-    "change_type": "add_beneficiary",
-    "details": "Added daughter Emily Johnson as beneficiary"
-  },
-  "confidence": 0.88,
-  "source_spans": [
-    {
-      "start_char": 0,
-      "end_char": 167,
-      "text": "This is to notify you that Mrs. Sarah Johnson (Account #98765) would like to add her daughter, Emily Johnson, as a beneficiary on her Roth IRA, effective immediately.",
-      "page": 1
-    }
-  ],
-  "extraction_notes": "Beneficiary addition with account and details"
-}
+12. compliance_flag
+    - Description: Potential compliance issue requiring review
+    - REQUIRED fields: issue_type, subject, regulation
+    - Optional: details, evidence_text, client_id
+    - Example source: "Pattern day trading detected in Martinez account, FINRA Rule 4210"
+    - Extract: { issue_type: "Pattern day trading", subject: "Martinez account", regulation: "FINRA Rule 4210" }
+
+=== EXTRACTION RULES ===
+
+1. ONLY use signal types from the list above
+2. ALWAYS extract ALL required fields - use null if not explicitly stated
+3. Preserve exact values with units as stated in document
+4. Include source_spans pointing to exact quoted text
+5. Be honest with confidence scores - lower is better than guessing
+6. Client names should be extracted as stated, not invented
+
+=== OUTPUT FORMAT ===
+
+Return JSON array:
+[
+  {
+    "signal_type": "suitability_drift",
+    "payload": {
+      "client": "Johnson Family Trust",
+      "current_risk": "Aggressive",
+      "target_risk": "Moderate",
+      "drift_direction": "more_aggressive",
+      "contributing_factors": "Equity allocation increased to 85%",
+      "client_id": "WM-12345"
+    },
+    "confidence": 0.92,
+    "source_spans": [
+      {
+        "start_char": 150,
+        "end_char": 280,
+        "text": "Johnson Family Trust (WM-12345) portfolio risk has drifted to Aggressive from the Moderate target, driven by equity allocation increasing to 85%",
+        "page": 1
+      }
+    ],
+    "extraction_notes": "Clear suitability drift with client ID and risk levels stated"
+  }
+]
