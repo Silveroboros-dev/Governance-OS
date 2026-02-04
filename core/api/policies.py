@@ -398,6 +398,53 @@ def delete_draft_version(
     db.commit()
 
 
+@router.patch("/{policy_id}/versions/{version_id}/rule", response_model=PolicyVersionResponse)
+def update_policy_rule(
+    policy_id: str,
+    version_id: str,
+    rule_definition: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """
+    Update the rule definition of a policy version.
+
+    Admin endpoint for fixing policy rules without full draft workflow.
+    """
+    try:
+        policy_uuid = UUID(policy_id)
+        version_uuid = UUID(version_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    version = db.query(PolicyVersion).filter(
+        PolicyVersion.id == version_uuid,
+        PolicyVersion.policy_id == policy_uuid
+    ).first()
+
+    if not version:
+        raise HTTPException(status_code=404, detail="Policy version not found")
+
+    version.rule_definition = rule_definition
+
+    # Audit event
+    audit_event = AuditEvent(
+        event_type=AuditEventType.POLICY_ACTIVATED,  # Reusing event type
+        aggregate_type="policy_version",
+        aggregate_id=version.id,
+        event_data={
+            "action": "rule_updated",
+            "policy_id": str(policy_uuid),
+            "version_id": str(version_uuid)
+        },
+        actor="admin"
+    )
+    db.add(audit_event)
+    db.commit()
+    db.refresh(version)
+
+    return version
+
+
 def _compute_rule_diff(baseline: Dict[str, Any], comparison: Dict[str, Any]) -> Dict[str, Any]:
     """Compute a summary of differences between two rule definitions."""
     diff = {

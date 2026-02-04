@@ -320,18 +320,21 @@ class GeminiClient:
 
         # Extract thoughts and text from response parts
         thoughts = None
-        text = None
+        text_parts = []
 
         if response.candidates and response.candidates[0].content:
             for part in response.candidates[0].content.parts:
                 if hasattr(part, 'thought') and part.thought:
                     thoughts = part.text
-                elif hasattr(part, 'text'):
-                    # Take the latest text part (the final JSON output)
-                    text = part.text
+                elif hasattr(part, 'text') and part.text:
+                    # Collect ALL text parts (not just the last one)
+                    text_parts.append(part.text)
+
+        # Concatenate all text parts
+        text = "".join(text_parts)
 
         return ThinkingResponse(
-            text=text or "",
+            text=text,
             thoughts=thoughts,
             usage=self.get_usage_metadata(response),
         )
@@ -378,18 +381,21 @@ class GeminiClient:
 
         # Extract thoughts and text from response parts
         thoughts = None
-        text = None
+        text_parts = []
 
         if response.candidates and response.candidates[0].content:
             for part in response.candidates[0].content.parts:
                 if hasattr(part, 'thought') and part.thought:
                     thoughts = part.text
-                elif hasattr(part, 'text'):
-                    # Take the latest text part (the final JSON output)
-                    text = part.text
+                elif hasattr(part, 'text') and part.text:
+                    # Collect ALL text parts (not just the last one)
+                    text_parts.append(part.text)
+
+        # Concatenate all text parts
+        text = "".join(text_parts)
 
         return ThinkingResponse(
-            text=text or "",
+            text=text,
             thoughts=thoughts,
             usage=self.get_usage_metadata(response),
         )

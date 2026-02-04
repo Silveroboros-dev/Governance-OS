@@ -19,7 +19,8 @@ from core.database import get_db
 from core.models import (
     ApprovalQueue, ApprovalActionType, ApprovalStatus,
     AuditEvent, AuditEventType,
-    Signal, SignalReliability
+    Signal, SignalReliability,
+    Policy, PolicyVersion, PolicyStatus
 )
 from core.models.signal import compute_signal_content_hash
 from core.schemas.approval import (
@@ -343,7 +344,55 @@ def _execute_signal_approval(approval: ApprovalQueue, db: Session) -> UUID:
     )
     db.add(audit_event)
 
+    # Trigger policy evaluation for the new signal
+    _evaluate_signal_against_policies(signal, db)
+
     return signal.id
+
+
+def _evaluate_signal_against_policies(signal: Signal, db: Session):
+    """
+    Evaluate a newly created signal against all active policies for its pack.
+
+    This is the critical link between signal ingestion and exception generation.
+    """
+    from core.models import Policy, PolicyVersion, PolicyStatus
+    from core.services.evaluator import Evaluator
+    from core.services.exception_engine import ExceptionEngine
+
+    # Find all active policy versions for this pack
+    active_versions = (
+        db.query(PolicyVersion)
+        .join(Policy)
+        .filter(
+            Policy.pack == signal.pack,
+            PolicyVersion.status == PolicyStatus.ACTIVE
+        )
+        .all()
+    )
+
+    if not active_versions:
+        return  # No active policies for this pack
+
+    evaluator = Evaluator(db)
+    exception_engine = ExceptionEngine(db)
+
+    for policy_version in active_versions:
+        # Get all signals for this pack (could be optimized to filter by relevant signal types)
+        pack_signals = (
+            db.query(Signal)
+            .filter(Signal.pack == signal.pack)
+            .order_by(Signal.observed_at.desc())
+            .limit(100)  # Reasonable limit for evaluation context
+            .all()
+        )
+
+        # Run evaluation
+        evaluation = evaluator.evaluate(policy_version, pack_signals)
+
+        # Generate exception if evaluation failed
+        if evaluation:
+            exception_engine.generate_exception(evaluation, policy_version)
 
 
 def _execute_context_approval(approval: ApprovalQueue, db: Session):
@@ -393,11 +442,25 @@ def _execute_dismiss_approval(approval: ApprovalQueue, db: Session):
 
 
 def _execute_policy_draft_approval(approval: ApprovalQueue, db: Session) -> UUID:
-    """Create policy version from approved draft."""
+    """Create policy version from approved draft.
+
+    Also triggers cache invalidation to ensure agents use updated policies.
+    """
     from core.models import Policy, PolicyVersion, PolicyStatus
     from datetime import datetime
 
     payload = approval.payload
+
+    # Invalidate Gemini context caches when policy changes
+    # This ensures agents use the updated policy definitions
+    try:
+        from coprocessor.cache import invalidate_on_policy_change
+        pack = payload.get("pack", "treasury")
+        version_str = f"policy_draft_{approval.id}"
+        invalidate_on_policy_change(pack, version_str)
+    except ImportError:
+        # Cache module not available - continue without invalidation
+        pass
 
     # Check if updating existing policy or creating new one
     policy_id = payload.get("policy_id")

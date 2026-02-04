@@ -42,10 +42,40 @@ Valid signal types for treasury pack:
    - Payload: { entity: string, agency: string, previous_rating: string, new_rating: string }
    - Example: "Moody's downgraded XYZ Corp from A2 to A3"
 
-9. settlement_rail_shortfall
-   - Insufficient funds on a settlement rail to cover required payments
-   - Payload: { rail: string, required_usd: number, available_usd: number, shortfall_usd: number, coverage_ratio: number, fragmentation_ratio: number, restricted_cash_usd: number, root_cause: string }
-   - Example: "Fedwire balance of $12M insufficient to cover $15M in required payments, $3M shortfall with 0.80 coverage ratio"
+9. counterparty_credit_downgrade
+   - Counterparty has been downgraded, affecting credit risk
+   - Payload: { counterparty: string, previous_rating: string, new_rating: string, exposure_usd: number }
+   - Example: "Bank ABC downgraded from A to BBB, current exposure $5M"
+
+10. liquidity_threshold_breach
+    - Cash or liquidity position falls below required threshold
+    - Payload: { asset: string, threshold_name: string, currency: string, current_amount: number, threshold_amount: number }
+    - Example: "Operating cash of $2M falls below minimum threshold of $5M"
+
+11. fx_exposure_breach
+    - Foreign exchange exposure exceeds risk limits
+    - Payload: { currency_pair: string, direction: string, notional: number, limit: number }
+    - Example: "EUR/USD long exposure of $8M exceeds $5M limit"
+
+12. cash_forecast_variance
+    - Actual cash position materially differs from forecast
+    - Payload: { account: string, currency: string, forecast_amount: number, actual_amount: number, variance_amount: number, variance: number }
+    - Example: "Actual cash $3M vs forecast $5M, variance of -$2M (-40%)"
+
+13. covenant_breach
+    - Financial covenant violation or near-breach
+    - Payload: { covenant_name: string, covenant_description: string, covenant_id: string, facility: string, actual_value: number, required_value: number }
+    - Example: "Debt-to-EBITDA ratio of 4.5x exceeds covenant limit of 4.0x"
+
+14. settlement_failure
+    - Trade settlement has failed or is at risk
+    - Payload: { trade_id: string, counterparty: string, asset: string, amount_usd: number, failure_reason: string, settlement_date: string }
+    - Example: "Trade #12345 failed to settle, $1.5M exposure with Broker XYZ"
+
+15. settlement_rail_shortfall
+    - Insufficient funds on a settlement rail to cover required payments
+    - Payload: { rail: string, required_usd: number, available_usd: number, shortfall_usd: number, coverage_ratio: number, fragmentation_ratio: number, restricted_cash_usd: number, root_cause: string }
+    - Example: "Fedwire balance of $12M insufficient to cover $15M in required payments, $3M shortfall with 0.80 coverage ratio"
 
 EXTRACTION EXAMPLES:
 

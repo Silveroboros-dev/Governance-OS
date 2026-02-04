@@ -45,9 +45,10 @@ def _counterparty_credit_downgrade(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _liquidity_threshold_breach(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Liquidity breach: dedupe by asset."""
+    """Liquidity breach: dedupe by threshold name and currency."""
     return {
-        "asset": payload.get("asset"),
+        "threshold_name": payload.get("threshold_name") or payload.get("asset"),
+        "currency": payload.get("currency"),
     }
 
 
@@ -60,17 +61,18 @@ def _fx_exposure_breach(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _cash_forecast_variance(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Cash forecast variance: dedupe by account."""
+    """Cash forecast variance: dedupe by account/currency and variance direction."""
     return {
-        "account": payload.get("account"),
+        "account": payload.get("account") or payload.get("currency"),
+        "variance_direction": "negative" if payload.get("variance", 0) < 0 else "positive",
     }
 
 
 def _covenant_breach(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Covenant breach: dedupe by covenant name and facility."""
+    """Covenant breach: dedupe by covenant name/description and required value."""
     return {
-        "covenant_name": payload.get("covenant_name"),
-        "facility": payload.get("facility"),
+        "covenant_name": payload.get("covenant_name") or payload.get("covenant_description") or payload.get("covenant_id"),
+        "required_value": payload.get("required_value") or payload.get("facility"),
     }
 
 

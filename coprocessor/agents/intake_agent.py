@@ -163,7 +163,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 thinking_response = self._client.generate_with_cache_and_thinking(
                     cache_name=cache_name,
                     user_prompt=user_prompt,
-                    max_tokens=4000,
+                    max_tokens=8000,
                     temperature=0.1,
                     thinking_budget=self._thinking_budget,
                 )
@@ -174,7 +174,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 thinking_response = self._client.generate_with_thinking(
                     user_prompt=user_prompt,
                     system_prompt=full_system,
-                    max_tokens=4000,
+                    max_tokens=8000,
                     temperature=0.1,
                     thinking_budget=self._thinking_budget,
                 )
@@ -187,7 +187,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 response_text = self._client.generate_with_cache(
                     cache_name=cache_name,
                     user_prompt=user_prompt,
-                    max_tokens=4000,
+                    max_tokens=8000,
                     temperature=0.1,
                 )
             else:
@@ -197,7 +197,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 response_text = self._client.generate(
                     user_prompt=user_prompt,
                     system_prompt=full_system,
-                    max_tokens=4000,
+                    max_tokens=8000,
                     temperature=0.1,
                 )
 
@@ -216,6 +216,10 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
 
     def _parse_json_response(self, response_text: str) -> List[Dict[str, Any]]:
         """Parse JSON from LLM response."""
+        # Log raw response for debugging
+        print(f"[DEBUG] Raw LLM response length: {len(response_text)}")
+        print(f"[DEBUG] Raw LLM response first 500 chars: {response_text[:500]}")
+
         # Handle markdown code blocks
         if "```json" in response_text:
             json_start = response_text.find("```json") + 7
@@ -226,6 +230,9 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
             json_end = response_text.find("```", json_start)
             response_text = response_text[json_start:json_end].strip()
 
+        print(f"[DEBUG] After stripping markdown, length: {len(response_text)}")
+        print(f"[DEBUG] After stripping: {response_text[:500]}")
+
         try:
             data = json.loads(response_text)
             if isinstance(data, list):
@@ -235,6 +242,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
             else:
                 return [data]
         except json.JSONDecodeError as e:
+            print(f"[DEBUG] JSON parse failed. Full response: {response_text}")
             raise ValueError(f"Failed to parse LLM response as JSON: {e}")
 
     def _build_extraction_result(

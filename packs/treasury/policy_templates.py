@@ -80,14 +80,13 @@ TREASURY_POLICY_TEMPLATES = {
                 {
                     "signal_type": "liquidity_threshold_breach",
                     "threshold": {
-                        "field": "payload.current_liquidity_ratio",
+                        # Supports both ratio-based and amount-based signals
+                        "field": "payload.current_amount",
                         "operator": "<",
-                        "value": "payload.threshold",
+                        "value": "payload.threshold_amount",
                     },
                     "severity_mapping": {
-                        "current_liquidity_ratio < threshold * 0.5": "critical",
-                        "current_liquidity_ratio < threshold * 0.75": "high",
-                        "default": "medium"
+                        "default": "high"
                     },
                 }
             ],
@@ -103,14 +102,13 @@ TREASURY_POLICY_TEMPLATES = {
                 {
                     "signal_type": "fx_exposure_breach",
                     "threshold": {
-                        "field": "payload.current_exposure_usd",
+                        # Trigger on any unhedged FX exposure with material notional
+                        "field": "payload.notional",
                         "operator": ">",
-                        "value": "payload.limit_usd",
+                        "value": 50000,  # $50K threshold for unhedged exposure
                     },
                     "severity_mapping": {
-                        "current_exposure_usd > limit_usd * 1.25": "critical",
-                        "current_exposure_usd > limit_usd * 1.10": "high",
-                        "default": "medium"
+                        "default": "high"
                     },
                 }
             ],
@@ -126,15 +124,13 @@ TREASURY_POLICY_TEMPLATES = {
                 {
                     "signal_type": "cash_forecast_variance",
                     "threshold": {
-                        "field": "payload.variance_percent",
-                        "operator": "abs>",  # Absolute value comparison
-                        "value": 20,  # 20% variance threshold
+                        # Trigger on material variance amounts
+                        "field": "payload.variance_amount",
+                        "operator": ">",
+                        "value": 10000,  # $10K variance threshold
                     },
                     "severity_mapping": {
-                        "variance_percent < -30": "critical",  # Significantly below forecast
-                        "variance_percent < -20": "high",
-                        "variance_percent > 30": "medium",  # Above forecast is less urgent
-                        "default": "medium"
+                        "default": "high"
                     },
                 }
             ],
@@ -150,14 +146,13 @@ TREASURY_POLICY_TEMPLATES = {
                 {
                     "signal_type": "covenant_breach",
                     "threshold": {
-                        "field": "payload.actual_ratio",
+                        # Supports value-based covenant signals
+                        "field": "payload.actual_value",
                         "operator": "<",
-                        "value": "payload.required_ratio",
+                        "value": "payload.required_value",
                     },
                     "severity_mapping": {
-                        "actual_ratio < required_ratio * 0.90": "critical",  # 10%+ below
-                        "actual_ratio < required_ratio * 0.95": "high",
-                        "default": "high"
+                        "default": "critical"  # Covenant breaches are always critical
                     },
                 }
             ],

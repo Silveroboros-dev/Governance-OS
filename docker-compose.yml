@@ -30,6 +30,7 @@ services:
       CORS_ORIGINS: '["http://localhost:3000"]'
       LOG_LEVEL: INFO
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
     ports:
       - "8000:8000"
     depends_on:
