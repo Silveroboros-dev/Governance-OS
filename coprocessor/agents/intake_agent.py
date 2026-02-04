@@ -163,7 +163,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 thinking_response = self._client.generate_with_cache_and_thinking(
                     cache_name=cache_name,
                     user_prompt=user_prompt,
-                    max_tokens=8000,
+                    max_tokens=16000,
                     temperature=0.1,
                     thinking_budget=self._thinking_budget,
                 )
@@ -174,7 +174,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 thinking_response = self._client.generate_with_thinking(
                     user_prompt=user_prompt,
                     system_prompt=full_system,
-                    max_tokens=8000,
+                    max_tokens=16000,
                     temperature=0.1,
                     thinking_budget=self._thinking_budget,
                 )
@@ -187,7 +187,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 response_text = self._client.generate_with_cache(
                     cache_name=cache_name,
                     user_prompt=user_prompt,
-                    max_tokens=8000,
+                    max_tokens=16000,
                     temperature=0.1,
                 )
             else:
@@ -197,7 +197,7 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 response_text = self._client.generate(
                     user_prompt=user_prompt,
                     system_prompt=full_system,
-                    max_tokens=8000,
+                    max_tokens=16000,
                     temperature=0.1,
                 )
 

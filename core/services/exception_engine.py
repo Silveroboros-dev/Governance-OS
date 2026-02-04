@@ -199,6 +199,9 @@ class ExceptionEngine:
         Returns:
             Dictionary of key dimensions
         """
+        from core.models import Signal
+        from uuid import UUID
+
         details = evaluation.details
         matched_signals = details.get("matched_signals", [])
 
@@ -210,7 +213,18 @@ class ExceptionEngine:
             # Use pack-specific extractor for the first matched signal
             first_signal = matched_signals[0]
             signal_type = first_signal.get("type")
-            payload = first_signal.get("payload", {})
+
+            # Look up the actual signal from DB to get payload
+            # (matched_signals only contains id and type, not payload)
+            signal_id = first_signal.get("id")
+            payload = {}
+            if signal_id:
+                try:
+                    signal = self.db.query(Signal).filter(Signal.id == UUID(signal_id)).first()
+                    if signal:
+                        payload = signal.payload or {}
+                except (ValueError, TypeError):
+                    pass
 
             if signal_type:
                 key_dims = extractor(signal_type, payload)

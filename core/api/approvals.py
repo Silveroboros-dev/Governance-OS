@@ -378,19 +378,14 @@ def _evaluate_signal_against_policies(signal: Signal, db: Session):
     exception_engine = ExceptionEngine(db)
 
     for policy_version in active_versions:
-        # Get all signals for this pack (could be optimized to filter by relevant signal types)
-        pack_signals = (
-            db.query(Signal)
-            .filter(Signal.pack == signal.pack)
-            .order_by(Signal.observed_at.desc())
-            .limit(100)  # Reasonable limit for evaluation context
-            .all()
+        # Evaluate policy against just this new signal (not all pack signals)
+        evaluation = evaluator.evaluate(
+            policy_version,
+            [signal],  # Only the new signal that triggered this evaluation
+            replay_namespace=None
         )
 
-        # Run evaluation
-        evaluation = evaluator.evaluate(policy_version, pack_signals)
-
-        # Generate exception if evaluation failed
+        # Generate exception if policy breach detected
         if evaluation:
             exception_engine.generate_exception(evaluation, policy_version)
 

@@ -38,6 +38,12 @@ The kernel is deterministic. LLMs are optional coprocessors and never the source
 - **One-screen commitment surface:** No scrolling, no drilldowns as default path
 - **Uncertainty is first-class:** Confidence gaps and unknowns must remain visible and explicit
 
+### Deployment Discipline
+- **ALWAYS test locally before deploying to Cloud Run.** Never deploy untested code.
+- Run `docker compose up --build` and verify the feature works locally first
+- Only deploy after confirming the changes work as expected
+- This rule exists because production debugging is expensive and risky
+
 ## Repository Structure
 
 ```
@@ -310,3 +316,88 @@ ENV REACT_APP_API_URL=http://localhost:3000
 **When to use localhost:**
 - Any URL that ends up in browser JavaScript
 - Environment variables with `PUBLIC`, `NEXT_PUBLIC_`, `VITE_`, `REACT_APP_` prefixes
+
+### Firebase App Hosting "package.json not found" build failure
+
+**Problem:** Firebase App Hosting build fails with "neither package.json nor any .js files found" even though `firebase.json` has `rootDir: "ui"` configured.
+
+**Cause:** When connecting a GitHub repository to Firebase App Hosting through the Firebase Console, you must **manually set the root directory in the Console UI**. The `rootDir` in `firebase.json` is used for local CLI operations, but the Console connection has its own separate configuration that takes precedence during builds.
+
+**Symptoms:**
+```
+Step #2 - "pack": Opting out: neither package.json nor any .js files found
+Step #2 - "pack": ERROR: No buildpack groups passed detection.
+```
+
+**Solution:**
+1. Go to Firebase Console → App Hosting → [your backend] → Settings
+2. Find "Root directory" setting
+3. Set it to `ui` (or wherever your Next.js app lives)
+4. Trigger a new rollout
+
+**Prevention:** When connecting GitHub to Firebase App Hosting, **always verify the root directory is set correctly in the Console** - don't assume `firebase.json` settings will be used.
+
+**Alternative:** Deploy the Next.js frontend to Cloud Run instead:
+```bash
+cd ui && gcloud run deploy govos-ui --source . --region europe-west4 --allow-unauthenticated
+```
+
+### Multiple Dockerfiles out of sync
+
+**Problem:** Cloud Run deployment fails with "No module named 'coprocessor'" or similar, even though the module exists and works locally.
+
+**Cause:** This project has **two Dockerfiles** that must be kept in sync:
+- `core/Dockerfile` - used by docker-compose for local development
+- `Dockerfile` (root) - used by `gcloud run deploy --source .` for Cloud Run
+
+**Prevention:** When adding new Python modules, update **BOTH** Dockerfiles:
+```bash
+# Check both files are in sync
+diff <(grep "^COPY" core/Dockerfile) <(grep "^COPY" Dockerfile)
+```
+
+### Cloud Run missing environment variables
+
+**Problem:** API returns "Internal Server Error" or errors about missing keys/connections.
+
+**Cause:** Environment variables from `.env` or `docker-compose.yml` are NOT automatically available in Cloud Run.
+
+**Required variables for this project:**
+- `DATABASE_URL` - Cloud SQL connection string
+- `ANTHROPIC_API_KEY` - for IntakeAgent signal extraction
+
+**Setting variables:**
+```bash
+gcloud run services update govos-api \
+  --region europe-west4 \
+  --project governance-os \
+  --update-env-vars="ANTHROPIC_API_KEY=sk-ant-..."
+
+# Check current variables
+gcloud run services describe govos-api \
+  --region europe-west4 --project governance-os \
+  --format="value(spec.template.spec.containers[0].env)"
+```
+
+## Future Considerations
+
+### MCP Server Authentication (check when adding write tools)
+
+The Cloud Run MCP server (`govos-mcp`) is currently deployed with `--allow-unauthenticated` because:
+- v0 is read-only (no sensitive write operations)
+- Data exposed is governance kernel data, not user PII
+
+**When to add authentication:**
+- When Sprint 3 write tools are added (propose_signal, propose_decision, etc.)
+- If sensitive data is exposed
+- If access needs to be restricted to specific clients
+
+**Options when ready:**
+1. **IAM authentication**: Use `--no-allow-unauthenticated` + service account tokens
+2. **API key header**: Add simple `X-API-Key` validation in MCP server code
+3. **Firebase App Check**: Only if MCP is called from Firebase client apps (unlikely)
+
+**Current deployment:**
+- URL: `https://govos-mcp-1064412167254.europe-west4.run.app/mcp`
+- Transport: Streamable HTTP
+- Database: Cloud SQL (same as govos-api)

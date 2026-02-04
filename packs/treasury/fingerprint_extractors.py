@@ -38,15 +38,17 @@ def _market_volatility_spike(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _counterparty_credit_downgrade(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Counterparty downgrade: dedupe by counterparty."""
+    """Counterparty downgrade: dedupe by counterparty and new rating."""
     return {
-        "counterparty": payload.get("counterparty"),
+        "counterparty": payload.get("counterparty") or payload.get("entity"),
+        "new_rating": payload.get("new_rating"),
     }
 
 
 def _liquidity_threshold_breach(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Liquidity breach: dedupe by threshold name and currency."""
+    """Liquidity breach: dedupe by entity, threshold name and currency."""
     return {
+        "entity": payload.get("entity") or payload.get("account") or payload.get("facility"),
         "threshold_name": payload.get("threshold_name") or payload.get("asset"),
         "currency": payload.get("currency"),
     }
@@ -61,24 +63,27 @@ def _fx_exposure_breach(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _cash_forecast_variance(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Cash forecast variance: dedupe by account/currency and variance direction."""
+    """Cash forecast variance: dedupe by entity, account/currency and variance direction."""
     return {
+        "entity": payload.get("entity") or payload.get("facility"),
         "account": payload.get("account") or payload.get("currency"),
         "variance_direction": "negative" if payload.get("variance", 0) < 0 else "positive",
     }
 
 
 def _covenant_breach(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Covenant breach: dedupe by covenant name/description and required value."""
+    """Covenant breach: dedupe by facility/counterparty, covenant name, and required value."""
     return {
+        "facility": payload.get("facility") or payload.get("counterparty") or payload.get("bank"),
         "covenant_name": payload.get("covenant_name") or payload.get("covenant_description") or payload.get("covenant_id"),
-        "required_value": payload.get("required_value") or payload.get("facility"),
+        "required_value": payload.get("required_value"),
     }
 
 
 def _settlement_failure(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Settlement failure: dedupe by trade ID."""
+    """Settlement failure: dedupe by counterparty and trade ID."""
     return {
+        "counterparty": payload.get("counterparty"),
         "trade_id": payload.get("trade_id"),
     }
 
