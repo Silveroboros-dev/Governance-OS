@@ -297,14 +297,16 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
 
 @mcp.tool()
 def get_policies(
-    is_active: bool = True,
+    pack: Optional[str] = None,
+    active_only: bool = True,
     include_versions: bool = False
 ) -> List[Dict[str, Any]]:
     """
     Get policy definitions.
 
     Args:
-        is_active: Only return active policies. Default True.
+        pack: Filter by domain pack (treasury, wealth). Optional.
+        active_only: Only return policies with an active version. Default True.
         include_versions: Include version history. Default False.
 
     Returns:
@@ -316,31 +318,35 @@ def get_policies(
         db = get_db_session()
         query = db.query(Policy)
 
-        if is_active:
-            query = query.filter(Policy.is_active == True)
+        if pack:
+            query = query.filter(Policy.pack == pack)
 
         policies = []
         for policy in query.all():
+            # Get current (active) version
+            current_version = db.query(PolicyVersion).filter(
+                PolicyVersion.policy_id == policy.id,
+                PolicyVersion.status == "active"
+            ).order_by(PolicyVersion.version_number.desc()).first()
+
+            if active_only and not current_version:
+                continue
+
             policy_data = {
                 "id": str(policy.id),
                 "name": policy.name,
+                "pack": policy.pack,
                 "description": policy.description,
-                "is_active": policy.is_active,
                 "created_at": policy.created_at.isoformat(),
             }
-
-            # Get current version
-            current_version = db.query(PolicyVersion).filter(
-                PolicyVersion.policy_id == policy.id,
-                PolicyVersion.is_current == True
-            ).first()
 
             if current_version:
                 policy_data["current_version"] = {
                     "id": str(current_version.id),
                     "version_number": current_version.version_number,
+                    "status": current_version.status.value if hasattr(current_version.status, 'value') else current_version.status,
                     "rule_definition": current_version.rule_definition,
-                    "effective_from": current_version.effective_from.isoformat() if current_version.effective_from else None,
+                    "valid_from": current_version.valid_from.isoformat() if current_version.valid_from else None,
                 }
 
             if include_versions:
@@ -352,9 +358,9 @@ def get_policies(
                     {
                         "id": str(v.id),
                         "version_number": v.version_number,
-                        "is_current": v.is_current,
-                        "effective_from": v.effective_from.isoformat() if v.effective_from else None,
-                        "change_reason": v.change_reason,
+                        "status": v.status.value if hasattr(v.status, 'value') else v.status,
+                        "valid_from": v.valid_from.isoformat() if v.valid_from else None,
+                        "changelog": v.changelog,
                     }
                     for v in versions
                 ]
@@ -390,14 +396,14 @@ def get_policy_detail(policy_id: str) -> Dict[str, Any]:
 
         current_version = db.query(PolicyVersion).filter(
             PolicyVersion.policy_id == policy.id,
-            PolicyVersion.is_current == True
-        ).first()
+            PolicyVersion.status == "active"
+        ).order_by(PolicyVersion.version_number.desc()).first()
 
         result = {
             "id": str(policy.id),
             "name": policy.name,
+            "pack": policy.pack,
             "description": policy.description,
-            "is_active": policy.is_active,
             "created_at": policy.created_at.isoformat(),
         }
 
@@ -405,10 +411,11 @@ def get_policy_detail(policy_id: str) -> Dict[str, Any]:
             result["current_version"] = {
                 "id": str(current_version.id),
                 "version_number": current_version.version_number,
+                "status": current_version.status.value if hasattr(current_version.status, 'value') else current_version.status,
                 "rule_definition": current_version.rule_definition,
-                "effective_from": current_version.effective_from.isoformat() if current_version.effective_from else None,
-                "effective_to": current_version.effective_to.isoformat() if current_version.effective_to else None,
-                "change_reason": current_version.change_reason,
+                "valid_from": current_version.valid_from.isoformat() if current_version.valid_from else None,
+                "valid_to": current_version.valid_to.isoformat() if current_version.valid_to else None,
+                "changelog": current_version.changelog,
             }
 
         db.close()
@@ -681,17 +688,19 @@ def get_recent_signals(
         if source:
             query = query.filter(Signal.source == source)
 
-        query = query.order_by(Signal.timestamp.desc()).limit(limit)
+        query = query.order_by(Signal.observed_at.desc()).limit(limit)
 
         signals = []
         for sig in query.all():
             signals.append({
                 "id": str(sig.id),
                 "signal_type": sig.signal_type,
+                "pack": sig.pack,
                 "source": sig.source,
                 "payload": sig.payload,
-                "timestamp": sig.timestamp.isoformat(),
-                "reliability": sig.reliability,
+                "observed_at": sig.observed_at.isoformat(),
+                "ingested_at": sig.ingested_at.isoformat() if sig.ingested_at else None,
+                "reliability": sig.reliability.value if hasattr(sig.reliability, 'value') else sig.reliability,
             })
 
         db.close()
