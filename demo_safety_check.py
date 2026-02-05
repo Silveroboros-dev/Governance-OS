@@ -44,13 +44,14 @@ from coprocessor.schemas.narrative import (
 )
 
 # ANSI colors for terminal output
+# Designed for dark terminal backgrounds. No yellow (unreadable).
 class Colors:
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
+    HEADER = '\033[95m'       # magenta — headers
+    BLUE = '\033[94m'         # blue — code/patterns
+    CYAN = '\033[96m'         # cyan — steps/prompts
+    GREEN = '\033[92m'        # green — success
+    WHITE = '\033[90m'        # dark grey — primary text
+    RED = '\033[91m'          # red — errors/attacks
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     END = '\033[0m'
@@ -75,7 +76,7 @@ def print_error(text: str):
 
 
 def print_warning(text: str):
-    print(f"{Colors.YELLOW}⚠ {text}{Colors.END}")
+    print(f"{Colors.CYAN}⚠ {text}{Colors.END}")
 
 
 def print_code(text: str):
@@ -281,7 +282,7 @@ def demo_defense_mechanism():
     ]
 
     for name, patterns, examples in categories:
-        print(f"{Colors.YELLOW}{name}:{Colors.END}")
+        print(f"{Colors.CYAN}{name}:{Colors.END}")
         print(f"  Examples: {examples}")
         print(f"  Patterns: {len(patterns)} regex rules")
         print(f"  Sample:   {Colors.BLUE}{patterns[0]}{Colors.END}")
@@ -313,7 +314,7 @@ def demo_pitch():
     │  • Extracts signals from unstructured docs  │
     │  • Uses 90% cheaper context caching         │
     │                                             │
-    │  {Colors.YELLOW}(Powerful but unpredictable){Colors.END}               │
+    │  {Colors.CYAN}(Powerful but unpredictable){Colors.END}                │
     └─────────────────────────────────────────────┘
                         │
                         ▼
@@ -360,7 +361,7 @@ def main():
         print(f"\n{Colors.CYAN}Demo complete! Run 'make evals' to see full test suite.{Colors.END}\n")
 
     except KeyboardInterrupt:
-        print(f"\n\n{Colors.YELLOW}Demo interrupted.{Colors.END}")
+        print(f"\n\n{Colors.CYAN}Demo interrupted.{Colors.END}")
         sys.exit(0)
 
 

@@ -21,13 +21,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 # ANSI colors for terminal output
+# Designed for dark terminal backgrounds. No yellow (unreadable).
 class Colors:
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
+    HEADER = '\033[95m'       # magenta — headers
+    BLUE = '\033[94m'         # blue — thoughts/reasoning
+    CYAN = '\033[96m'         # cyan — section titles
+    GREEN = '\033[92m'        # green — JSON output, success
+    WHITE = '\033[90m'        # dark grey — primary text
+    RED = '\033[91m'          # red — errors only
     BOLD = '\033[1m'
     DIM = '\033[2m'
     RESET = '\033[0m'
@@ -52,31 +53,30 @@ def print_document(text: str):
 
 
 def print_thinking(thoughts: str):
-    """Print Gemini's thinking process with formatting."""
-    print(f"{Colors.YELLOW}")
-    print("  [Gemini's Reasoning Chain]")
-    print()
+    """Print Gemini's thinking process in blue (distinct from JSON output)."""
+    print(f"\n{Colors.BOLD}{Colors.BLUE}  [Gemini's Reasoning Chain]{Colors.RESET}")
+    print(f"{Colors.BLUE}")
     for line in thoughts.strip().split('\n'):
         print(f"  {line}")
     print(f"{Colors.RESET}")
 
 
 def print_signal(signal: dict, index: int):
-    """Print an extracted signal."""
+    """Print an extracted signal — green for structured data."""
     conf = signal.get('confidence', 0)
-    conf_color = Colors.GREEN if conf >= 0.9 else Colors.YELLOW if conf >= 0.7 else Colors.RED
+    conf_color = Colors.GREEN if conf >= 0.9 else Colors.CYAN if conf >= 0.7 else Colors.RED
 
-    print(f"\n  {Colors.BOLD}Signal #{index + 1}:{Colors.RESET} {signal.get('signal_type', 'unknown')}")
+    print(f"\n  {Colors.BOLD}{Colors.GREEN}Signal #{index + 1}:{Colors.RESET} {Colors.WHITE}{signal.get('signal_type', 'unknown')}{Colors.RESET}")
     print(f"  {Colors.DIM}Confidence:{Colors.RESET} {conf_color}{conf:.0%}{Colors.RESET}")
 
     if signal.get('payload'):
         print(f"  {Colors.DIM}Payload:{Colors.RESET}")
         for k, v in signal['payload'].items():
-            print(f"    - {k}: {v}")
+            print(f"    {Colors.GREEN}- {k}: {v}{Colors.RESET}")
 
     if signal.get('source_spans'):
         span = signal['source_spans'][0]
-        print(f"  {Colors.DIM}Source:{Colors.RESET} \"{span.get('text', '')[:50]}...\"")
+        print(f"  {Colors.DIM}Source:{Colors.RESET} {Colors.WHITE}\"{span.get('text', '')[:60]}...\"{Colors.RESET}")
 
 
 def run_demo(auto_mode: bool = False):
@@ -127,7 +127,7 @@ def run_demo(auto_mode: bool = False):
 
     # Check if we have API key
     if not os.environ.get("GOOGLE_API_KEY"):
-        print(f"\n{Colors.YELLOW}Note: GOOGLE_API_KEY not set. Showing simulated output.{Colors.RESET}")
+        print(f"\n{Colors.WHITE}Note: GOOGLE_API_KEY not set. Showing simulated output.{Colors.RESET}")
 
         # Simulated thinking output
         simulated_thoughts = """
@@ -232,7 +232,7 @@ numerical data with clear threshold comparisons in the source text.
 
         except Exception as e:
             print(f"{Colors.RED}Error: {e}{Colors.RESET}")
-            print(f"{Colors.YELLOW}API call failed. Run without GOOGLE_API_KEY for simulated output.{Colors.RESET}")
+            print(f"{Colors.WHITE}API call failed. Run without GOOGLE_API_KEY for simulated output.{Colors.RESET}")
             return
 
     # Summary

@@ -1,4 +1,4 @@
-.PHONY: help up down logs migrate seed demo-kernel test clean ps replay mcp evals scenarios
+.PHONY: help up down logs migrate seed demo-kernel test clean ps replay mcp evals scenarios demo-video demo-video-auto
 
 help:
 	@echo "Governance OS - Development Commands"
@@ -32,6 +32,8 @@ help:
 	@echo "  make demo-safety-auto  - Run AI safety demo (auto-advance for video)"
 	@echo "  make demo-thinking     - Run Thinking Mode demo (interactive)"
 	@echo "  make demo-thinking-auto - Run Thinking Mode demo (auto-advance for video)"
+	@echo "  make demo-video        - Video demo: all 3 acts, interactive"
+	@echo "  make demo-video-auto   - Video demo: all 3 acts, auto-advance"
 
 up:
 	docker compose up --build -d
@@ -140,6 +142,13 @@ demo-thinking:
 demo-thinking-auto:
 	@echo "Running Thinking Mode Demo (auto-advance mode)..."
 	python demo_thinking_mode.py --auto
+
+# Unified video demo (3 acts: Thinking + Canonicalizer + Safety)
+demo-video:
+	python demo_video.py
+
+demo-video-auto:
+	python demo_video.py --auto
 
 # Load demo scenarios
 scenarios:
