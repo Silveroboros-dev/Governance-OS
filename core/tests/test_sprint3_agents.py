@@ -154,7 +154,7 @@ class TestIntakeAgentBuildResult:
         candidates_data = [
             {
                 "signal_type": "position_limit_breach",
-                "payload": {"asset": "BTC", "position": 120},
+                "payload": {"asset": "BTC", "current_position": "$120M", "limit": "$100M"},
                 "confidence": 0.85,
                 "source_spans": [
                     {"start_char": 10, "end_char": 50, "text": "BTC position $120M"}
@@ -240,7 +240,7 @@ class TestIntakeAgentBuildResult:
         candidates_data = [
             {
                 "signal_type": "position_limit_breach",
-                "payload": {},
+                "payload": {"asset": "BTC", "current_position": "$120M", "limit": "$100M"},
                 "confidence": 1.5,  # Out of range
                 "source_spans": [{"start_char": 0, "end_char": 10, "text": "test"}],
             },
@@ -332,11 +332,11 @@ class TestIntakeAgentSafetyInvariants:
         from coprocessor.schemas.extraction import validate_signal_type_for_pack
 
         # Treasury signal types should be valid for treasury
-        for signal_type in ["position_limit_breach", "counterparty_exposure_change"]:
+        for signal_type in ["position_limit_breach", "counterparty_credit_downgrade"]:
             assert validate_signal_type_for_pack(signal_type, "treasury") is True
 
         # Wealth signal types should NOT be valid for treasury
-        for signal_type in ["risk_tolerance_change", "beneficiary_update"]:
+        for signal_type in ["risk_tolerance_change", "suitability_drift"]:
             assert validate_signal_type_for_pack(signal_type, "treasury") is False
 
     def test_source_spans_required(self, mock_gemini_client):

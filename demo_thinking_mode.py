@@ -205,7 +205,7 @@ numerical data with clear threshold comparisons in the source text.
         try:
             from coprocessor.agents.intake_agent import IntakeAgent
 
-            agent = IntakeAgent(use_thinking=True, thinking_level="high")
+            agent = IntakeAgent(use_thinking=True, thinking_budget=8192)
             result = agent.extract_signals_sync(
                 content=sample_document,
                 pack="treasury",
@@ -232,8 +232,8 @@ numerical data with clear threshold comparisons in the source text.
 
         except Exception as e:
             print(f"{Colors.RED}Error: {e}{Colors.RESET}")
-            print(f"{Colors.YELLOW}Falling back to simulated output...{Colors.RESET}")
-            return run_demo(auto_mode)
+            print(f"{Colors.YELLOW}API call failed. Run without GOOGLE_API_KEY for simulated output.{Colors.RESET}")
+            return
 
     # Summary
     print_section("Why This Matters")
