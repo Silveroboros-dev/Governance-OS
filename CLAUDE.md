@@ -145,6 +145,54 @@ docker compose exec core bash -lc "python -m replay.seed_fixtures"
 docker compose exec core bash -lc "python -m replay.run --pack treasury --from 2025-01-01 --to 2025-03-31"
 ```
 
+## Deployment
+
+### Frontend (Next.js) — Firebase App Hosting (automatic)
+
+The frontend deploys **automatically** when you push to `main`. No manual deploy step needed.
+
+- **Platform:** Firebase App Hosting
+- **Live URL:** `https://governance-os.web.app`
+- **Root directory:** `ui/` (configured in Firebase Console → App Hosting → Settings, NOT from `firebase.json`)
+- **Trigger:** Push to `main` branch on GitHub
+
+**Manual rollout** (if automatic deploy hasn't triggered):
+```bash
+firebase apphosting:rollouts:create web --git-branch main --project governance-os
+```
+
+**Check rollout status:**
+```bash
+firebase apphosting:rollouts:list web --project governance-os
+```
+
+### Backend (FastAPI) — Cloud Run (manual)
+
+The backend must be deployed manually from the project root:
+
+```bash
+gcloud run deploy govos-api --source . --region europe-west4 --project governance-os --allow-unauthenticated
+```
+
+- **Live URL:** `https://govos-api-1064412167254.europe-west4.run.app`
+- **Dockerfile:** `Dockerfile` (root) — NOT `core/Dockerfile` (which is for local docker-compose)
+- **Database:** Cloud SQL PostgreSQL (connection via `DATABASE_URL` env var)
+
+### MCP Server — Cloud Run (manual)
+
+```bash
+cd mcp_server && gcloud run deploy govos-mcp --source . --region europe-west4 --project governance-os --allow-unauthenticated
+```
+
+- **Live URL:** `https://govos-mcp-1064412167254.europe-west4.run.app/mcp`
+
+### Key deployment rules
+
+1. **Frontend:** Just push to `main`. Firebase handles the rest.
+2. **Backend:** Always test locally first (`docker compose up --build`), then `gcloud run deploy` from project root.
+3. **Environment variables** are NOT automatically synced — use `gcloud run services update` to set them on Cloud Run (see Troubleshooting section).
+4. **Two Dockerfiles** must stay in sync: `Dockerfile` (Cloud Run) and `core/Dockerfile` (local dev).
+
 ## Domain Packs
 
 Treasury and Wealth are implemented as **packs** (configuration), not forks. Each pack contains:

@@ -1,0 +1,212 @@
+{
+  "pack": "wealth",
+  "version": "2.0.0",
+  "description": "Realistic wealth management signal fixtures with rich structure. Tests lookthrough gating, definition disputes, cross-type dedup, and signal type misclassification.",
+  "scenarios": [
+    {
+      "scenario_id": "W01_TRUE_CONCENTRATION_BREACH",
+      "title": "Single fund concentration breach should remain breach",
+      "domain": "wealth",
+      "description": "OakRidge weight exceeds max single fund cap; complete fields -> breach remains.",
+      "input_signals": [
+        {
+          "id": "w01_s1",
+          "source": "ic_memo",
+          "proposed_type": "position_limit_breach",
+          "subject": { "id": "fund_oakridge_pcf_iii", "name": "OakRidge Private Credit Fund III", "type": "fund" },
+          "constraint_id": "max_single_fund_15pct",
+          "metric_id": "pct_of_tpv",
+          "operator": ">",
+          "threshold": 0.15,
+          "measured": 0.176,
+          "value_date": "2026-02-18",
+          "currency": null,
+          "flags": ["METRIC_DEFINITION_KNOWN", "VALUE_DATE_CONFIRMED"],
+          "evidence_refs": [{ "doc_id": "ic_memo_2026-02-18", "ref": "OakRidge 17.6%" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 1 },
+      "notes": ["Expected after: CONCENTRATION_BREACH."]
+    },
+    {
+      "scenario_id": "W02_LOOKTHROUGH_MISSING_NOT_BREACH",
+      "title": "Look-through-required constraint cannot be breach without look-through",
+      "domain": "wealth",
+      "description": "EM ETF weight 11.4% is not proof that any single country >10%. Should downgrade to LOOKTHROUGH_MISSING.",
+      "input_signals": [
+        {
+          "id": "w02_s1",
+          "source": "ic_memo",
+          "proposed_type": "position_limit_breach",
+          "subject": { "id": "etf_em_equity", "name": "EM Equity ETF", "type": "fund" },
+          "constraint_id": "max_single_country_em_10pct",
+          "metric_id": "single_country_em_exposure_pct",
+          "operator": ">",
+          "threshold": 0.1,
+          "measured": 0.114,
+          "value_date": "2026-02-18",
+          "currency": null,
+          "flags": ["LOOKTHROUGH_REQUIRED", "LOOKTHROUGH_MISSING"],
+          "evidence_refs": [{ "doc_id": "ic_memo_2026-02-18", "ref": "EM ETF 11.4% (country breakdown missing)" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: LOOKTHROUGH_MISSING (non-breach)."]
+    },
+    {
+      "scenario_id": "W03_LIQUIDITY_DEFINITION_DISPUTE",
+      "title": "Liquidity runway depends on definition; treat as dispute/risk, not breach",
+      "domain": "wealth",
+      "description": "Internal cash differs from custodian cash (pending settlement). Mandate says 12m liquidity; CIO says liquid assets count.",
+      "input_signals": [
+        {
+          "id": "w03_s1",
+          "source": "ic_memo",
+          "proposed_type": "mandate_breach",
+          "subject": { "id": "client_karmine", "name": "Karmine Holdings SA", "type": "client" },
+          "constraint_id": "liquidity_12_months",
+          "metric_id": "cash_available_usd",
+          "operator": "<",
+          "threshold": 1200000,
+          "measured": 640000,
+          "value_date": "2026-02-18",
+          "currency": "USD",
+          "flags": ["DEFINITION_DISPUTE", "SOURCE_CONFLICT"],
+          "evidence_refs": [{ "doc_id": "ic_memo_2026-02-18", "ref": "cash 640k; annual spend 1.2m" }]
+        },
+        {
+          "id": "w03_s2",
+          "source": "custodian_scan",
+          "proposed_type": "mandate_breach",
+          "subject": { "id": "client_karmine", "name": "Karmine Holdings SA", "type": "client" },
+          "constraint_id": "liquidity_12_months",
+          "metric_id": "cash_available_usd",
+          "operator": "<",
+          "threshold": 1200000,
+          "measured": 1240110.1,
+          "value_date": "2026-02-14",
+          "currency": "USD",
+          "flags": ["VALUE_DATE_MISMATCH", "PENDING_SETTLEMENT_INCLUDED"],
+          "evidence_refs": [{ "doc_id": "custodian_scan_2026-02-14", "ref": "cash 1.24m incl pending settlement 580k" }]
+        }
+      ],
+      "expected": { "before_breach_count": 2, "after_breach_count": 0 },
+      "notes": ["Expected after: LIQUIDITY_DEFINITION_DISPUTE + SETTLEMENT_PENDING_CASH / RECONCILIATION_VARIANCE (non-breach)."]
+    },
+    {
+      "scenario_id": "W04_MISSING_KID_BLOCKER",
+      "title": "Missing PRIIPs/KID should be a blocker, not breach",
+      "domain": "wealth",
+      "description": "Structured note present but KID missing; initial 'compliance breach' should become POLICY_BLOCKER_MISSING_DOC.",
+      "input_signals": [
+        {
+          "id": "w04_s1",
+          "source": "portfolio_system",
+          "proposed_type": "compliance_breach",
+          "subject": { "id": "instr_axn_autocall_2025", "name": "AXN Autocall 2025", "type": "structured_product" },
+          "constraint_id": "kid_required",
+          "metric_id": "kid_on_file",
+          "operator": "==",
+          "threshold": 1,
+          "measured": 0,
+          "value_date": "2026-02-17",
+          "currency": null,
+          "flags": ["MISSING_REQUIRED_DOC"],
+          "evidence_refs": [{ "doc_id": "portfolio_export", "ref": "KID missing for AXN Autocall" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: POLICY_BLOCKER_MISSING_DOC (non-breach)."]
+    },
+    {
+      "scenario_id": "W05_FEE_DISCREPANCY_NOT_BREACH",
+      "title": "Fee discrepancy should be fee_discrepancy, not mandate breach",
+      "domain": "wealth",
+      "description": "Charged fee differs from expected; missing fee schedule doc; should not be a breach.",
+      "input_signals": [
+        {
+          "id": "w05_s1",
+          "source": "email",
+          "proposed_type": "mandate_breach",
+          "subject": { "id": "svc_northlake_admin", "name": "NorthLake Admin Fee", "type": "fee" },
+          "constraint_id": "fee_rate_expected",
+          "metric_id": "fee_rate_quarterly",
+          "operator": ">",
+          "threshold": 0.0025,
+          "measured": 0.0035,
+          "value_date": "2026-02-18",
+          "currency": null,
+          "flags": ["MISSING_REQUIRED_DOC", "EVIDENCE_WEAK"],
+          "evidence_refs": [{ "doc_id": "email_coo_2026-02-18", "ref": "charged 0.35% vs term sheet 0.25%" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: FEE_DISCREPANCY (non-breach)."]
+    },
+    {
+      "scenario_id": "W06_SUITABILITY_STALE_PROCESS_RISK",
+      "title": "Suitability stale is process risk, not breach",
+      "domain": "wealth",
+      "description": "Suitability test older than policy target; should be process_risk, not mandate breach.",
+      "input_signals": [
+        {
+          "id": "w06_s1",
+          "source": "rm_notes",
+          "proposed_type": "mandate_breach",
+          "subject": { "id": "client_novalis", "name": "Novalis Foundation", "type": "client" },
+          "constraint_id": "suitability_refresh_12m",
+          "metric_id": "suitability_age_months",
+          "operator": ">",
+          "threshold": 12,
+          "measured": 15,
+          "value_date": "2026-02-18",
+          "currency": null,
+          "flags": ["PROCESS_RISK", "MISSING_REQUIRED_DOC"],
+          "evidence_refs": [{ "doc_id": "rm_notes", "ref": "suitability test date 2024-11-06" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: SUITABILITY_STALE / PROCESS_RISK (non-breach)."]
+    },
+    {
+      "scenario_id": "W07_DUPLICATE_MANDATE_AND_CONCENTRATION_MERGE",
+      "title": "Mandate breach + concentration breach for same fact should merge to single breach",
+      "domain": "wealth",
+      "description": "Two signals describe the same concentration issue; canonicalizer should dedupe and keep one breach type.",
+      "input_signals": [
+        {
+          "id": "w07_s1",
+          "source": "ic_memo",
+          "proposed_type": "mandate_breach",
+          "subject": { "id": "fund_oakridge_pcf_iii", "name": "OakRidge Private Credit Fund III", "type": "fund" },
+          "constraint_id": "max_single_fund_15pct",
+          "metric_id": "pct_of_tpv",
+          "operator": ">",
+          "threshold": 0.15,
+          "measured": 0.176,
+          "value_date": "2026-02-18",
+          "currency": null,
+          "flags": ["VALUE_DATE_CONFIRMED"],
+          "evidence_refs": [{ "doc_id": "ic_memo_2026-02-18", "ref": "OakRidge 17.6%" }]
+        },
+        {
+          "id": "w07_s2",
+          "source": "ic_memo",
+          "proposed_type": "position_limit_breach",
+          "subject": { "id": "fund_oakridge_pcf_iii", "name": "OakRidge Private Credit Fund III", "type": "fund" },
+          "constraint_id": "max_single_fund_15pct",
+          "metric_id": "pct_of_tpv",
+          "operator": ">",
+          "threshold": 0.15,
+          "measured": 0.176,
+          "value_date": "2026-02-18",
+          "currency": null,
+          "flags": ["VALUE_DATE_CONFIRMED"],
+          "evidence_refs": [{ "doc_id": "ic_memo_2026-02-18", "ref": "OakRidge exceeds 15% cap" }]
+        }
+      ],
+      "expected": { "before_breach_count": 2, "after_breach_count": 1 },
+      "notes": ["Expected after: one CONCENTRATION_BREACH with merged evidence."]
+    }
+  ]
+}

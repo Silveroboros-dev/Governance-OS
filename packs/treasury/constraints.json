@@ -1,0 +1,250 @@
+{
+  "pack": "treasury",
+  "version": "1.0.0",
+  "description": "Constraint registry for treasury signal canonicalization. Maps signal types to completeness requirements, severity rules, and deduplication keys.",
+  "constraints": {
+    "position_limit_breach": {
+      "constraint_id": "treasury.position_limit_breach",
+      "category": "threshold",
+      "required_for_breach": ["asset", "current_position", "limit"],
+      "required_for_observation": ["asset"],
+      "completeness_fields": {
+        "threshold": "limit",
+        "measured": "current_position",
+        "subject": "asset",
+        "operator": ">"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": [
+          {"condition": "breach_percent > 50", "severity": "critical"},
+          {"condition": "duration_hours > 24", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["asset"],
+      "evidence_priority": ["compliance_report", "risk_system", "bank_statement", "email"]
+    },
+    "market_volatility_spike": {
+      "constraint_id": "treasury.market_volatility_spike",
+      "category": "threshold",
+      "required_for_breach": ["asset", "volatility", "threshold"],
+      "required_for_observation": ["asset", "volatility"],
+      "completeness_fields": {
+        "threshold": "threshold",
+        "measured": "volatility",
+        "subject": "asset",
+        "operator": ">"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "volatility > 0.50", "severity": "high"},
+          {"condition": "volatility > 0.75", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["asset"],
+      "evidence_priority": ["risk_system", "market_data", "email"]
+    },
+    "counterparty_credit_downgrade": {
+      "constraint_id": "treasury.counterparty_credit_downgrade",
+      "category": "event",
+      "required_for_breach": ["counterparty", "previous_rating", "new_rating"],
+      "required_for_observation": ["counterparty", "new_rating"],
+      "completeness_fields": {
+        "subject": "counterparty",
+        "measured": "new_rating",
+        "threshold": "previous_rating"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": [
+          {"condition": "new_rating in ['BB+','BB','BB-','B+','B','B-','CCC','CC','C','D']", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["counterparty", "new_rating"],
+      "evidence_priority": ["rating_agency", "compliance_report", "email"]
+    },
+    "liquidity_threshold_breach": {
+      "constraint_id": "treasury.liquidity_threshold_breach",
+      "category": "threshold",
+      "required_for_breach": ["entity", "current_ratio", "threshold"],
+      "required_for_observation": ["entity"],
+      "completeness_fields": {
+        "threshold": "threshold",
+        "measured": "current_ratio",
+        "subject": "entity",
+        "operator": "<"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": [
+          {"condition": "current_ratio < 0.10", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["entity", "currency"],
+      "evidence_priority": ["bank_statement", "treasury_system", "compliance_report"]
+    },
+    "fx_exposure_breach": {
+      "constraint_id": "treasury.fx_exposure_breach",
+      "category": "threshold",
+      "required_for_breach": ["currency_pair", "current_exposure", "limit", "direction"],
+      "required_for_observation": ["currency_pair", "current_exposure"],
+      "completeness_fields": {
+        "threshold": "limit",
+        "measured": "current_exposure",
+        "subject": "currency_pair",
+        "operator": ">"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": [
+          {"condition": "breach_percent > 25", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["currency_pair", "direction"],
+      "evidence_priority": ["fx_system", "risk_system", "compliance_report"]
+    },
+    "cash_forecast_variance": {
+      "constraint_id": "treasury.cash_forecast_variance",
+      "category": "threshold",
+      "required_for_breach": ["account", "actual", "forecast", "variance_percent"],
+      "required_for_observation": ["account", "variance_percent"],
+      "completeness_fields": {
+        "threshold": "forecast",
+        "measured": "actual",
+        "subject": "account",
+        "operator": "!="
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "variance_percent < -25", "severity": "high"},
+          {"condition": "variance_percent < -50", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["account", "variance_direction"],
+      "evidence_priority": ["treasury_system", "bank_statement", "forecast_report"]
+    },
+    "covenant_breach": {
+      "constraint_id": "treasury.covenant_breach",
+      "category": "threshold",
+      "required_for_breach": ["covenant_name", "actual_ratio", "required_ratio"],
+      "required_for_observation": ["covenant_name"],
+      "completeness_fields": {
+        "threshold": "required_ratio",
+        "measured": "actual_ratio",
+        "subject": "covenant_name",
+        "operator": "<"
+      },
+      "requires_lookthrough": false,
+      "requires_definition_lock": true,
+      "severity_rules": {
+        "default": "critical",
+        "escalation": []
+      },
+      "dedupe_keys": ["facility", "covenant_name"],
+      "evidence_priority": ["loan_agreement", "compliance_report", "financial_statement"]
+    },
+    "settlement_failure": {
+      "constraint_id": "treasury.settlement_failure",
+      "category": "event",
+      "required_for_breach": ["counterparty", "amount", "failure_reason"],
+      "required_for_observation": ["counterparty"],
+      "completeness_fields": {
+        "subject": "counterparty",
+        "measured": "failure_reason"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": [
+          {"condition": "failure_reason == 'insufficient_funds'", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["counterparty", "trade_id"],
+      "evidence_priority": ["settlement_system", "custodian_report", "email"]
+    },
+    "settlement_rail_shortfall": {
+      "constraint_id": "treasury.settlement_rail_shortfall",
+      "category": "threshold",
+      "required_for_breach": ["rail", "shortfall", "coverage_ratio"],
+      "required_for_observation": ["rail", "shortfall"],
+      "completeness_fields": {
+        "threshold": "required",
+        "measured": "available",
+        "subject": "rail",
+        "operator": "<"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "critical",
+        "escalation": []
+      },
+      "dedupe_keys": ["rail"],
+      "evidence_priority": ["settlement_system", "treasury_system"]
+    },
+    "debt_maturity_approaching": {
+      "constraint_id": "treasury.debt_maturity_approaching",
+      "category": "event",
+      "required_for_breach": ["facility", "amount", "maturity_date"],
+      "required_for_observation": ["facility", "maturity_date"],
+      "completeness_fields": {
+        "subject": "facility",
+        "measured": "maturity_date"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": [
+          {"condition": "days_to_maturity < 30", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["facility"],
+      "evidence_priority": ["loan_agreement", "treasury_system", "compliance_report"]
+    },
+    "interest_rate_reset": {
+      "constraint_id": "treasury.interest_rate_reset",
+      "category": "event",
+      "required_for_breach": ["facility", "current_rate", "reset_date"],
+      "required_for_observation": ["facility", "reset_date"],
+      "completeness_fields": {
+        "subject": "facility",
+        "measured": "current_rate"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "annual_impact > 1000000", "severity": "high"}
+        ]
+      },
+      "dedupe_keys": ["facility"],
+      "evidence_priority": ["loan_agreement", "treasury_system"]
+    },
+    "bank_account_anomaly": {
+      "constraint_id": "treasury.bank_account_anomaly",
+      "category": "event",
+      "required_for_breach": ["account", "anomaly_type", "amount"],
+      "required_for_observation": ["account", "anomaly_type"],
+      "completeness_fields": {
+        "subject": "account",
+        "measured": "anomaly_type"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "anomaly_type == 'fraud_indicator'", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["account", "anomaly_type"],
+      "evidence_priority": ["bank_statement", "fraud_system", "email"]
+    }
+  }
+}

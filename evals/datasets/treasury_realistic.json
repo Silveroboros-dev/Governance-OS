@@ -1,0 +1,219 @@
+{
+  "pack": "treasury",
+  "version": "2.0.0",
+  "description": "Realistic treasury signal fixtures with rich structure (subject objects, metric_ids, operators, value_dates, flags). Tests canonicalizer against real-world signal shapes from LLM extraction.",
+  "scenarios": [
+    {
+      "scenario_id": "T01_DUPLICATE_COVENANT_BREACH_MERGE",
+      "title": "Duplicate covenant breach signals should merge into one",
+      "domain": "treasury",
+      "description": "Two sources report the same covenant breach for the same account/date; canonicalizer should dedupe/merge.",
+      "input_signals": [
+        {
+          "id": "t01_s1",
+          "source": "bank_email",
+          "proposed_type": "covenant_breach",
+          "subject": { "id": "acct_usd_main", "name": "USD Main Account", "type": "bank_account" },
+          "constraint_id": "min_unrestricted_cash_90k",
+          "metric_id": "unrestricted_cash_usd",
+          "operator": "<",
+          "threshold": 90000,
+          "measured": 78940,
+          "value_date": "2026-02-14",
+          "currency": "USD",
+          "flags": ["SOURCE_BANK", "VALUE_DATE_CONFIRMED"],
+          "evidence_refs": [{ "doc_id": "bank_email_2026-02-14", "ref": "unrestricted balance 78,940" }]
+        },
+        {
+          "id": "t01_s2",
+          "source": "ops_notes",
+          "proposed_type": "covenant_breach",
+          "subject": { "id": "acct_usd_main", "name": "USD Main Account", "type": "bank_account" },
+          "constraint_id": "min_unrestricted_cash_90k",
+          "metric_id": "unrestricted_cash_usd",
+          "operator": "<",
+          "threshold": 90000,
+          "measured": 78940,
+          "value_date": "2026-02-14",
+          "currency": "USD",
+          "flags": ["SOURCE_NOTES", "VALUE_DATE_CONFIRMED"],
+          "evidence_refs": [{ "doc_id": "meeting_notes_2026-02-15", "ref": "bank says 78.9k unrestricted" }]
+        }
+      ],
+      "expected": { "before_breach_count": 2, "after_breach_count": 0 },
+      "notes": [
+        "Expected after: 0 breach — covenant_breach requires definition_lock gate (no definition_locked in payload).",
+        "Signals merge to 1 observation with merged evidence_refs.",
+        "Dedupe key suggestion: (constraint_id, subject_id, value_date_bucket)."
+      ]
+    },
+    {
+      "scenario_id": "T02_BREACH_DOWNGRADE_MISSING_VALUE_DATE",
+      "title": "Missing value_date should downgrade a breach to at-risk/inconclusive",
+      "domain": "treasury",
+      "description": "Signal claims breach but lacks value_date; canonicalizer should refuse 'breach' label.",
+      "input_signals": [
+        {
+          "id": "t02_s1",
+          "source": "email",
+          "proposed_type": "covenant_breach",
+          "subject": { "id": "acct_usd_main", "name": "USD Main Account", "type": "bank_account" },
+          "constraint_id": "min_unrestricted_cash_90k",
+          "metric_id": "unrestricted_cash_usd",
+          "operator": "<",
+          "threshold": 90000,
+          "measured": 88500,
+          "value_date": null,
+          "currency": "USD",
+          "flags": ["MISSING_VALUE_DATE", "DERIVED_FROM_EMAIL_ONLY"],
+          "evidence_refs": [{ "doc_id": "email_thread", "ref": "unrestricted below 90k (no date)" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: COVENANT_AT_RISK / INCONCLUSIVE, not BREACH."]
+    },
+    {
+      "scenario_id": "T03_RECONCILIATION_VARIANCE_NOT_BREACH",
+      "title": "Reconciliation variance must not be labeled as covenant breach",
+      "domain": "treasury",
+      "description": "Internal cash differs from statement; initial system calls it covenant_breach, but it's a reconciliation variance.",
+      "input_signals": [
+        {
+          "id": "t03_s1",
+          "source": "treasury_sheet",
+          "proposed_type": "covenant_breach",
+          "subject": { "id": "acct_usd_main", "name": "USD Main Account", "type": "bank_account" },
+          "constraint_id": "min_unrestricted_cash_90k",
+          "metric_id": "cash_on_hand_usd",
+          "operator": null,
+          "threshold": null,
+          "measured": 104560,
+          "value_date": "2026-02-14",
+          "currency": "USD",
+          "flags": ["SOURCE_INTERNAL", "DEFINITION_DISPUTE"],
+          "evidence_refs": [{ "doc_id": "treasury_sheet", "ref": "cash on hand 104,560" }]
+        },
+        {
+          "id": "t03_s2",
+          "source": "bank_statement_scan",
+          "proposed_type": "covenant_breach",
+          "subject": { "id": "acct_usd_main", "name": "USD Main Account", "type": "bank_account" },
+          "constraint_id": "min_unrestricted_cash_90k",
+          "metric_id": "available_balance_usd",
+          "operator": null,
+          "threshold": null,
+          "measured": 61740.55,
+          "value_date": "2026-02-12",
+          "currency": "USD",
+          "flags": ["SOURCE_SCAN", "VALUE_DATE_MISMATCH", "OCR_LOW_QUALITY"],
+          "evidence_refs": [{ "doc_id": "statement_scan_2026-02-12", "ref": "available 61,740.55" }]
+        }
+      ],
+      "expected": { "before_breach_count": 2, "after_breach_count": 0 },
+      "notes": [
+        "Expected after: RECONCILIATION_VARIANCE + VALUE_DATE_MISMATCH, not BREACH.",
+        "A covenant breach exists only after metric definition and value-date alignment."
+      ]
+    },
+    {
+      "scenario_id": "T04_LIQUIDITY_CLIFF_RISK_NOT_BREACH",
+      "title": "Liquidity cliff is risk; don't force into breach without policy threshold",
+      "domain": "treasury",
+      "description": "Upcoming payments exceed cash, but there is no explicit policy threshold; initial proposed type is liquidity_breach.",
+      "input_signals": [
+        {
+          "id": "t04_s1",
+          "source": "forecast",
+          "proposed_type": "liquidity_breach",
+          "subject": { "id": "entity_vegachem", "name": "VegaChem Trading & Manufacturing Ltd", "type": "legal_entity" },
+          "constraint_id": "runway_min_14d",
+          "metric_id": "cash_runway_days",
+          "operator": "<",
+          "threshold": 14,
+          "measured": 6,
+          "value_date": "2026-02-15",
+          "currency": null,
+          "flags": ["DERIVED_FROM_FORECAST", "MISSING_METRIC_DEFINITION"],
+          "evidence_refs": [{ "doc_id": "weekly_pack", "ref": "payroll+gas due within 7 days" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: LIQUIDITY_AT_RISK/RUNWAY_RISK (non-breach unless policy defines threshold)."]
+    },
+    {
+      "scenario_id": "T05_FX_EXPOSURE_IS_RISK",
+      "title": "FX exposure should not become a breach",
+      "domain": "treasury",
+      "description": "Unhedged EUR payable exists; initial system calls it a breach. Canonicalizer should map to FX_EXPOSURE_RISK.",
+      "input_signals": [
+        {
+          "id": "t05_s1",
+          "source": "meeting_notes",
+          "proposed_type": "fx_breach",
+          "subject": { "id": "entity_vegachem", "name": "VegaChem Trading & Manufacturing Ltd", "type": "legal_entity" },
+          "constraint_id": "fx_hedge_required",
+          "metric_id": "unhedged_payable_eur",
+          "operator": ">",
+          "threshold": 0,
+          "measured": 120000,
+          "value_date": "2026-02-15",
+          "currency": "EUR",
+          "flags": ["MISSING_HEDGE_INSTRUCTION", "EVIDENCE_WEAK"],
+          "evidence_refs": [{ "doc_id": "meeting_notes_2026-02-15", "ref": "EUR payable 120k unhedged" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: FX_EXPOSURE_RISK (non-breach)."]
+    },
+    {
+      "scenario_id": "T06_BLOCKED_PAYMENT_NOT_BREACH",
+      "title": "Blocked payment is an operational exception, not a breach",
+      "domain": "treasury",
+      "description": "AP cannot pay due to invoice entity mismatch; initial type is compliance_breach.",
+      "input_signals": [
+        {
+          "id": "t06_s1",
+          "source": "email",
+          "proposed_type": "compliance_breach",
+          "subject": { "id": "vendor_packright", "name": "PackRight Packaging", "type": "vendor" },
+          "constraint_id": "ap_invoice_validity",
+          "metric_id": "invoice_entity_match",
+          "operator": "==",
+          "threshold": 1,
+          "measured": 0,
+          "value_date": "2026-02-14",
+          "currency": null,
+          "flags": ["DATA_QUALITY", "ACTION_REQUIRED"],
+          "evidence_refs": [{ "doc_id": "email_coo_2026-02-14", "ref": "invoice has wrong entity name" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: PAYMENT_BLOCKED / DATA_QUALITY_MISMATCH (non-breach)."]
+    },
+    {
+      "scenario_id": "T07_TRUE_COVENANT_BREACH_COMPLETE",
+      "title": "True covenant breach with complete fields should remain breach",
+      "domain": "treasury",
+      "description": "All required fields present; canonicalizer should keep breach.",
+      "input_signals": [
+        {
+          "id": "t07_s1",
+          "source": "bank_system",
+          "proposed_type": "covenant_breach",
+          "subject": { "id": "acct_usd_main", "name": "USD Main Account", "type": "bank_account" },
+          "constraint_id": "min_unrestricted_cash_90k",
+          "metric_id": "unrestricted_cash_usd",
+          "operator": "<",
+          "threshold": 90000,
+          "measured": 78940,
+          "value_date": "2026-02-14",
+          "currency": "USD",
+          "flags": ["VALUE_DATE_CONFIRMED", "METRIC_DEFINITION_KNOWN"],
+          "evidence_refs": [{ "doc_id": "bank_statement_2026-02-14", "ref": "unrestricted 78,940" }]
+        }
+      ],
+      "expected": { "before_breach_count": 1, "after_breach_count": 0 },
+      "notes": ["Expected after: covenant_breach blocked by definition_lock gate (no definition_locked in payload). Becomes observation."]
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+ORION METALS TRADING AG — TREASURY WEEKLY PACK (Messy Input, Synthetic Demo)
+Week: W09 / 2026  | Compiled: 2026-02-25 06:58 CET
+Entity: Orion Metals Trading AG (synthetic)  | HQ: Zurich (CH)
+Treasury Owner: A. Keller (synthetic) | Prepared by: Treasury Ops (synthetic)
+Confidentiality: synthetic demo data only — do not use for real decisions.
+
+KNOWN ISSUES (intentional for testing):
+- Conflicting value dates (Feb 22 vs Feb 24 vs Feb 25)
+- OCR artifacts in bank statement excerpt
+- Pending settlement included in some cash figures but not others
+- Definitions inconsistent: "available balance" vs "unrestricted cash" vs "cash on hand"
+- Missing attachments referenced in emails
+
+====================================================================
+1) Executive summary (Treasury Ops notes — not audited)
+====================================================================
+- Liquidity looks tight through end of month due to VAT payment + supplier prepayment.
+- Potential covenant risk: unrestricted cash minimum requirement may be breached depending on definition/value date.
+- One urgent payment is blocked due to invoice entity mismatch (supplier amended invoice still pending).
+- FX exposure increased: EUR payables not fully hedged for March shipments.
+- Credit line headroom exists, but utilization nearing internal comfort level.
+
+Top upcoming outflows (planned, not confirmed):
+- VAT payment: CHF 410,000 due 2026-02-28 (tax office notice referenced, not attached)
+- Supplier prepayment: EUR 290,000 due 2026-02-27 (invoice attached? unclear)
+- Payroll: CHF 185,000 due 2026-03-01
+
+====================================================================
+2) Cash position snapshot (Internal sheet extract) — as of 2026-02-25 06:30 CET
+====================================================================
+[INTERNAL TREASURY SHEET — excerpt]
+Base currency: CHF
+
+Bank accounts (cash on hand, internal):
+- AlpineBank CH (CHF Operating):       CHF 322,540
+- AlpineBank CH (EUR Operating):       EUR 118,200
+- NordPort Bank (USD Collections):     USD 74,980
+- Petty cash / card float:             CHF 12,300
+
+Internal "unrestricted cash" (policy metric): CHF 86,400  <-- WATCHLIST (min 100,000)
+Internal note: "Unrestricted excludes: pending settlement, blocked balances, and letters of credit margin."
+
+Internal flagged items:
+- Pending settlement (sale of USD): +USD 58,000 (T+2; trade date 2026-02-24) NOT included above
+- Blocked balance: CHF 41,500 (bank hold for disputed beneficiary) excluded from unrestricted
+
+====================================================================
+3) Bank statement scan OCR excerpt (AlpineBank CH) — Statement date 2026-02-24
+====================================================================
+[SCAN OCR EXCERPT — AlpineBank CH — Account Summary]
+Client: Orion Metals Trading AG             Account: CH19•••••0048
+Statement date: 2026-02-24   Currency: CHF
+
+AVAILABLE BALANCE:               CHF 118,973.55
+BOOK BALANCE:                    CHF 77,473.55
+NOTES:
+- "Avail. includes overdraft facility limit CHF 50,000"  <-- IMPORTANT DEFINITION ISSUE
+- "Pending incoming transfer CHF 25,000 value date 2026-02-25"
+- "Hold: CHF 41,500 pending compliance review"
+
+(End OCR excerpt)
+
+OCR quality: medium (some characters uncertain).
+
+====================================================================
+4) Covenant / policy excerpt (from facility term sheet notes — not attached)
+====================================================================
+Facility: Revolving Credit Facility (RCF) — AlpineBank CH
+Covenant (liquidity): "Minimum Unrestricted Cash >= CHF 100,000 at all times"
+Definition (as copied into notes):
+"Unrestricted cash = cash balances excluding (i) overdraft limits,
+(ii) blocked/held balances, (iii) margin pledged to LCs, (iv) uncollected receivables."
+
+Referenced but NOT attached:
+- RCF_TermSheet_AlpineBank_2025-06.pdf
+- Covenant_Definition_Memo_2025-07.docx
+
+====================================================================
+5) Email thread export (partial; messy)
+====================================================================
+
+--- Email #1 ---------------------------------------------------------
+From: CFO <cfo@orion.example>
+To: Treasury Ops <treasury@orion.example>; Controller <controller@orion.example>
+Date: 2026-02-24 19:12
+Subject: URGENT — covenant breach risk?
+
+I saw the bank statement shows "available" ~119k.
+Are we safe vs the 100k unrestricted cash covenant? Please confirm tonight.
+Also, why is 41.5k "on hold"?
+
+--- Email #2 ---------------------------------------------------------
+From: Treasury Ops <treasury@orion.example>
+To: CFO; Controller
+Date: 2026-02-24 19:36
+Subject: RE: URGENT — covenant breach risk?
+
+Available includes overdraft limit (50k) per OCR note.
+Book balance is 77.5k; plus there's a 41.5k hold (excluded from unrestricted).
+By our definition, unrestricted may be ~86.4k as of Feb 25 morning (sheet).
+We also have +25k incoming on value date Feb 25 (not booked yet).
+
+Need to confirm whether covenant tests are "end of day" and which definition Alpine uses (available vs book).
+
+--- Email #3 ---------------------------------------------------------
+From: Controller <controller@orion.example>
+To: Treasury Ops; CFO
+Date: 2026-02-24 20:02
+Subject: RE: URGENT — covenant breach risk?
+
+The 41.5k hold is due to beneficiary name mismatch on payment to "Baltic Steel OÜ".
+Compliance requested amended invoice + contract copy (we have contract, invoice pending).
+If covenant is strict at all times, we may need to draw CHF 50k overnight or move funds.
+
+Attachment referenced: Invoice_Amended_BalticSteel.pdf (NOT in this export)
+
+--- Email #4 ---------------------------------------------------------
+From: Treasury Ops <treasury@orion.example>
+To: FX Desk <fx@orion.example>
+Date: 2026-02-25 07:10
+Subject: EUR exposure for March shipments
+
+We have EUR payables ~EUR 410k due 2026-03-10/15 (2 shipments).
+Only EUR 150k hedged so far. Please propose hedge plan.
+Also note: CFO prefers "no derivatives beyond forwards."
+
+====================================================================
+6) Meeting notes (Cash & Risk sync) — 2026-02-25 08:30–08:55
+====================================================================
+Attendees: CFO, Treasury Ops, Controller, Sales Ops
+
+Notes:
+- CFO: "If covenant is 'unrestricted' per our definition, we are below 100k unless incoming 25k clears today."
+- Controller: "Bank may test using 'available' which includes overdraft. That would show 118.9k."
+- Treasury: "But overdraft is excluded per our covenant notes; we need the term sheet."
+- Decision: prepare two scenarios:
+  A) Do nothing, wait for incoming 25k (risk: still breach if EOD strict)
+  B) Draw CHF 50k from RCF to cover covenant buffer (risk: optics + interest)
+- Action: resolve payment hold by getting amended invoice + confirming beneficiary.
+- FX: flag that EUR payables partly unhedged; set hedge proposal by EOD.

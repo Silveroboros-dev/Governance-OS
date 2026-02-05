@@ -1,0 +1,154 @@
+{
+  "pack": "wealth",
+  "version": "1.0.0",
+  "description": "Golden test cases for wealth Canonicalizer evaluation. Tests lookthrough gating, mandate breaches, and wealth-specific completeness rules.",
+  "candidates": [
+    {
+      "id": "W1",
+      "signal_type": "concentration_breach",
+      "payload": {
+        "subject": "AAPL",
+        "metric": "% of TPV",
+        "threshold": "15%",
+        "current_value": "22%",
+        "client_id": "client-001",
+        "portfolio_id": "port-001"
+      },
+      "confidence": 0.93,
+      "source_spans": [{"start_char": 0, "end_char": 80, "text": "AAPL at 22% of total portfolio value vs 15% limit"}],
+      "_test_note": "Complete breach with lookthrough required. But no lookthrough_available=true, so should be DOWNGRADED to observation."
+    },
+    {
+      "id": "W2",
+      "signal_type": "concentration_breach",
+      "payload": {
+        "subject": "MSFT",
+        "metric": "% of TPV",
+        "threshold": "10%",
+        "current_value": "18%",
+        "client_id": "client-006",
+        "portfolio_id": "port-006",
+        "lookthrough_available": true
+      },
+      "confidence": 0.93,
+      "source_spans": [{"start_char": 80, "end_char": 160, "text": "MSFT concentration 18% (lookthrough confirmed)"}],
+      "_test_note": "Complete breach WITH lookthrough (different client/subject from W1). Should stay as BREACH."
+    },
+    {
+      "id": "W3",
+      "signal_type": "mandate_breach",
+      "payload": {
+        "constraint": "Max equity allocation",
+        "current": "75%",
+        "limit": "60%",
+        "asset_class": "US Equities",
+        "client_id": "client-002"
+      },
+      "confidence": 0.88,
+      "source_spans": [{"start_char": 200, "end_char": 280, "text": "Equity allocation at 75% versus 60% mandate limit"}],
+      "_test_note": "Complete breach with lookthrough required but missing. Should be DOWNGRADED."
+    },
+    {
+      "id": "W4",
+      "signal_type": "mandate_breach",
+      "payload": {
+        "constraint": "Max fixed income duration",
+        "current": "8.5 years",
+        "limit": "6.0 years",
+        "asset_class": "Fixed Income",
+        "client_id": "client-007",
+        "lookthrough_available": true
+      },
+      "confidence": 0.88,
+      "source_spans": [{"start_char": 280, "end_char": 360, "text": "FI duration 8.5y vs 6.0y mandate (lookthrough confirmed)"}],
+      "_test_note": "Complete mandate breach WITH lookthrough (different client/constraint from W3). Should be BREACH at critical severity."
+    },
+    {
+      "id": "W5",
+      "signal_type": "suitability_drift",
+      "payload": {
+        "client": "Jane Smith",
+        "current_risk": "aggressive",
+        "target_risk": "moderate",
+        "drift_direction": "more_aggressive",
+        "client_id": "client-003"
+      },
+      "confidence": 0.90,
+      "source_spans": [{"start_char": 400, "end_char": 500, "text": "Jane Smith portfolio risk aggressive vs moderate target"}],
+      "_test_note": "Complete breach — should escalate to critical (drift_direction == more_aggressive)"
+    },
+    {
+      "id": "W6",
+      "signal_type": "suitability_drift",
+      "payload": {
+        "client": "Jane Smith",
+        "current_risk": "aggressive",
+        "client_id": "client-003"
+      },
+      "confidence": 0.65,
+      "source_spans": [{"start_char": 500, "end_char": 560, "text": "Jane Smith portfolio appears more aggressive"}],
+      "_test_note": "Incomplete breach — missing target_risk. Low confidence. Should downgrade. Also duplicate of W5 by dedupe_keys."
+    },
+    {
+      "id": "W7",
+      "signal_type": "fee_discrepancy",
+      "payload": {
+        "charged": "0.45%",
+        "expected": "0.35%",
+        "fee_type": "management",
+        "period": "Q4 2024",
+        "amount_impact": "15000",
+        "client_id": "client-004"
+      },
+      "confidence": 0.87,
+      "source_spans": [{"start_char": 600, "end_char": 680, "text": "Management fee 0.45% vs expected 0.35%"}],
+      "_test_note": "Complete breach — should escalate to high (amount_impact > 10000)"
+    },
+    {
+      "id": "W8",
+      "signal_type": "withdrawal_request",
+      "payload": {
+        "client": "Bob Johnson",
+        "amount": "$500,000",
+        "percent_of_portfolio": "55",
+        "client_id": "client-005",
+        "reason": "Real estate purchase"
+      },
+      "confidence": 0.95,
+      "source_spans": [{"start_char": 700, "end_char": 800, "text": "Bob Johnson requesting $500K withdrawal (55% of portfolio)"}],
+      "_test_note": "Complete event — should escalate to critical (percent_of_portfolio > 50)"
+    },
+    {
+      "id": "W9",
+      "signal_type": "lookthrough_missing",
+      "payload": {
+        "subject": "Vanguard Total Bond ETF",
+        "rule": "regulatory concentration check",
+        "missing_data": "underlying bond holdings"
+      },
+      "confidence": 0.82,
+      "source_spans": [{"start_char": 800, "end_char": 880, "text": "Cannot perform lookthrough on Vanguard Total Bond ETF"}],
+      "_test_note": "Complete event — should escalate to high (rule contains 'regulatory')"
+    }
+  ],
+  "expected": {
+    "total_candidates": 9,
+    "breach_count": 3,
+    "observation_count": 5,
+    "dropped_count": 0,
+    "merged_count": 1,
+    "downgrade_count": 4,
+    "lookthrough_blocked_count": 2,
+    "signal_details": {
+      "W1": {"status": "observation", "reason": "lookthrough_missing (threshold + lookthrough gate)"},
+      "W2": {"status": "breach", "severity": "high", "note": "threshold + lookthrough, WITH lookthrough"},
+      "W3": {"status": "observation", "reason": "lookthrough_missing (threshold + lookthrough gate)"},
+      "W4": {"status": "breach", "severity": "critical", "note": "threshold + lookthrough, WITH lookthrough"},
+      "W5": {"status": "breach", "severity": "critical", "note": "threshold, complete, no gates"},
+      "W6": {"status": "merged_or_observation", "reason": "incomplete + duplicate of W5"},
+      "W7": {"status": "observation", "severity": "high", "reason": "threshold + authorized_threshold gate blocks (no evidence_type in payload)"},
+      "W8": {"status": "observation", "severity": "critical", "reason": "event category — always OBSERVATION"},
+      "W9": {"status": "observation", "severity": "high", "reason": "event category — always OBSERVATION"}
+    }
+  }
+}

@@ -35,6 +35,10 @@ class IntakeProcessRequest(BaseModel):
         max_length=500,
         description="Source identifier (e.g., 'Q4 Board Meeting', 'CFO Email')"
     )
+    document_date: Optional[datetime] = Field(
+        None,
+        description="Date of the source document. Used as observed_at for extracted signals. Falls back to submission time if not provided."
+    )
 
 
 class SourceSpanResponse(BaseModel):
@@ -57,6 +61,18 @@ class ExtractedSignalResponse(BaseModel):
     requires_verification: bool = Field(..., description="True if confidence < 0.7")
 
 
+class CanonicalizationMetrics(BaseModel):
+    """Metrics from the Canonicalizer pass (if enabled)."""
+
+    enabled: bool = Field(False, description="Whether canonicalization was applied")
+    breach_count: int = Field(0, description="Signals classified as complete breaches")
+    observation_count: int = Field(0, description="Signals downgraded to observations")
+    dropped_count: int = Field(0, description="Signals dropped (no constraint match)")
+    merged_count: int = Field(0, description="Signals merged as duplicates")
+    downgrade_count: int = Field(0, description="Breach candidates downgraded due to incompleteness")
+    lookthrough_blocked_count: int = Field(0, description="Signals blocked by missing lookthrough data")
+
+
 class IntakeProcessResponse(BaseModel):
     """Response from intake processing."""
 
@@ -75,3 +91,6 @@ class IntakeProcessResponse(BaseModel):
     processing_time_ms: int = Field(..., description="Processing duration in milliseconds")
     extraction_notes: Optional[str] = Field(None, description="Overall extraction notes")
     warnings: List[str] = Field(default_factory=list, description="Processing warnings")
+    canonicalization: Optional[CanonicalizationMetrics] = Field(
+        None, description="Canonicalization metrics (present when canonicalization is enabled)"
+    )

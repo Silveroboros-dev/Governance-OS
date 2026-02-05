@@ -1,0 +1,151 @@
+{
+  "pack": "treasury",
+  "version": "1.0.0",
+  "description": "Golden test cases for treasury Canonicalizer evaluation. Each candidate simulates IntakeAgent output. Expected results define what the Canonicalizer should produce.",
+  "candidates": [
+    {
+      "id": "C1",
+      "signal_type": "position_limit_breach",
+      "payload": {
+        "asset": "BTC",
+        "current_position": "150",
+        "limit": "100",
+        "duration_hours": 36,
+        "breach_percent": "50",
+        "entity": "Trading Desk Alpha"
+      },
+      "confidence": 0.95,
+      "source_spans": [{"start_char": 0, "end_char": 80, "text": "BTC position at 150 units vs 100 limit"}],
+      "_test_note": "Complete breach — all required fields present, should stay as breach with critical severity (duration_hours > 24)"
+    },
+    {
+      "id": "C2",
+      "signal_type": "position_limit_breach",
+      "payload": {
+        "asset": "BTC",
+        "current_position": "150"
+      },
+      "confidence": 0.72,
+      "source_spans": [{"start_char": 100, "end_char": 140, "text": "BTC position at 150 units"}],
+      "_test_note": "Incomplete breach — missing 'limit' field. Should be downgraded to observation."
+    },
+    {
+      "id": "C3",
+      "signal_type": "position_limit_breach",
+      "payload": {
+        "asset": "BTC",
+        "current_position": "155",
+        "limit": "100",
+        "duration_hours": 36,
+        "breach_percent": "55",
+        "entity": "Trading Desk Alpha"
+      },
+      "confidence": 0.90,
+      "source_spans": [{"start_char": 200, "end_char": 280, "text": "BTC position now at 155 units, limit remains 100"}],
+      "_test_note": "Duplicate of C1 — same asset (BTC), same dedupe_key. Should be merged into C1."
+    },
+    {
+      "id": "C4",
+      "signal_type": "covenant_breach",
+      "payload": {
+        "covenant_name": "DSCR",
+        "actual_ratio": "1.05",
+        "required_ratio": "1.20",
+        "facility": "Revolving Credit Facility",
+        "lender": "JPMorgan"
+      },
+      "confidence": 0.88,
+      "source_spans": [{"start_char": 300, "end_char": 400, "text": "DSCR at 1.05x versus 1.20x minimum"}],
+      "_test_note": "Complete breach — all fields present, severity should be critical (covenant default)"
+    },
+    {
+      "id": "C5",
+      "signal_type": "covenant_breach",
+      "payload": {
+        "covenant_name": "Leverage Ratio"
+      },
+      "confidence": 0.55,
+      "source_spans": [{"start_char": 400, "end_char": 450, "text": "leverage ratio may be at risk"}],
+      "_test_note": "Incomplete breach — missing actual_ratio and required_ratio. Should be downgraded. Also low confidence."
+    },
+    {
+      "id": "C6",
+      "signal_type": "settlement_failure",
+      "payload": {
+        "counterparty": "Citadel Securities",
+        "amount": "$5,000,000",
+        "failure_reason": "insufficient_funds",
+        "trade_id": "T-2025-001"
+      },
+      "confidence": 0.92,
+      "source_spans": [{"start_char": 500, "end_char": 600, "text": "Settlement failure on T-2025-001 with Citadel"}],
+      "_test_note": "Complete event — all fields present, severity should escalate to critical (insufficient_funds)"
+    },
+    {
+      "id": "C7",
+      "signal_type": "debt_maturity_approaching",
+      "payload": {
+        "facility": "Term Loan A",
+        "amount": "$50,000,000",
+        "maturity_date": "2025-03-15",
+        "days_to_maturity": 20
+      },
+      "confidence": 0.91,
+      "source_spans": [{"start_char": 600, "end_char": 700, "text": "Term Loan A matures in 20 days"}],
+      "_test_note": "Complete event — should escalate to critical (days_to_maturity < 30)"
+    },
+    {
+      "id": "C8",
+      "signal_type": "cash_forecast_variance",
+      "payload": {
+        "account": "Operating Account",
+        "actual": "$18,000,000",
+        "forecast": "$25,000,000",
+        "variance_percent": "-28"
+      },
+      "confidence": 0.85,
+      "source_spans": [{"start_char": 700, "end_char": 800, "text": "Operating account at $18M vs $25M forecast"}],
+      "_test_note": "Complete breach — should escalate to high (variance_percent < -25)"
+    },
+    {
+      "id": "C9",
+      "signal_type": "market_volatility_spike",
+      "payload": {
+        "asset": "SPX"
+      },
+      "confidence": 0.45,
+      "source_spans": [{"start_char": 800, "end_char": 850, "text": "SPX volatility elevated"}],
+      "_test_note": "Incomplete breach — missing volatility and threshold. Low confidence. Also missing observation-level field 'volatility', so DROPPED."
+    },
+    {
+      "id": "C10",
+      "signal_type": "nonexistent_signal_type",
+      "payload": {
+        "something": "unknown"
+      },
+      "confidence": 0.60,
+      "source_spans": [{"start_char": 850, "end_char": 900, "text": "some unrecognized pattern"}],
+      "_test_note": "Unknown signal type — no constraint defined. Should be DROPPED."
+    }
+  ],
+  "expected": {
+    "total_candidates": 10,
+    "breach_count": 2,
+    "observation_count": 4,
+    "dropped_count": 2,
+    "merged_count": 2,
+    "downgrade_count": 3,
+    "signal_details": {
+      "C1": {"status": "breach", "severity": "critical", "complete": true, "note": "threshold category, all gates pass"},
+      "C2": {"status": "merged", "note": "Same dedupe_key (asset=BTC) as C1 but lower completeness, merged into C1"},
+      "C3": {"status": "merged", "note": "Same dedupe_key (asset=BTC) as C1 but processed after C1, merged"},
+      "C4": {"status": "observation", "severity": "critical", "complete": true, "note": "threshold + definition_lock gate blocks BREACH (no definition_locked in payload)"},
+      "C5": {"status": "observation", "severity": "critical", "complete": false, "missing": ["actual_ratio", "required_ratio"], "note": "incomplete + definition_lock gate"},
+      "C6": {"status": "observation", "severity": "critical", "complete": true, "note": "event category — always OBSERVATION"},
+      "C7": {"status": "observation", "severity": "critical", "complete": true, "note": "event category — always OBSERVATION"},
+      "C8": {"status": "breach", "severity": "high", "complete": true, "note": "threshold category, all gates pass"},
+      "C9": {"status": "dropped", "note": "Missing observation-level field 'volatility', cannot even be observation"},
+      "C10": {"status": "dropped", "note": "Unknown signal type, no constraint defined"}
+    }
+  }
+}

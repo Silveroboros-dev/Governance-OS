@@ -274,9 +274,12 @@ Return a JSON array of candidate signals. If no signals found, return empty arra
                 source_spans = []
                 for span_data in candidate_data.get("source_spans", []):
                     try:
+                        # LLM may return null for char offsets — default to 0
+                        start_char = span_data.get("start_char")
+                        end_char = span_data.get("end_char")
                         source_spans.append(SourceSpan(
-                            start_char=span_data.get("start_char", 0),
-                            end_char=span_data.get("end_char", 0),
+                            start_char=start_char if start_char is not None else 0,
+                            end_char=end_char if end_char is not None else 0,
                             text=span_data.get("text", ""),
                             page=span_data.get("page"),
                         ))

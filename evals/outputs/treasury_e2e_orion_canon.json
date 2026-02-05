@@ -1,0 +1,105 @@
+{
+  "breach_count": 2,
+  "observation_count": 3,
+  "dropped_count": 0,
+  "merged_count": 0,
+  "event_count": 2,
+  "threshold_breach_count": 2,
+  "threshold_observation_count": 1,
+  "definition_lock_blocked_count": 1,
+  "authorized_threshold_blocked_count": 0,
+  "signals": [
+    {
+      "source_candidate_id": "E0",
+      "signal_type": "covenant_breach",
+      "canonical_status": "observation",
+      "severity": "critical",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "definition_lock_required",
+        "definition_lock_missing",
+        "downgraded"
+      ],
+      "title": "COVENANT_BREACH: Minimum Unrestricted Cash (CHF 86,400 vs CHF 100,000 required)",
+      "dedupe_key": "1928eebc5249cee4",
+      "merged_from": [],
+      "evidence_refs": [
+        "Internal 'unrestricted cash' (policy metric): CHF 86,400  <-- WATCHLIST (min 100",
+        "Covenant (liquidity): \"Minimum Unrestricted Cash >= CHF 100,000 at all times\""
+      ]
+    },
+    {
+      "source_candidate_id": "E1",
+      "signal_type": "liquidity_threshold_breach",
+      "canonical_status": "breach",
+      "severity": "high",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete"
+      ],
+      "title": "LIQUIDITY_BREACH: Orion Metals Trading AG (CHF 86,400 vs CHF 100,000 required)",
+      "dedupe_key": "dc40a96c3baa5695",
+      "merged_from": [],
+      "evidence_refs": [
+        "Internal 'unrestricted cash' (policy metric): CHF 86,400  <-- WATCHLIST (min 100"
+      ]
+    },
+    {
+      "source_candidate_id": "E2",
+      "signal_type": "settlement_failure",
+      "canonical_status": "observation",
+      "severity": "high",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "event_category"
+      ],
+      "title": "SETTLEMENT_FAILURE: Baltic Steel O\u00dc (CHF 41,500, beneficiary name mismatch)",
+      "dedupe_key": "0b3daa4cc6bad554",
+      "merged_from": [],
+      "evidence_refs": [
+        "The 41.5k hold is due to beneficiary name mismatch on payment to \"Baltic Steel O"
+      ]
+    },
+    {
+      "source_candidate_id": "E3",
+      "signal_type": "bank_account_anomaly",
+      "canonical_status": "observation",
+      "severity": "medium",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "event_category"
+      ],
+      "title": "ACCOUNT_ANOMALY: AlpineBank CH (CH19\u2022\u2022\u2022\u2022\u20220048) (compliance hold / beneficiary mismatch, CHF 41,500)",
+      "dedupe_key": "595ec9d589676401",
+      "merged_from": [],
+      "evidence_refs": [
+        "Hold: CHF 41,500 pending compliance review"
+      ]
+    },
+    {
+      "source_candidate_id": "E4",
+      "signal_type": "settlement_rail_shortfall",
+      "canonical_status": "breach",
+      "severity": "critical",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete"
+      ],
+      "title": "RAIL_SHORTFALL: AlpineBank CH (CHF 87,460 shortfall, 0.79 coverage)",
+      "dedupe_key": "c8840b3eb5c23aa0",
+      "merged_from": [],
+      "evidence_refs": [
+        "VAT payment: CHF 410,000 due 2026-02-28",
+        "AlpineBank CH (CHF Operating):       CHF 322,540"
+      ]
+    }
+  ]
+}

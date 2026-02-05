@@ -1,0 +1,237 @@
+{
+  "pack": "wealth",
+  "version": "1.0.0",
+  "description": "Constraint registry for wealth management signal canonicalization. Maps signal types to completeness requirements, severity rules, and deduplication keys.",
+  "constraints": {
+    "concentration_breach": {
+      "constraint_id": "wealth.concentration_breach",
+      "category": "threshold",
+      "required_for_breach": ["subject", "metric", "threshold", "current_value"],
+      "required_for_observation": ["subject", "metric"],
+      "completeness_fields": {
+        "threshold": "threshold",
+        "measured": "current_value",
+        "subject": "subject",
+        "operator": ">"
+      },
+      "requires_lookthrough": true,
+      "severity_rules": {
+        "default": "high",
+        "escalation": [
+          {"condition": "numeric(current_value) > 25", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["subject", "metric", "client_id"],
+      "evidence_priority": ["portfolio_system", "compliance_report", "custodian_report"]
+    },
+    "lookthrough_missing": {
+      "constraint_id": "wealth.lookthrough_missing",
+      "category": "event",
+      "required_for_breach": ["subject", "rule", "missing_data"],
+      "required_for_observation": ["subject", "missing_data"],
+      "completeness_fields": {
+        "subject": "subject",
+        "measured": "missing_data"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "rule contains 'regulatory'", "severity": "high"}
+        ]
+      },
+      "dedupe_keys": ["subject", "rule", "client_id"],
+      "evidence_priority": ["compliance_report", "portfolio_system"]
+    },
+    "fee_discrepancy": {
+      "constraint_id": "wealth.fee_discrepancy",
+      "category": "threshold",
+      "required_for_breach": ["charged", "expected"],
+      "required_for_observation": ["charged"],
+      "completeness_fields": {
+        "threshold": "expected",
+        "measured": "charged",
+        "subject": "fee_type",
+        "operator": "!="
+      },
+      "requires_lookthrough": false,
+      "requires_authorized_threshold": true,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "amount_impact > 10000", "severity": "high"}
+        ]
+      },
+      "dedupe_keys": ["fee_type", "period", "client_id"],
+      "evidence_priority": ["fee_schedule", "custodian_report", "billing_statement"]
+    },
+    "settlement_pending_cash": {
+      "constraint_id": "wealth.settlement_pending_cash",
+      "category": "event",
+      "required_for_breach": ["amount", "impact"],
+      "required_for_observation": ["amount"],
+      "completeness_fields": {
+        "subject": "impact",
+        "measured": "amount"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "affects_liquidity == true", "severity": "high"}
+        ]
+      },
+      "dedupe_keys": ["settlement_date", "client_id"],
+      "evidence_priority": ["custodian_report", "portfolio_system"]
+    },
+    "suitability_drift": {
+      "constraint_id": "wealth.suitability_drift",
+      "category": "threshold",
+      "required_for_breach": ["client", "current_risk", "target_risk"],
+      "required_for_observation": ["client", "current_risk"],
+      "completeness_fields": {
+        "threshold": "target_risk",
+        "measured": "current_risk",
+        "subject": "client",
+        "operator": "!="
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": [
+          {"condition": "drift_direction == 'more_aggressive'", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["client", "client_id"],
+      "evidence_priority": ["ips_document", "portfolio_system", "risk_system"]
+    },
+    "mandate_breach": {
+      "constraint_id": "wealth.mandate_breach",
+      "category": "threshold",
+      "required_for_breach": ["constraint", "current", "limit"],
+      "required_for_observation": ["constraint"],
+      "completeness_fields": {
+        "threshold": "limit",
+        "measured": "current",
+        "subject": "constraint",
+        "operator": ">"
+      },
+      "requires_lookthrough": true,
+      "severity_rules": {
+        "default": "critical",
+        "escalation": []
+      },
+      "dedupe_keys": ["constraint", "asset_class", "client_id"],
+      "evidence_priority": ["ips_document", "mandate_document", "compliance_report"]
+    },
+    "rebalancing_required": {
+      "constraint_id": "wealth.rebalancing_required",
+      "category": "event",
+      "required_for_breach": ["portfolio", "max_drift"],
+      "required_for_observation": ["portfolio"],
+      "completeness_fields": {
+        "subject": "portfolio",
+        "measured": "max_drift"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "days_since_rebalance > 365", "severity": "high"}
+        ]
+      },
+      "dedupe_keys": ["portfolio", "client_id"],
+      "evidence_priority": ["portfolio_system", "rebalancing_report"]
+    },
+    "tax_harvest_opportunity": {
+      "constraint_id": "wealth.tax_harvest_opportunity",
+      "category": "event",
+      "required_for_breach": ["security", "unrealized_loss"],
+      "required_for_observation": ["security"],
+      "completeness_fields": {
+        "subject": "security",
+        "measured": "unrealized_loss"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "low",
+        "escalation": [
+          {"condition": "estimated_tax_savings > 50000", "severity": "high"}
+        ]
+      },
+      "dedupe_keys": ["security", "client_id"],
+      "evidence_priority": ["portfolio_system", "tax_report"]
+    },
+    "withdrawal_request": {
+      "constraint_id": "wealth.withdrawal_request",
+      "category": "event",
+      "required_for_breach": ["client", "amount", "percent_of_portfolio"],
+      "required_for_observation": ["client", "amount"],
+      "completeness_fields": {
+        "subject": "client",
+        "measured": "amount"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "medium",
+        "escalation": [
+          {"condition": "percent_of_portfolio > 25", "severity": "high"},
+          {"condition": "percent_of_portfolio > 50", "severity": "critical"}
+        ]
+      },
+      "dedupe_keys": ["client", "requested_date", "client_id"],
+      "evidence_priority": ["client_request", "portfolio_system"]
+    },
+    "risk_tolerance_change": {
+      "constraint_id": "wealth.risk_tolerance_change",
+      "category": "event",
+      "required_for_breach": ["client", "previous", "new_tolerance"],
+      "required_for_observation": ["client", "new_tolerance"],
+      "completeness_fields": {
+        "subject": "client",
+        "measured": "new_tolerance"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": []
+      },
+      "dedupe_keys": ["client", "client_id"],
+      "evidence_priority": ["client_communication", "questionnaire", "email"]
+    },
+    "objective_change": {
+      "constraint_id": "wealth.objective_change",
+      "category": "event",
+      "required_for_breach": ["client", "previous", "new_objective"],
+      "required_for_observation": ["client", "new_objective"],
+      "completeness_fields": {
+        "subject": "client",
+        "measured": "new_objective"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": []
+      },
+      "dedupe_keys": ["client", "client_id"],
+      "evidence_priority": ["client_communication", "ips_document"]
+    },
+    "compliance_flag": {
+      "constraint_id": "wealth.compliance_flag",
+      "category": "event",
+      "required_for_breach": ["issue_type", "subject", "regulation"],
+      "required_for_observation": ["issue_type", "subject"],
+      "completeness_fields": {
+        "subject": "subject",
+        "measured": "issue_type"
+      },
+      "requires_lookthrough": false,
+      "severity_rules": {
+        "default": "high",
+        "escalation": []
+      },
+      "dedupe_keys": ["issue_type", "subject", "client_id"],
+      "evidence_priority": ["compliance_report", "regulatory_filing"]
+    }
+  }
+}
