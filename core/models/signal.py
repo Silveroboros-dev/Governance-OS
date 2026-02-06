@@ -53,6 +53,12 @@ class SignalReliability(str, PyEnum):
     UNVERIFIED = "unverified"
 
 
+class CanonicalStatus(str, PyEnum):
+    """Canonicalizer output: what kind of signal is this."""
+    BREACH = "breach"           # Complete breach signal, all gates passed
+    OBSERVATION = "observation"  # Downgraded: missing evidence or event category
+
+
 class Signal(Base):
     """
     Signal: Timestamped fact with provenance.
@@ -74,6 +80,14 @@ class Signal(Base):
     reliability = Column(SQLEnum(SignalReliability, name="signal_reliability", values_callable=lambda x: [e.value for e in x]), nullable=False)
     observed_at = Column(DateTime(timezone=True), nullable=False)  # When signal was observed
     ingested_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)  # When we received it
+
+    # Canonicalization output (from deterministic Canonicalizer layer)
+    canonical_status = Column(
+        SQLEnum(CanonicalStatus, name="canonical_status", values_callable=lambda x: [e.value for e in x]),
+        nullable=True  # Nullable for backward compatibility with existing signals
+    )
+    severity = Column(String(20), nullable=True)  # 'low', 'medium', 'high', 'critical'
+    canonical_flags = Column(JSONB, nullable=True)  # List of flag strings from Canonicalizer
 
     # Metadata (renamed to avoid SQLAlchemy reserved attribute)
     signal_metadata = Column("metadata", JSONB)  # Additional context (e.g., data provider, user who submitted)

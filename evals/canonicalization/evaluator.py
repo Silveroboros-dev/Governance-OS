@@ -322,12 +322,13 @@ class CanonicalizationEvaluator:
         )
 
         # Count how many raw candidates would be breach-category
-        # (without completeness gating)
+        # (without completeness gating). In the constraint registry,
+        # "threshold" category signals are breach-eligible; "event" are always observations.
         breach_category_count = 0
         for c in candidates:
             signal_type = c.get("signal_type", "")
             constraint = registry.get(signal_type, {})
-            if constraint.get("category") == "breach":
+            if constraint.get("category") == "threshold":
                 breach_category_count += 1
         result.raw_breach_type_count = breach_category_count
 
@@ -335,7 +336,7 @@ class CanonicalizationEvaluator:
         fb = FalseBreachAnalysis(total_breach_category=breach_category_count)
         for cs in canon_result.signals:
             constraint = registry.get(cs.signal_type, {})
-            if constraint.get("category") == "breach":
+            if constraint.get("category") == "threshold":
                 if cs.canonical_status == CanonicalStatus.BREACH:
                     fb.complete_breaches += 1
                 elif cs.canonical_status == CanonicalStatus.OBSERVATION:

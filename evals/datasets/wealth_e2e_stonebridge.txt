@@ -1,0 +1,157 @@
+MERIDIAN PRIVATE WEALTH SA — WEALTH MANAGEMENT PACK (Messy Input, Synthetic Demo)
+Client: Stonebridge Family Office (synthetic) | Mandate: Discretionary (Balanced)
+Created: 2026-03-03 12:10 CET | Sources: PMS export + custodian OCR scan + RM emails + call notes
+Confidentiality: synthetic demo data only.
+
+INTENTIONAL MESSINESS / TEST TARGETS
+- Mixed valuation dates (Feb 28 vs Mar 02)
+- Classification dispute (certificate tagged as "equity" in PMS but "structured" at custodian)
+- Look-through missing for one fund constraint (should gate to OBSERVATION)
+- Authorized threshold present for issuer cap + fee schedule (should allow BREACH where applicable)
+- Events/blockers: withdrawal request, missing KID, stale suitability, pending settlement (must remain OBSERVATION)
+
+====================================================================
+1) IPS / constraint excerpt (RM file note — signed docs referenced)
+====================================================================
+Risk profile: Balanced
+Constraints (relevant excerpts):
+- Single issuer cap (direct securities): max 7.0% of total portfolio value (TPV)
+- Single fund cap: max 12.0% of TPV (internal control; requires look-through flag in registry for fund-type constraints)
+- Equity exposure: hard max 40% (but classification must be consistent)
+- Liquidity buffer: min 15% cash + T-bills (value date alignment required)
+
+Operational / governance:
+- PRIIPs/KID required for structured products distributed to this client segment
+- Suitability refresh target: 12 months
+
+Referenced but NOT attached (intentional):
+- Suitability_2024-09-15.pdf
+- PRIIPs_KID_EIGER-2025.pdf
+
+Attached excerpt (authorized threshold evidence):
+- Signed Fee Schedule snippet (see section 5)
+
+====================================================================
+2) PMS portfolio snapshot (internal) — as of 2026-03-02 (close)
+====================================================================
+Base currency: CHF
+Total portfolio value (PMS): CHF 6,040,000
+
+Allocation (PMS):
+- Cash & T-bills:            CHF 820,000 (13.6%)  <-- below 15% (but pending settlement exists)
+- Bonds:                     CHF 2,140,000 (35.4%)
+- Equities:                  CHF 2,540,000 (42.1%) <-- above 40% (but classification dispute exists)
+- Alternatives:              CHF 290,000 (4.8%)
+- Other/Unclassified:        CHF 250,000 (4.1%)
+
+Top positions (PMS):
+1) Alpina Energy AG (equity, ISIN CH00ALPINA1):     CHF 507,000 (8.4%)  <-- issuer cap breach (7%)
+2) Global Equity UCITS ETF:                          CHF 770,000 (12.7%) <-- fund cap issue (requires look-through gate in registry)
+3) EM Active Fund (Emerging Mkts):                   CHF 540,000 (8.9%)  <-- single-country cap needs look-through (not provided)
+4) "Eiger Yield Certificate 2025":                   CHF 360,000 (6.0%)  <-- tagged as equity in PMS (classification dispute)
+5) Structured Note "ZEN Autocall 2025":              CHF 240,000 (4.0%)  <-- KID missing (blocker)
+
+PMS notes:
+- Pending settlement proceeds expected: CHF 220,000 (sale of bond ladder, trade 2026-03-01, T+2)
+- Client requested withdrawal CHF 500,000 by 2026-03-12 (email)
+
+====================================================================
+3) Custodian statement scan OCR excerpt — value date 2026-02-28
+====================================================================
+[SCAN OCR EXCERPT — LumenCustody Bank SA — Portfolio Statement]
+Client: Stonebridge Family Office          Account: CH77•••••1902
+Statement date: 2026-02-28   Base: CHF
+TOTAL ASSETS:                 CHF 6,102,880.40
+
+Breakdown (custodian):
+- CASH:                       CHF 1,045,000.00 (17.1%)  <-- includes pending settlement
+- BONDS:                      CHF 2,115,400.00 (34.7%)
+- EQUITIES:                   CHF 2,320,480.40 (38.0%)
+- STRUCTURED PRODUCTS:        CHF 622,000.00  (10.2%)  <-- includes "Eiger Yield Certificate 2025"
+NOTES:
+- "Cash includes pending settlement CHF 220,000 from sale dated 2026-03-01 (T+2)"  (yes, date mismatch is intentional)
+- "Issuer exposure calculations exclude collective vehicles unless look-through provided."
+
+Holdings line (OCR partial):
+- Alpina Energy AG: market value CHF 512,000 (approx. 8.4% of TPV)
+(End OCR excerpt)
+
+====================================================================
+4) Email thread export (partial; messy)
+====================================================================
+
+--- Email #1 ---------------------------------------------------------
+From: Client CFO <client.cfo@stonebridge.example>
+To: RM <rm@meridian.example>
+Date: 2026-03-02 09:12
+Subject: Withdrawal March 12
+
+Please ensure CHF 500,000 is available to transfer by 2026-03-12.
+Prefer to avoid selling Alpina Energy (strategic holding).
+
+--- Email #2 ---------------------------------------------------------
+From: RM <rm@meridian.example>
+To: PM <pm@meridian.example>; Ops <ops@meridian.example>; Compliance <compliance@meridian.example>
+Date: 2026-03-02 16:40
+Subject: Stonebridge — issuer cap breach + classification dispute
+
+PMS shows Alpina Energy at ~8.4% vs issuer cap 7% (looks like a real breach).
+But PMS also tags "Eiger Yield Certificate" as equity; custodian puts it under structured products.
+Equity exposure breach may be a classification artifact.
+Also fund concentration flags likely require look-through in our registry; we don't have constituents.
+
+--- Email #3 ---------------------------------------------------------
+From: Compliance <compliance@meridian.example>
+To: RM; Ops
+Date: 2026-03-02 17:05
+Subject: Missing KID for ZEN Autocall / Eiger Certificate
+
+We do not have PRIIPs/KID on file for ZEN Autocall 2025.
+Also check Eiger Certificate documentation; custodian classifies it as structured.
+Treat as product governance blocker until KIDs are in the folder.
+
+--- Email #4 ---------------------------------------------------------
+From: Ops <ops@meridian.example>
+To: RM; PM
+Date: 2026-03-03 08:10
+Subject: Fee schedule / invoice mismatch (custody fee)
+
+Custodian invoice shows 0.45% p.a. on total assets for Q1.
+Signed schedule says 0.30% p.a. (see excerpt below).
+We should raise a dispute ticket if confirmed.
+
+====================================================================
+5) Authorized threshold evidence: Signed fee schedule excerpt (should enable a confirmed breach)
+====================================================================
+[SIGNED FEE SCHEDULE — excerpt, copied text]
+Client: Stonebridge Family Office
+Custody fee: 0.30% p.a. on total assets (billed quarterly)
+Effective: 2025-01-01
+Signed: Client representative + Meridian (scanned signatures)
+(End excerpt)
+
+Custodian invoice snippet (email attachment text):
+- "Custody fee applied: 0.45% p.a. equivalent for Q1" (calculation basis unclear)
+
+====================================================================
+6) Call notes (RM + PM) — 2026-03-03 10:30–10:50
+====================================================================
+- PM: "Issuer cap breach (Alpina) looks confirmed; both PMS and custodian show ~8.4%."
+- RM: "Client wants to avoid selling Alpina. We need options: partial trim + hedge? or mandate amendment?"
+- Ops: "Liquidity looks OK if settlement posts; value dates mismatch though."
+- Compliance: "Missing KID is a blocker; track as observation with required evidence."
+- Note: Suitability questionnaire date in CRM is 2024-09-15 (stale > 12 months).
+
+====================================================================
+7) Expected detections (ground truth expectations for system check)
+====================================================================
+- Threshold BREACH: issuer_cap_breach — Alpina Energy ~8.4% > 7.0% (authorized threshold is in IPS excerpt; no look-through needed)
+- Threshold OBSERVATION (gated): equity_max_breach — PMS shows 42.1% > 40% but classification dispute (certificate equity vs structured)
+- Threshold OBSERVATION (gated): fund_concentration — ETF 12.7% > 12% but registry requires look-through for fund constraints; constituents missing
+- Event OBSERVATION: withdrawal_request CHF 500k by 2026-03-12
+- Event OBSERVATION: settlement_pending_cash CHF 220k (value date mismatch noted)
+- Blocker OBSERVATION: missing KID for ZEN Autocall (and possibly Eiger Certificate)
+- Threshold BREACH: fee_discrepancy — invoice 0.45% vs signed 0.30% (authorized threshold evidence present)
+- Event OBSERVATION: suitability_stale (2024-09-15)
+
+(End Pack — Wealth)

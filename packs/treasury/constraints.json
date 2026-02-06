@@ -100,6 +100,7 @@
         "operator": ">"
       },
       "requires_lookthrough": false,
+      "requires_authorized_threshold": true,
       "severity_rules": {
         "default": "high",
         "escalation": [

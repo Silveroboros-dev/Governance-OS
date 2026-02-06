@@ -28,11 +28,12 @@
         "current_value": "18%",
         "client_id": "client-006",
         "portfolio_id": "port-006",
-        "lookthrough_available": true
+        "lookthrough_available": true,
+        "threshold_authorized": true
       },
       "confidence": 0.93,
       "source_spans": [{"start_char": 80, "end_char": 160, "text": "MSFT concentration 18% (lookthrough confirmed)"}],
-      "_test_note": "Complete breach WITH lookthrough (different client/subject from W1). Should stay as BREACH."
+      "_test_note": "Complete breach WITH lookthrough AND authorized threshold (different client/subject from W1). Should stay as BREACH."
     },
     {
       "id": "W3",
@@ -140,8 +141,8 @@
     "downgrade_count": 4,
     "lookthrough_blocked_count": 2,
     "signal_details": {
-      "W1": {"status": "observation", "reason": "lookthrough_missing (threshold + lookthrough gate)"},
-      "W2": {"status": "breach", "severity": "high", "note": "threshold + lookthrough, WITH lookthrough"},
+      "W1": {"status": "observation", "reason": "lookthrough_missing AND authorized_threshold_missing (both gates block)"},
+      "W2": {"status": "breach", "severity": "high", "note": "threshold + lookthrough + authorized_threshold, all gates pass"},
       "W3": {"status": "observation", "reason": "lookthrough_missing (threshold + lookthrough gate)"},
       "W4": {"status": "breach", "severity": "critical", "note": "threshold + lookthrough, WITH lookthrough"},
       "W5": {"status": "breach", "severity": "critical", "note": "threshold, complete, no gates"},

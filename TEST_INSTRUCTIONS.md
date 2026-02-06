@@ -180,6 +180,13 @@ This will:
 - `core/tests/conftest.py` - Pytest fixtures and configuration
 - `core/tests/test_determinism.py` - **CRITICAL** determinism tests
 - `core/tests/test_services.py` - Service layer tests
+- `core/tests/test_canonicalizer.py` - Canonicalizer determinism and gating
+- `core/tests/test_canonicalizer_realistic.py` - Treasury realistic scenarios
+- `core/tests/test_canonicalizer_realistic_wealth.py` - Wealth realistic scenarios
+- `core/tests/test_canonicalizer_integration.py` - Integration tests
+- `core/tests/test_gemini_cache.py` - Gemini context caching tests
+- `core/tests/test_sprint3_*.py` - Approvals, traces, schemas, agents, evals
+- `tests/` - MCP server, replay, coprocessor, evals, packs
 - `pytest.ini` - Pytest configuration
 
 ---
@@ -224,8 +231,9 @@ Tests are passing if:
 - ✅ No import errors
 - ✅ No database connection errors
 - ✅ All service tests pass
+- ✅ All eval suites pass (`make evals`)
 
-**If all tests pass, the backend kernel is production-ready!** 🎉
+**Total test count: 500 pytest + 46 eval cases = 546 tests**
 
 ---
 
@@ -268,6 +276,23 @@ Tests cover:
 - ✅ 10 wealth domain test cases
 - ✅ Regex pattern detection (recommendations, opinions, severity, policy eval)
 - ✅ Gemini semantic verification (catches subtle hallucinations)
+
+### Canonicalization Eval (False Breach Prevention)
+
+```bash
+# Run canonicalization suite only
+python -m evals.runner --suite canonicalization -v
+
+# Included automatically in make evals
+make evals
+```
+
+Tests cover:
+- ✅ Treasury: 10 candidates → 2 breaches, 4 observations, 2 dropped, 2 merged (71% prevention)
+- ✅ Wealth: 9 candidates → 3 breaches, 5 observations, 0 dropped, 1 merged (57% prevention)
+- ✅ Overall: two-thirds false breach prevention across 14 breach-category signals
+- ✅ Determinism: identical outputs across 3 runs (SHA256 hash verified)
+- ✅ No API key required — runs entirely on golden datasets
 
 ---
 

@@ -89,6 +89,93 @@ Titles are generated deterministically from templates after extraction.
     - Example source: "Pattern day trading detected in Martinez account, FINRA Rule 4210"
     - Extract: { issue_type: "Pattern day trading", subject: "Martinez account", regulation: "FINRA Rule 4210" }
 
+=== GATED SIGNALS — EVIDENCE CONTRACT ===
+
+The following signal types require evidence to become confirmed breaches:
+
+1. concentration_breach — REQUIRES:
+   - threshold_authority: source of limit (e.g., "ips", "mandate_document")
+   - threshold_authorized: true (if limit comes from signed IPS or mandate)
+   - LOOKTHROUGH RULE:
+     * For DIRECT SECURITIES (stocks, bonds, individual equities): set lookthrough_available: true
+       (Direct securities are transparent - no lookthrough needed)
+     * For FUNDS/ETFs: set lookthrough_available: true ONLY if constituents are provided
+       If constituents missing, set lookthrough_available: false
+   - Look for: IPS excerpts, mandate constraints, signed documents
+
+2. mandate_breach — REQUIRES:
+   - threshold_authority: source of constraint
+   - threshold_authorized: true
+   - For equity/liquidity: lookthrough_available if fund data needed
+   - If classification is disputed, add: classification_disputed: true
+
+3. fee_discrepancy — REQUIRES:
+   - threshold_authority: "fee_schedule" (if signed schedule exists)
+   - threshold_authorized: true (if fee schedule is signed/authoritative)
+   - evidence_type: "fee_schedule", "term_sheet", etc.
+   - definition_source_ref: quote from signed schedule
+
+Example — Issuer cap breach (DIRECT SECURITY - lookthrough available):
+{
+  "signal_type": "concentration_breach",
+  "payload": {
+    "subject": "Alpina Energy AG",
+    "metric": "Single issuer cap",
+    "threshold": "7.0%",
+    "current_value": "8.4%",
+    "threshold_authority": "ips",
+    "threshold_authorized": true,
+    "lookthrough_available": true,
+    "definition_locked": true,
+    "definition_source_ref": "IPS constraint: Single issuer cap (direct securities): max 7.0% of TPV",
+    "evidence_type": "mandate_document"
+  }
+}
+
+Example — Fund concentration breach (FUND - needs constituents):
+{
+  "signal_type": "concentration_breach",
+  "payload": {
+    "subject": "Global Equity UCITS ETF",
+    "metric": "Single fund cap",
+    "threshold": "12.0%",
+    "current_value": "12.7%",
+    "threshold_authority": "ips",
+    "threshold_authorized": true,
+    "lookthrough_available": false,
+    "definition_source_ref": "Single fund cap: max 12.0% of TPV (internal control; requires look-through flag)"
+  }
+}
+
+Example — Fee discrepancy with signed schedule:
+{
+  "signal_type": "fee_discrepancy",
+  "payload": {
+    "charged": "0.45% p.a.",
+    "expected": "0.30% p.a.",
+    "fee_type": "custody",
+    "threshold_authority": "fee_schedule",
+    "threshold_authorized": true,
+    "evidence_type": "fee_schedule",
+    "definition_source_ref": "Signed Fee Schedule: Custody fee 0.30% p.a. (Effective 2025-01-01, signed by client + Meridian)"
+  }
+}
+
+Example — Mandate breach needing lookthrough (blocked):
+{
+  "signal_type": "mandate_breach",
+  "payload": {
+    "constraint": "Equity exposure",
+    "current": "42.1%",
+    "limit": "40%",
+    "threshold_authority": "ips",
+    "threshold_authorized": true,
+    "lookthrough_available": false,
+    "classification_disputed": true,
+    "definition_source_ref": "PMS tags Eiger Certificate as equity; custodian tags as structured"
+  }
+}
+
 === EXTRACTION RULES ===
 
 1. ONLY use signal types from the list above
@@ -97,6 +184,7 @@ Titles are generated deterministically from templates after extraction.
 4. Include source_spans pointing to exact quoted text
 5. Be honest with confidence scores - lower is better than guessing
 6. Client names should be extracted as stated, not invented
+7. For gated signals, ALWAYS look for evidence fields (threshold_authority, definition_source_ref, etc.)
 
 === OUTPUT FORMAT ===
 

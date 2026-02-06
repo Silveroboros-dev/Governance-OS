@@ -142,7 +142,7 @@ Contradictions are surfaced, not silently resolved.
 /packs        Domain packs (treasury, wealth)
 ```
 
-**Test coverage:** 421 tests | **Eval coverage:** 28 golden test cases
+**Test coverage:** 500 pytest tests | **Eval coverage:** 46 eval cases (including canonicalization)
 
 ---
 
@@ -211,7 +211,7 @@ Treasury and Wealth are implemented as **packs** (configuration), not forks.
 
 ## MCP Server (AI Agent Integration)
 
-The MCP server exposes the governance kernel to AI agents via Model Context Protocol. The server itself is **LLM-agnostic**—it exposes database tools without any LLM dependency.
+MCP is the firewall between AI and the governance kernel. Agents can observe and propose, but never decide. That boundary is enforced at the protocol level, not by trusting the LLM to behave. The server itself contains no AI — it's a standard tool provider, like the GitHub or Postgres MCP servers.
 
 **Read Tools:**
 - `get_open_exceptions` - List exceptions requiring decisions

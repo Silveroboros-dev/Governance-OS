@@ -217,7 +217,7 @@ class TestLookthroughGating:
         assert CanonicalFlag.DOWNGRADED in sig.flags
 
     def test_lookthrough_required_with_data_stays_breach(self):
-        """Concentration breach WITH lookthrough → stays breach."""
+        """Concentration breach WITH lookthrough AND authorized threshold → stays breach."""
         candidates = [{
             "id": "W1",
             "signal_type": "concentration_breach",
@@ -227,6 +227,7 @@ class TestLookthroughGating:
                 "threshold": "15%",
                 "current_value": "22%",
                 "lookthrough_available": True,
+                "threshold_authorized": True,  # Required for breach status
             },
             "confidence": 0.93,
         }]

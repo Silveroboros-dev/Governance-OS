@@ -1,0 +1,214 @@
+{
+  "document_source": "wealth_e2e_stonebridge.txt",
+  "pack": "wealth",
+  "extraction_time_s": 30.000962018966675,
+  "total_candidates": 9,
+  "candidates": [
+    {
+      "id": "W0",
+      "signal_type": "concentration_breach",
+      "payload": {
+        "subject": "Alpina Energy AG",
+        "metric": "Single issuer cap",
+        "threshold": "7.0%",
+        "current_value": "8.4%",
+        "threshold_authority": "ips",
+        "threshold_authorized": true,
+        "lookthrough_available": true,
+        "definition_locked": true,
+        "definition_source_ref": "Single issuer cap (direct securities): max 7.0% of total portfolio value (TPV)",
+        "evidence_type": "mandate_document",
+        "_generated_title": "CONCENTRATION_BREACH: Alpina Energy AG (8.4% vs 7.0% limit)"
+      },
+      "confidence": 0.98,
+      "source_spans": [
+        {
+          "start_char": 1011,
+          "end_char": 1085,
+          "text": "Single issuer cap (direct securities): max 7.0% of total portfolio value (TPV)"
+        },
+        {
+          "start_char": 1653,
+          "end_char": 1718,
+          "text": "Alpina Energy AG (equity, ISIN CH00ALPINA1):     CHF 507,000 (8.4%)"
+        }
+      ]
+    },
+    {
+      "id": "W1",
+      "signal_type": "concentration_breach",
+      "payload": {
+        "subject": "Global Equity UCITS ETF",
+        "metric": "Single fund cap",
+        "threshold": "12.0%",
+        "current_value": "12.7%",
+        "threshold_authority": "ips",
+        "threshold_authorized": true,
+        "lookthrough_available": false,
+        "definition_source_ref": "Single fund cap: max 12.0% of TPV (internal control; requires look-through flag in registry for fund-type constraints)",
+        "_generated_title": "CONCENTRATION_BREACH: Global Equity UCITS ETF (12.7% vs 12.0% limit)"
+      },
+      "confidence": 0.95,
+      "source_spans": [
+        {
+          "start_char": 1091,
+          "end_char": 1210,
+          "text": "Single fund cap: max 12.0% of TPV (internal control; requires look-through flag in registry for fund-type constraints)"
+        },
+        {
+          "start_char": 1751,
+          "end_char": 1802,
+          "text": "Global Equity UCITS ETF:                          CHF 770,000 (12.7%)"
+        }
+      ]
+    },
+    {
+      "id": "W2",
+      "signal_type": "mandate_breach",
+      "payload": {
+        "constraint": "Equity exposure",
+        "current": "42.1%",
+        "limit": "40%",
+        "threshold_authority": "ips",
+        "threshold_authorized": true,
+        "classification_disputed": true,
+        "definition_source_ref": "Equity exposure: hard max 40% (but classification must be consistent)",
+        "_generated_title": "MANDATE_BREACH: Equity exposure (42.1% vs 40% allowed)"
+      },
+      "confidence": 0.92,
+      "source_spans": [
+        {
+          "start_char": 1213,
+          "end_char": 1283,
+          "text": "Equity exposure: hard max 40% (but classification must be consistent)"
+        },
+        {
+          "start_char": 1566,
+          "end_char": 1603,
+          "text": "Equities:                  CHF 2,540,000 (42.1%)"
+        }
+      ]
+    },
+    {
+      "id": "W3",
+      "signal_type": "fee_discrepancy",
+      "payload": {
+        "charged": "0.45% p.a.",
+        "expected": "0.30% p.a.",
+        "fee_type": "custody",
+        "threshold_authority": "fee_schedule",
+        "threshold_authorized": true,
+        "evidence_type": "fee_schedule",
+        "definition_source_ref": "Signed Fee Schedule: Custody fee: 0.30% p.a. on total assets (billed quarterly)",
+        "_generated_title": "FEE_DISCREPANCY: 0.45% p.a. charged vs 0.30% p.a. expected"
+      },
+      "confidence": 0.98,
+      "source_spans": [
+        {
+          "start_char": 3390,
+          "end_char": 3435,
+          "text": "Custodian invoice shows 0.45% p.a. on total assets"
+        },
+        {
+          "start_char": 3617,
+          "end_char": 3681,
+          "text": "Custody fee: 0.30% p.a. on total assets (billed quarterly)"
+        }
+      ]
+    },
+    {
+      "id": "W4",
+      "signal_type": "withdrawal_request",
+      "payload": {
+        "client": "Stonebridge Family Office",
+        "amount": "CHF 500,000",
+        "percent_of_portfolio": "8.3%",
+        "reason": "transfer",
+        "requested_date": "2026-03-12",
+        "_generated_title": "WITHDRAWAL_REQUEST: Stonebridge Family Office (CHF 500,000, 8.3%)"
+      },
+      "confidence": 0.95,
+      "source_spans": [
+        {
+          "start_char": 2841,
+          "end_char": 2902,
+          "text": "Please ensure CHF 500,000 is available to transfer by 2026-03-12"
+        }
+      ]
+    },
+    {
+      "id": "W5",
+      "signal_type": "settlement_pending_cash",
+      "payload": {
+        "amount": "CHF 220,000",
+        "impact": "included in available cash for margin/liquidity calculations",
+        "settlement_date": "2026-03-03",
+        "_generated_title": "SETTLEMENT_PENDING_CASH: CHF 220,000 (included in available cash for margin/liquidity calculations)"
+      },
+      "confidence": 0.95,
+      "source_spans": [
+        {
+          "start_char": 2083,
+          "end_char": 2175,
+          "text": "Pending settlement proceeds expected: CHF 220,000 (sale of bond ladder, trade 2026-03-01, T+2)"
+        }
+      ]
+    },
+    {
+      "id": "W6",
+      "signal_type": "lookthrough_missing",
+      "payload": {
+        "subject": "EM Active Fund (Emerging Mkts)",
+        "rule": "single-country cap",
+        "missing_data": "constituents",
+        "_generated_title": "LOOKTHROUGH_MISSING: EM Active Fund (Emerging Mkts) (constituents)"
+      },
+      "confidence": 0.9,
+      "source_spans": [
+        {
+          "start_char": 1853,
+          "end_char": 1951,
+          "text": "EM Active Fund (Emerging Mkts):                   CHF 540,000 (8.9%)  <-- single-country cap needs look-through (not provided)"
+        }
+      ]
+    },
+    {
+      "id": "W7",
+      "signal_type": "compliance_flag",
+      "payload": {
+        "issue_type": "Missing KID",
+        "subject": "ZEN Autocall 2025",
+        "regulation": "PRIIPs",
+        "_generated_title": "COMPLIANCE_FLAG: Missing KID (ZEN Autocall 2025)"
+      },
+      "confidence": 0.95,
+      "source_spans": [
+        {
+          "start_char": 3205,
+          "end_char": 3261,
+          "text": "We do not have PRIIPs/KID on file for ZEN Autocall 2025."
+        }
+      ]
+    },
+    {
+      "id": "W8",
+      "signal_type": "compliance_flag",
+      "payload": {
+        "issue_type": "Stale suitability",
+        "subject": "Stonebridge Family Office",
+        "regulation": "Internal Policy (12-month refresh)",
+        "_generated_title": "COMPLIANCE_FLAG: Stale suitability (Stonebridge Family Office)"
+      },
+      "confidence": 0.9,
+      "source_spans": [
+        {
+          "start_char": 4038,
+          "end_char": 4116,
+          "text": "Suitability questionnaire date in CRM is 2024-09-15 (stale > 12 months)."
+        }
+      ]
+    }
+  ],
+  "thinking_summary": "**Comprehensive Portfolio Review: Stonebridge Family Office (2026-03-03)**\n\nAlright, here's the situation with the Stonebridge Family Office. I've got a comprehensive review to conduct, considering a discretionary balanced mandate. The key data points have been collected, and I'm seeing a handful of critical items that need immediate attention.\n\nFirst, I observe that the portfolio, as per the data extracted from the source, shows multiple breaches of investment constraints. Namely, Alpina Energy AG is exceeding the 7% single issuer cap at 8.4%\u2014a clear *concentration_breach*. The Global Equity UCITS ETF is also a problem, breaching the 12% single fund cap at 12.7%, another *concentration_breach*. I'll need to flag that because look-through isn't available. Also, the overall equity exposure, sitting at 42.1% (PMS) versus a mandate of 40%, represents a *mandate_breach*. The discrepancy between the PMS and custodian data requires further analysis to ascertain if the difference is a classification issue around the \"Eiger Yield Certificate.\"\n\nNext, a critical *fee_discrepancy* is apparent. The custodian invoice shows a 0.45% annual fee, yet the signed fee schedule clearly states 0.30% for custody. This is an immediate discrepancy that needs clarification.\n\nBeyond these breaches, there is a *withdrawal_request* from the client for CHF 500,000, which is approximately 8.3% of the portfolio. This withdrawal needs to be factored into any liquidity calculations. In addition, there is a CHF 220,000 pending settlement affecting the *settlement_pending_cash* impacting liquidity buffer and that needs to be factored into available cash for margin/liquidity calculations.\n\nI also see some data gaps. There is a *lookthrough_missing* signal on the EM Active Fund, indicating I can't verify compliance with single-country caps. Furthermore, I have two distinct *compliance_flag* issues. One is a missing KID for the ZEN Autocall 2025, which represents a product governance or PRIIPs regulation concern. The second is an issue of *stale_suitability*. The client's suitability questionnaire was last updated on 2024-09-15, which makes this an internal policy (12-month refresh) lapse.\n\nIn short, my analysis reveals a portfolio exhibiting breaches of concentration limits, a deviation from the mandated equity exposure, fee discrepancies, liquidity considerations, a missing KID, and a suitability lapse. I must produce a report to the appropriate parties that provides an in-depth analysis of these issues. I need to make recommendations that align with the client's best interests.\n\n\n",
+  "extraction_notes": null
+}

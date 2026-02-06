@@ -1,8 +1,8 @@
 {
   "document_source": "treasury_e2e_orion.txt",
   "pack": "treasury",
-  "extraction_time_s": 42.544487953186035,
-  "total_candidates": 5,
+  "extraction_time_s": 28.777762174606323,
+  "total_candidates": 4,
   "candidates": [
     {
       "id": "E0",
@@ -15,17 +15,17 @@
         "facility": "Revolving Credit Facility (RCF)",
         "_generated_title": "COVENANT_BREACH: Minimum Unrestricted Cash (CHF 86,400 vs CHF 100,000 required)"
       },
-      "confidence": 0.98,
+      "confidence": 0.95,
       "source_spans": [
         {
-          "start_char": 1690,
-          "end_char": 1754,
+          "start_char": 1640,
+          "end_char": 1705,
           "text": "Covenant (liquidity): \"Minimum Unrestricted Cash >= CHF 100,000 at all times\""
         },
         {
-          "start_char": 1150,
-          "end_char": 1236,
-          "text": "Internal \"unrestricted cash\" (policy metric): CHF 86,400  <-- WATCHLIST (min 100,000)"
+          "start_char": 1184,
+          "end_char": 1256,
+          "text": "Internal \"unrestricted cash\" (policy metric): CHF 86,400  <-- WATCHLIST"
         }
       ]
     },
@@ -36,75 +36,60 @@
         "entity": "Orion Metals Trading AG",
         "current_ratio": "CHF 86,400",
         "threshold": "CHF 100,000",
-        "asset": "unrestricted cash",
         "_generated_title": "LIQUIDITY_BREACH: Orion Metals Trading AG (CHF 86,400 vs CHF 100,000 required)"
       },
-      "confidence": 0.98,
+      "confidence": 0.95,
       "source_spans": [
         {
-          "start_char": 1150,
-          "end_char": 1236,
+          "start_char": 1184,
+          "end_char": 1256,
           "text": "Internal \"unrestricted cash\" (policy metric): CHF 86,400  <-- WATCHLIST (min 100,000)"
         }
       ]
     },
     {
       "id": "E2",
-      "signal_type": "bank_account_anomaly",
+      "signal_type": "settlement_failure",
       "payload": {
-        "account": "CH19\u2022\u2022\u2022\u2022\u20220048",
-        "anomaly_type": "compliance_hold",
+        "counterparty": "Baltic Steel O\u00dc",
         "amount": "CHF 41,500",
-        "bank": "AlpineBank CH",
-        "_generated_title": "ACCOUNT_ANOMALY: CH19\u2022\u2022\u2022\u2022\u20220048 (compliance_hold, CHF 41,500)"
+        "failure_reason": "beneficiary name mismatch",
+        "_generated_title": "SETTLEMENT_FAILURE: Baltic Steel O\u00dc (CHF 41,500, beneficiary name mismatch)"
       },
       "confidence": 0.95,
       "source_spans": [
         {
-          "start_char": 1610,
-          "end_char": 1655,
-          "text": "Hold: CHF 41,500 pending compliance review"
+          "start_char": 2235,
+          "end_char": 2327,
+          "text": "The 41.5k hold is due to beneficiary name mismatch on payment to \"Baltic Steel O\u00dc\""
         }
       ]
     },
     {
       "id": "E3",
-      "signal_type": "settlement_failure",
+      "signal_type": "bank_account_anomaly",
       "payload": {
-        "counterparty": "Baltic Steel O\u00dc",
+        "account": "CH19\u2022\u2022\u2022\u2022\u20220048",
+        "anomaly_type": "compliance review hold",
         "amount": "CHF 41,500",
-        "failure_reason": "beneficiary_name_mismatch",
-        "_generated_title": "SETTLEMENT_FAILURE: Baltic Steel O\u00dc (CHF 41,500, beneficiary_name_mismatch)"
+        "bank": "AlpineBank CH",
+        "_generated_title": "ACCOUNT_ANOMALY: CH19\u2022\u2022\u2022\u2022\u20220048 (compliance review hold, CHF 41,500)"
       },
       "confidence": 0.95,
       "source_spans": [
         {
-          "start_char": 2240,
-          "end_char": 2335,
-          "text": "The 41.5k hold is due to beneficiary name mismatch on payment to \"Baltic Steel O\u00dc\"."
-        }
-      ]
-    },
-    {
-      "id": "E4",
-      "signal_type": "fx_exposure_breach",
-      "payload": {
-        "currency_pair": "EUR/CHF",
-        "current_exposure": "EUR 410,000",
-        "limit": "EUR 150,000",
-        "direction": "short",
-        "_generated_title": "FX_EXPOSURE_BREACH: EUR/CHF (EUR 410,000 vs EUR 150,000 limit, short)"
-      },
-      "confidence": 0.75,
-      "source_spans": [
+          "start_char": 1545,
+          "end_char": 1589,
+          "text": "Hold: CHF 41,500 pending compliance review"
+        },
         {
-          "start_char": 2540,
-          "end_char": 2645,
-          "text": "We have EUR payables ~EUR 410k due 2026-03-10/15 (2 shipments). Only EUR 150k hedged so far."
+          "start_char": 1445,
+          "end_char": 1466,
+          "text": "Account: CH19\u2022\u2022\u2022\u2022\u20220048"
         }
       ]
     }
   ],
-  "thinking_summary": "**Analysis of Orion Metals Trading AG Treasury Weekly Pack: Signal Generation**\n\nOkay, here's the breakdown of what I'm seeing in this Orion Metals Trading AG weekly treasury pack dated 2026-02-25. It's clear there are several critical issues, primarily around liquidity and potential compliance breaches. I've broken down the signals I'm detecting, and I'm flagging them with confidence levels based on the clarity and strength of the evidence within the document.\n\nFirst, a *covenant breach* is a major concern. The \"Minimum Unrestricted Cash\" covenant in the Revolving Credit Facility (RCF) with AlpineBank CH requires at least CHF 100,000, but the current unrestricted cash is only CHF 86,400. This is explicitly flagged as \"WATCHLIST\" and the numbers match. This is a pretty straightforward and high-confidence signal (0.98).\n\nThe *liquidity threshold breach* is essentially the same issue, but framed as a violation of an *internal* policy metric: \"unrestricted cash\" falling below CHF 100,000. It's essentially the same violation as the covenant breach. I'm tagging it as a separate signal. Same high confidence (0.98).\n\nThere's also a *bank account anomaly*. A CHF 41,500 payment to Baltic Steel O\u00dc is on hold at AlpineBank CH due to a beneficiary name mismatch. This is well-defined. The hold amount, the bank, and the anomaly type are all present and clear (0.98).\n\nThis is directly linked to a *settlement failure* or significant risk of failure. This payment to Baltic Steel O\u00dc is blocked because of an invoice/beneficiary name mismatch, again, for the CHF 41,500 amount. This payment could have been blocked because of the name mismatch. Confidence: 0.95.\n\nFinally, an *FX exposure breach* or significant risk. Orion has EUR 410,000 in EUR payables coming due. Only EUR 150,000 of it is hedged. It's not explicitly stated that the hedging policy requires being fully hedged (but that's the inference). This isn't a *breach* in the sense of a numeric policy violation, but it exposes the company to material FX risk. I'm calling it a breach here. It's a lower confidence signal (0.70) because it's an inference.\n\nI have not identified any debt maturities, interest rate resets, rail shortfalls, or market volatility spikes. Also, there are no downgrades of the credit of a counterparty, and no position limit breaches.\n\n\n",
+  "thinking_summary": "**Orion Metals Trading AG - Treasury Weekly Pack Analysis: My Thought Process**\n\nAlright, let's dissect this Treasury weekly pack from Orion Metals Trading AG, dated 2026-02-25. It's a bit of a messy input, a synthetic demo, but I can work with this. My primary focus is to identify and structure relevant financial signals.\n\nFirst, I see a clear **covenant breach** signal. The internal policy metric for \"unrestricted cash\" is CHF 86,400, while the minimum required by the covenant (with AlpineBank CH for the RCF) is CHF 100,000. That's a direct violation, and I'll need to capture that: `covenant_breach` is the signal type, with details like the actual ratio, required ratio, and the facility. Confidence on this is high \u2013 0.95 \u2013 because the numbers are explicitly provided, and the risk is clearly stated.\n\nFollowing this, there is also a **liquidity threshold breach** related to the internal policy on \"unrestricted cash.\" This threshold aligns perfectly with the covenant, and I'll structure it. This is a crucial internal metric too. The values are the same: CHF 86,400 vs. CHF 100,000, and my confidence level matches the Covenant violation's, at 0.95.\n\nNow, an **FX exposure** \u2013 EUR payables are unhedged. However, I need to stick to the rules and only output the signal type if the required fields are available. I'm going to hold off on this signal. The document describes exposure but doesn't mention a *limit* breached. My task is not to assume, so I can't extract the `fx_exposure_breach`.\n\nNext, I see a **bank account anomaly**: an urgent payment is blocked due to an invoice entity mismatch to \"Baltic Steel O\u00dc.\" The hold is CHF 41,500. This is a classic compliance issue. So, the signal is `bank_account_anomaly` with associated details (account number, anomaly type, amount). Confidence here is at 0.95 again.\n\nThen there is a potential **Settlement Rail Shortfall**, since the VAT payment of CHF 410,000 is due on 2026-02-28, which exceeds the balance of the AlpineBank CHF Operating account (CHF 322,540). However, the document doesn't explicitly state the shortfall *amount* or the *coverage ratio* (322,540/410,000 = .78). The prompt says never to infer the values. Hence, I'm skipping it.\n\nFurthermore, there is a **settlement failure** due to a \"beneficiary name mismatch\" to the same party, Baltic Steel O\u00dc. Amount is CHF 41,500.\n\nI'm checking for **Cash Forecast Variance** signal, but the text is not providing any actual vs forecast values. I'll need to skip it.\n\nI'm also looking for a **Debt Maturity/Interest Rate Reset**, but nothing here mentions specific maturity dates or reset dates for the RCF, other than it being a 2025 facility. Skipping.\n\nFor **Position Limit Breach**, the document doesn't have an asset position that \"exceeds\" the limit.\n\nAfter re-evaluating, the document links a liquidity threshold to both an *internal policy metric* and a *Covenant*. I'll include both and recognize them.\n\nAfter more re-evaluating the above signals, I'm producing the JSON in the structured format and with high confidence scores. \n\n\n",
   "extraction_notes": null
 }

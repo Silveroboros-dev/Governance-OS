@@ -1,10 +1,10 @@
 {
-  "breach_count": 2,
+  "breach_count": 1,
   "observation_count": 3,
   "dropped_count": 0,
   "merged_count": 0,
   "event_count": 2,
-  "threshold_breach_count": 2,
+  "threshold_breach_count": 1,
   "threshold_observation_count": 1,
   "definition_lock_blocked_count": 1,
   "authorized_threshold_blocked_count": 0,
@@ -27,7 +27,7 @@
       "merged_from": [],
       "evidence_refs": [
         "Covenant (liquidity): \"Minimum Unrestricted Cash >= CHF 100,000 at all times\"",
-        "Internal \"unrestricted cash\" (policy metric): CHF 86,400  <-- WATCHLIST (min 100"
+        "Internal \"unrestricted cash\" (policy metric): CHF 86,400  <-- WATCHLIST"
       ]
     },
     {
@@ -49,24 +49,6 @@
     },
     {
       "source_candidate_id": "E2",
-      "signal_type": "bank_account_anomaly",
-      "canonical_status": "observation",
-      "severity": "medium",
-      "completeness_score": 1.0,
-      "missing_fields": [],
-      "flags": [
-        "complete",
-        "event_category"
-      ],
-      "title": "ACCOUNT_ANOMALY: CH19\u2022\u2022\u2022\u2022\u20220048 (compliance_hold, CHF 41,500)",
-      "dedupe_key": "134fe2ab43989153",
-      "merged_from": [],
-      "evidence_refs": [
-        "Hold: CHF 41,500 pending compliance review"
-      ]
-    },
-    {
-      "source_candidate_id": "E3",
       "signal_type": "settlement_failure",
       "canonical_status": "observation",
       "severity": "high",
@@ -76,7 +58,7 @@
         "complete",
         "event_category"
       ],
-      "title": "SETTLEMENT_FAILURE: Baltic Steel O\u00dc (CHF 41,500, beneficiary_name_mismatch)",
+      "title": "SETTLEMENT_FAILURE: Baltic Steel O\u00dc (CHF 41,500, beneficiary name mismatch)",
       "dedupe_key": "0b3daa4cc6bad554",
       "merged_from": [],
       "evidence_refs": [
@@ -84,20 +66,22 @@
       ]
     },
     {
-      "source_candidate_id": "E4",
-      "signal_type": "fx_exposure_breach",
-      "canonical_status": "breach",
-      "severity": "high",
+      "source_candidate_id": "E3",
+      "signal_type": "bank_account_anomaly",
+      "canonical_status": "observation",
+      "severity": "medium",
       "completeness_score": 1.0,
       "missing_fields": [],
       "flags": [
-        "complete"
+        "complete",
+        "event_category"
       ],
-      "title": "FX_EXPOSURE_BREACH: EUR/CHF (EUR 410,000 vs EUR 150,000 limit, short)",
-      "dedupe_key": "0f22eb2889cbaa56",
+      "title": "ACCOUNT_ANOMALY: CH19\u2022\u2022\u2022\u2022\u20220048 (compliance review hold, CHF 41,500)",
+      "dedupe_key": "4be57d3f8ad67d10",
       "merged_from": [],
       "evidence_refs": [
-        "We have EUR payables ~EUR 410k due 2026-03-10/15 (2 shipments). Only EUR 150k he"
+        "Hold: CHF 41,500 pending compliance review",
+        "Account: CH19\u2022\u2022\u2022\u2022\u20220048"
       ]
     }
   ]

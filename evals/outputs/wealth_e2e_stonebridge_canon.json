@@ -1,0 +1,185 @@
+{
+  "breach_count": 2,
+  "observation_count": 7,
+  "dropped_count": 0,
+  "merged_count": 0,
+  "event_count": 5,
+  "threshold_breach_count": 2,
+  "threshold_observation_count": 2,
+  "definition_lock_blocked_count": 0,
+  "authorized_threshold_blocked_count": 0,
+  "signals": [
+    {
+      "source_candidate_id": "W0",
+      "signal_type": "concentration_breach",
+      "canonical_status": "breach",
+      "severity": "high",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "lookthrough_required",
+        "authorized_threshold_required"
+      ],
+      "title": "CONCENTRATION_BREACH: Alpina Energy AG (8.4% vs 7.0% limit)",
+      "dedupe_key": "4c1400a6b764f129",
+      "merged_from": [],
+      "evidence_refs": [
+        "Single issuer cap (direct securities): max 7.0% of total portfolio value (TPV)",
+        "Alpina Energy AG (equity, ISIN CH00ALPINA1):     CHF 507,000 (8.4%)"
+      ]
+    },
+    {
+      "source_candidate_id": "W1",
+      "signal_type": "concentration_breach",
+      "canonical_status": "observation",
+      "severity": "high",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "lookthrough_required",
+        "lookthrough_missing",
+        "authorized_threshold_required",
+        "downgraded"
+      ],
+      "title": "CONCENTRATION_BREACH: Global Equity UCITS ETF (12.7% vs 12.0% limit)",
+      "dedupe_key": "397e9c90e0f03347",
+      "merged_from": [],
+      "evidence_refs": [
+        "Single fund cap: max 12.0% of TPV (internal control; requires look-through flag ",
+        "Global Equity UCITS ETF:                          CHF 770,000 (12.7%)"
+      ]
+    },
+    {
+      "source_candidate_id": "W2",
+      "signal_type": "mandate_breach",
+      "canonical_status": "observation",
+      "severity": "critical",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "lookthrough_required",
+        "lookthrough_missing",
+        "downgraded"
+      ],
+      "title": "MANDATE_BREACH: Equity exposure (42.1% vs 40% allowed)",
+      "dedupe_key": "a80fa0655ec4e796",
+      "merged_from": [],
+      "evidence_refs": [
+        "Equity exposure: hard max 40% (but classification must be consistent)",
+        "Equities:                  CHF 2,540,000 (42.1%)"
+      ]
+    },
+    {
+      "source_candidate_id": "W3",
+      "signal_type": "fee_discrepancy",
+      "canonical_status": "breach",
+      "severity": "medium",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "authorized_threshold_required"
+      ],
+      "title": "FEE_DISCREPANCY: 0.45% p.a. charged vs 0.30% p.a. expected",
+      "dedupe_key": "80977d24eb6e2237",
+      "merged_from": [],
+      "evidence_refs": [
+        "Custodian invoice shows 0.45% p.a. on total assets",
+        "Custody fee: 0.30% p.a. on total assets (billed quarterly)"
+      ]
+    },
+    {
+      "source_candidate_id": "W4",
+      "signal_type": "withdrawal_request",
+      "canonical_status": "observation",
+      "severity": "medium",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "event_category"
+      ],
+      "title": "WITHDRAWAL_REQUEST: Stonebridge Family Office (CHF 500,000, 8.3%)",
+      "dedupe_key": "128a6b2045240ce5",
+      "merged_from": [],
+      "evidence_refs": [
+        "Please ensure CHF 500,000 is available to transfer by 2026-03-12"
+      ]
+    },
+    {
+      "source_candidate_id": "W5",
+      "signal_type": "settlement_pending_cash",
+      "canonical_status": "observation",
+      "severity": "medium",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "event_category"
+      ],
+      "title": "SETTLEMENT_PENDING_CASH: CHF 220,000 (included in available cash for margin/liquidity calculations)",
+      "dedupe_key": "dfc375602ecaf296",
+      "merged_from": [],
+      "evidence_refs": [
+        "Pending settlement proceeds expected: CHF 220,000 (sale of bond ladder, trade 20"
+      ]
+    },
+    {
+      "source_candidate_id": "W6",
+      "signal_type": "lookthrough_missing",
+      "canonical_status": "observation",
+      "severity": "medium",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "event_category"
+      ],
+      "title": "LOOKTHROUGH_MISSING: EM Active Fund (Emerging Mkts) (constituents)",
+      "dedupe_key": "8eca671fdfcb2cf6",
+      "merged_from": [],
+      "evidence_refs": [
+        "EM Active Fund (Emerging Mkts):                   CHF 540,000 (8.9%)  <-- single"
+      ]
+    },
+    {
+      "source_candidate_id": "W7",
+      "signal_type": "compliance_flag",
+      "canonical_status": "observation",
+      "severity": "high",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "event_category"
+      ],
+      "title": "COMPLIANCE_FLAG: Missing KID (ZEN Autocall 2025)",
+      "dedupe_key": "637b118f84fd10ab",
+      "merged_from": [],
+      "evidence_refs": [
+        "We do not have PRIIPs/KID on file for ZEN Autocall 2025."
+      ]
+    },
+    {
+      "source_candidate_id": "W8",
+      "signal_type": "compliance_flag",
+      "canonical_status": "observation",
+      "severity": "high",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "event_category"
+      ],
+      "title": "COMPLIANCE_FLAG: Stale suitability (Stonebridge Family Office)",
+      "dedupe_key": "f633a80b06bea5c4",
+      "merged_from": [],
+      "evidence_refs": [
+        "Suitability questionnaire date in CRM is 2024-09-15 (stale > 12 months)."
+      ]
+    }
+  ]
+}

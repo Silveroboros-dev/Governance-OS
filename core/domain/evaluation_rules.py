@@ -87,12 +87,18 @@ def _evaluate_threshold_breach(
     Evaluate threshold breach rules.
 
     Checks if any/all signals meet threshold conditions.
+
+    IMPORTANT: Respects canonical_status from the Canonicalizer.
+    Signals with canonical_status="observation" are EXCLUDED from breach matching.
+    Only signals with canonical_status="breach" (or None for backward compatibility)
+    can trigger policy failures.
     """
     conditions = rule_definition.get("conditions", [])
     evaluation_logic = rule_definition.get("evaluation_logic", "any_condition_met")
 
     matched_conditions = []
     matched_signals = []
+    observation_signals = []  # Track observations for audit
 
     for condition in conditions:
         signal_type = condition["signal_type"]
@@ -103,6 +109,16 @@ def _evaluate_threshold_breach(
 
         for signal in relevant_signals:
             if _check_threshold(signal, threshold):
+                # Check canonical_status from Canonicalizer
+                # Only "breach" status signals can trigger policy failures
+                canonical_status = signal.get("canonical_status")
+
+                if canonical_status == "observation":
+                    # Signal was downgraded by Canonicalizer — cannot trigger breach
+                    observation_signals.append(signal)
+                    continue
+
+                # canonical_status is "breach" or None (backward compatibility)
                 matched_conditions.append(condition)
                 matched_signals.append(signal)
                 break  # One match per condition
@@ -121,6 +137,7 @@ def _evaluate_threshold_breach(
         "conditions_evaluated": len(conditions),
         "conditions_matched": len(matched_conditions),
         "matched_signals": [{"id": str(s["id"]), "type": s["signal_type"]} for s in matched_signals],
+        "observation_signals": [{"id": str(s["id"]), "type": s["signal_type"]} for s in observation_signals],
         "severity": _determine_severity(matched_signals, conditions) if matched_signals else None
     }
 
@@ -280,6 +297,12 @@ def _evaluate_event_trigger(
     that a field exists. Used for policies like "any risk_tolerance_change
     signal requires review".
 
+    IMPORTANT: Consistent with threshold rules, only signals with
+    canonical_status="breach" can cause FAIL. Event-category signals are
+    always observations; they may generate review tasks outside the evaluator
+    but do not cause FAIL here. This preserves the semantic meaning of FAIL
+    as "a rule was violated" rather than "something needs review."
+
     Example rule_definition:
         {
             "type": "event_trigger",
@@ -304,6 +327,7 @@ def _evaluate_event_trigger(
 
     matched_conditions = []
     matched_signals = []
+    observation_signals = []  # Track observations for audit
 
     for condition in conditions:
         signal_type = condition["signal_type"]
@@ -315,11 +339,23 @@ def _evaluate_event_trigger(
         for signal in relevant_signals:
             # Check if signal matches trigger condition
             if _check_event_trigger(signal, threshold):
+                # Check canonical_status from Canonicalizer
+                # Only "breach" status signals can trigger policy failures
+                canonical_status = signal.get("canonical_status")
+
+                if canonical_status == "observation":
+                    # Signal is an observation — cannot trigger FAIL
+                    # May generate review tasks outside evaluator
+                    observation_signals.append(signal)
+                    continue
+
+                # canonical_status is "breach" or None (backward compatibility)
                 matched_conditions.append(condition)
                 matched_signals.append(signal)
                 break  # One match per condition
 
     # Determine result based on evaluation logic
+    # Only breach signals can cause FAIL; observations are tracked but don't fail
     if evaluation_logic == "any_condition_met":
         result = "fail" if matched_conditions else "pass"
     elif evaluation_logic == "all_conditions_met":
@@ -327,13 +363,19 @@ def _evaluate_event_trigger(
     else:
         result = "inconclusive"
 
+    # Use canonical severity from signals if available
+    severity = _determine_event_severity(matched_signals, conditions) if matched_signals else None
+    if matched_signals and matched_signals[0].get("severity"):
+        severity = matched_signals[0].get("severity")
+
     details = {
         "rule_type": "event_trigger",
         "evaluation_logic": evaluation_logic,
         "conditions_evaluated": len(conditions),
         "conditions_matched": len(matched_conditions),
-        "matched_signals": [{"id": str(s["id"]), "type": s["signal_type"]} for s in matched_signals],
-        "severity": _determine_event_severity(matched_signals, conditions) if matched_signals else None
+        "matched_signals": [{"id": str(s["id"]), "type": s["signal_type"], "canonical_status": s.get("canonical_status")} for s in matched_signals],
+        "observation_signals": [{"id": str(s["id"]), "type": s["signal_type"]} for s in observation_signals],
+        "severity": severity
     }
 
     return result, details

@@ -51,9 +51,60 @@ Return a JSON array of candidate signals:
   }
 ]
 
+EVIDENCE CONTRACT (CRITICAL FOR GATED SIGNALS):
+
+Some signal types require evidence to prove threshold authority or definition clarity.
+Without this evidence, signals will be DOWNGRADED from breach to observation.
+
+For signals that reference thresholds or limits, you MUST include:
+
+1. threshold_authority: The source of the threshold (if explicit in document)
+   Valid values: "ips", "term_sheet", "fee_schedule", "contract", "mandate_document",
+                 "loan_agreement", "policy_document", "bank_confirmation", "internal_policy"
+
+2. threshold_authorized: boolean - set true if threshold comes from authoritative document
+
+3. definition_locked: boolean - set true if definition is confirmed/unambiguous
+   Set true when: bank/counterparty confirms definition, signed document exists
+   Set false when: definition is disputed, conflicting definitions exist
+
+4. definition_source_ref: string - quote from document confirming definition (if present)
+
+5. evidence_type: The type of evidence supporting the signal
+   Valid values: "term_sheet", "fee_schedule", "contract", "mandate_document",
+                 "signed_confirmation", "bank_email", "internal_calculation"
+
+Example for covenant breach with definition lock:
+{
+  "signal_type": "covenant_breach",
+  "payload": {
+    "covenant_name": "Minimum Unrestricted Cash",
+    "actual_ratio": "CHF 96,400",
+    "required_ratio": "CHF 100,000",
+    "definition_locked": true,
+    "definition_source_ref": "Bank covenant officer email confirms: unrestricted cash excludes overdraft, holds, pending settlement",
+    "threshold_authority": "bank_confirmation",
+    "threshold_authorized": true
+  }
+}
+
+Example for fee discrepancy with authorized threshold:
+{
+  "signal_type": "fee_discrepancy",
+  "payload": {
+    "charged": "0.45%",
+    "expected": "0.30%",
+    "threshold_authority": "fee_schedule",
+    "threshold_authorized": true,
+    "evidence_type": "fee_schedule",
+    "definition_source_ref": "Signed Fee Schedule: Custody fee 0.30% p.a. (Effective 2025-01-01)"
+  }
+}
+
 WHAT NOT TO DO:
 - Don't make up signal types not in the vocabulary
 - Don't extract signals without textual evidence
 - Don't inflate confidence to seem more useful
 - Don't guess dates, amounts, or identifiers
 - Don't combine multiple signals into one
+- Don't omit evidence fields for gated signals — they will be downgraded

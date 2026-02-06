@@ -7,7 +7,7 @@ Designed for hackathon video recording. Short, visual, scannable at a glance.
 
 Three acts in ~90 seconds of terminal time:
   ACT 1: Gemini reads a document and shows its reasoning (Thinking Mode)
-  ACT 2: Canonicalizer filters 14 signals → 2 real breaches (86% prevention)
+  ACT 2: Canonicalizer filters 14 signals → 5 real breaches (2/3 prevention)
   ACT 3: Safety layer blocks AI from making recommendations
 
 Run:
@@ -167,12 +167,12 @@ def act2_canonicalizer():
 
     # The headline numbers
     print(f"  {C.BOLD}{'─' * 55}{C._}")
-    bar("Raw LLM signals:", 14, 14, C.W)
-    bar("False breaches prevented:", 12, 14, C.G)
-    bar("Confirmed breaches:", 2, 14, C.R)
+    bar("Breach-category signals:", 14, 14, C.W)
+    bar("False breaches prevented:", 9, 14, C.G)
+    bar("Confirmed breaches:", 5, 14, C.R)
     print(f"  {C.BOLD}{'─' * 55}{C._}")
     print()
-    print(f"  {C.BOLD}{C.G}86% false alarm prevention  ·  0 missed signals{C._}")
+    print(f"  {C.BOLD}{C.G}2/3 false alarm prevention  ·  0 missed signals{C._}")
     print(f"  {C.DIM}  Same inputs → same outputs. Deterministic. Replayable.{C._}")
 
     pause(2)

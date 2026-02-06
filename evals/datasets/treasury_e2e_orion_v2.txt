@@ -1,0 +1,165 @@
+ORION METALS TRADING AG — TREASURY WEEKLY PACK (Messy Input, Synthetic Demo)
+Week: W10 / 2026 | Compiled: 2026-03-03 06:42 CET
+Entity: Orion Metals Trading AG (synthetic) | HQ: Zurich (CH)
+Owner: Treasury Ops (synthetic) | CFO sponsor: cfo@orion.example
+Confidentiality: synthetic demo data only.
+
+INTENTIONAL MESSINESS / TEST TARGETS
+- Conflicting balances: "available" vs "book" vs "unrestricted" (overdraft included in available)
+- Definition lock: present for one covenant (should allow breach), missing for another (should downgrade)
+- Authorized threshold: present for RCF utilization (should allow breach); missing for FX "limit" rumor (should downgrade)
+- Events: settlement pending, payment blocked, fee spike anomaly (must remain OBSERVATION)
+
+====================================================================
+1) Executive summary (Ops notes — NOT audited)
+====================================================================
+This week is about two things: (1) cash covenant optics and (2) RCF utilization creeping above internal limits.
+Key items:
+A) Confirmed threshold breach: RCF utilization above internal limit (85%) as of 2026-03-02 EOD.
+B) Confirmed covenant breach: Minimum Unrestricted Cash covenant (>= CHF 100,000) breached at EOD 2026-03-02 under agreed definition.
+C) Potential FX "limit breach" is NOT confirmed (threshold not sourced / definition unclear) — treat as observation.
+D) Operational events: one supplier payment blocked; fee spike flagged; pending settlement affects tomorrow morning cash.
+
+Upcoming outflows:
+- Supplier: EUR 245,000 due 2026-03-05 (contract OK; invoice entity mismatch issue may delay)
+- Payroll: CHF 188,000 due 2026-03-07
+- VAT: CHF 120,000 due 2026-03-10
+
+====================================================================
+2) Cash position snapshot (Internal sheet extract) — as of 2026-03-03 06:10 CET
+====================================================================
+[INTERNAL TREASURY SHEET — excerpt]
+Base currency: CHF
+
+Cash on hand (internal, as of 2026-03-03 06:10):
+- AlpineBank CH (CHF Operating):            CHF 141,260
+- AlpineBank CH (EUR Operating):            EUR 104,900
+- NordPort Bank (USD Collections):          USD 63,440
+- Petty cash / card float:                  CHF 9,500
+
+Pending items (internal):
+- Pending settlement proceeds:              CHF 82,000   (sale of bonds, trade date 2026-03-01, T+2)
+- Pending incoming transfer:                CHF 25,000   (value date 2026-03-03, not booked yet)
+- Bank hold / blocked balance:              CHF 58,700   (beneficiary mismatch; see email thread)
+
+Unrestricted cash (covenant metric):
+- Internal computed unrestricted cash @ EOD 2026-03-02: CHF 96,400  (min required 100,000)
+Definition note (IMPORTANT): excludes overdraft limits, bank holds, LC margin, and pending settlement.
+
+====================================================================
+3) Bank statement scan OCR excerpt (AlpineBank CH) — Statement date 2026-03-02
+====================================================================
+[SCAN OCR EXCERPT — AlpineBank CH — Account Summary]
+Client: Orion Metals Trading AG              Account: CH19•••••0048
+Statement date: 2026-03-02   Currency: CHF
+
+AVAILABLE BALANCE:            CHF 156,908.20
+BOOK BALANCE:                 CHF 106,908.20
+OD FACILITY LIMIT:            CHF 50,000.00  (included in AVAILABLE)
+
+NOTES (OCR imperfect):
+- "Hold: CHF 58,700 pending compliance review"
+- "Incoming transfer CHF 25,000 value date 03.03"
+- "Fees posted 03.02: CHF 4,980 (see details)"
+
+(End OCR excerpt)
+
+====================================================================
+4) Policy / constraints excerpts (what counts as "authorized threshold")
+====================================================================
+A) Internal Treasury Policy v3.2 (Registry) — excerpt (copied into pack)
+- RCF utilization soft limit: 85% (escalate if exceeded)
+- Min unrestricted cash covenant (facility): >= CHF 100,000 at all times (definition per term sheet)
+- FX: "hedge target band 40–70% for forecast EUR payables", NOT a hard limit (no breach semantics)
+
+B) RCF facility key numbers (confirmed)
+- Facility limit: CHF 2,000,000
+- Drawn amount at EOD 2026-03-02: CHF 1,840,000
+=> Utilization = 1,840,000 / 2,000,000 = 92.0%  (breaches internal 85% limit)
+
+====================================================================
+5) Definition lock evidence (this should enable a confirmed covenant breach)
+====================================================================
+This is the *definition lock* for "unrestricted cash". It is confirmed in writing:
+
+--- Email (bank) ----------------------------------------------------
+From: AlpineBank Covenant Officer <covenants@alpinebank.example>
+To: CFO <cfo@orion.example>; Treasury Ops <treasury@orion.example>
+Date: 2026-03-02 17:46
+Subject: Definition of "Unrestricted Cash" for Minimum Cash Covenant
+
+Confirmed: for covenant testing, "Unrestricted Cash" excludes:
+(i) overdraft/credit facility limits,
+(ii) blocked/held balances,
+(iii) LC margin and pledged cash,
+(iv) pending settlement proceeds until booked (value date).
+
+Covenant threshold remains CHF 100,000 at all times.
+(End)
+
+--- Internal note ---------------------------------------------------
+Treasury confirms: EOD 2026-03-02 unrestricted cash = CHF 96,400 (below 100,000) using above definition.
+
+====================================================================
+6) Email thread export (partial; messy)
+====================================================================
+
+--- Email #1 ---------------------------------------------------------
+From: CFO <cfo@orion.example>
+To: Treasury Ops <treasury@orion.example>
+Date: 2026-03-02 18:02
+Subject: Are we in breach tonight?
+
+I see available 156.9k on the scan. But if that includes overdraft + holds, what is "unrestricted" at EOD?
+Also: why fees jumped to ~5k today?
+
+--- Email #2 ---------------------------------------------------------
+From: Treasury Ops <treasury@orion.example>
+To: CFO
+Date: 2026-03-02 18:18
+Subject: RE: Are we in breach tonight?
+
+Per bank covenant officer email: overdraft + holds + pending settlement excluded.
+Unrestricted @ EOD ~96.4k (breach vs 100k).
+RCF utilization @92% also exceeds internal limit 85% (see calc section 4B).
+Options: draw additional buffer? or move funds from EUR account after FX conversion? (timing risk)
+
+--- Email #3 ---------------------------------------------------------
+From: AP <ap@orion.example>
+To: Treasury Ops; Controller
+Date: 2026-03-02 18:41
+Subject: PAYMENT BLOCKED — Baltic Steel OÜ
+
+Payment CHF 58,700 blocked by bank due beneficiary mismatch ("Baltic Steel OU" vs "Baltic Steel OÜ").
+Bank requested amended invoice + contract page.
+We have contract, invoice amendment pending from supplier.
+
+(Attachment referenced: Invoice_Amended_BalticSteel.pdf — NOT included)
+
+--- Email #4 ---------------------------------------------------------
+From: FX Desk <fx@orion.example>
+To: Treasury Ops
+Date: 2026-03-03 06:05
+Subject: EUR hedge "limit breach"?
+
+We currently have forecast EUR payables ~EUR 520k for March.
+Hedged forwards cover EUR 140k. Unhedged EUR 380k.
+Not sure if there is a "hard limit" — policy says hedge target band, not a breach.
+Please clarify escalation wording before sending to CFO.
+
+====================================================================
+7) Meeting notes (Treasury Risk Huddle) — 2026-03-03 07:30–07:55
+====================================================================
+Attendees: CFO, Treasury Ops, Controller, AP lead
+
+- CFO: "We need deterministic output: what is a confirmed breach vs what is an observation."
+- Treasury: "RCF utilization > 85% is confirmed (internal policy threshold)."
+- Treasury: "Min unrestricted cash covenant is confirmed breached under bank-confirmed definition."
+- Controller: "FX shouldn't be labeled breach; it's target band, no hard threshold."
+- AP: "Blocked payment is operational; fix beneficiary/invoice."
+- CFO: "Fee spike: investigate whether bank posted quarterly account fees or unusual charges."
+
+Actions:
+1) Escalate confirmed breaches to CFO/Board pack with evidence.
+2) Treat FX as observation unless policy/term sheet provides a hard threshold.
+3) Resolve payment block and fee anomaly as events with owners.

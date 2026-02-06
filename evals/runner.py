@@ -535,6 +535,123 @@ def run_gemini_suite(pack: str, verbose: bool = False, use_cache: bool = True) -
     return all_passed
 
 
+def run_canonicalization_suite(pack: str, verbose: bool = False) -> bool:
+    """
+    Run canonicalization A/B eval suite.
+
+    Loads golden candidate datasets, runs the deterministic Canonicalizer,
+    verifies results match expected counts, and reports false breach
+    prevention rate. No API key needed — everything runs locally.
+
+    Returns True if passed, False otherwise.
+    """
+    from .canonicalization.evaluator import CanonicalizationEvaluator
+
+    evaluator = CanonicalizationEvaluator()
+    packs = [pack] if pack != "all" else ["treasury", "wealth"]
+    all_passed = True
+
+    total_candidates_all = 0
+    total_raw_breach_all = 0
+    total_confirmed_breach_all = 0
+    total_observations_all = 0
+    total_dropped_all = 0
+    total_merged_all = 0
+
+    for p in packs:
+        if verbose:
+            print(f"\n{'='*60}")
+            print(f"Canonicalization Eval: {p}")
+            print('='*60)
+
+        candidates = evaluator.load_golden_candidates(p)
+        if not candidates:
+            if verbose:
+                print(f"[SKIP] No canonicalization dataset for {p}")
+            continue
+
+        expected = evaluator.load_golden_expected(p)
+
+        # Run canonicalization (pure function, no LLM)
+        report = evaluator.evaluate_pack(p, candidates)
+        ab = report.ab_comparison
+
+        if ab is None:
+            if verbose:
+                print(f"[FAIL] No A/B comparison produced for {p}")
+            all_passed = False
+            continue
+
+        # Accumulate cross-pack totals
+        total_candidates_all += ab.raw_candidate_count
+        total_raw_breach_all += ab.raw_breach_type_count
+        total_confirmed_breach_all += ab.canonical_breach_count
+        total_observations_all += ab.canonical_observation_count
+        total_dropped_all += ab.canonical_dropped_count
+        total_merged_all += ab.canonical_merged_count
+
+        # Verify against expected counts if available
+        pack_passed = True
+        if expected:
+            checks = [
+                ("breach_count", ab.canonical_breach_count, expected.get("breach_count")),
+                ("observation_count", ab.canonical_observation_count, expected.get("observation_count")),
+                ("dropped_count", ab.canonical_dropped_count, expected.get("dropped_count")),
+                ("merged_count", ab.canonical_merged_count, expected.get("merged_count")),
+            ]
+            for name, actual, exp in checks:
+                if exp is not None and actual != exp:
+                    pack_passed = False
+                    all_passed = False
+                    if verbose:
+                        print(f"  [FAIL] {name}: expected {exp}, got {actual}")
+                elif verbose and exp is not None:
+                    print(f"  [PASS] {name}: {actual}")
+
+        # Determinism check
+        det = evaluator.evaluate_determinism(p, candidates, runs=3)
+        if not det["deterministic"]:
+            pack_passed = False
+            all_passed = False
+            if verbose:
+                print(f"  [FAIL] Determinism: outputs differ across 3 runs")
+        elif verbose:
+            print(f"  [PASS] Determinism: identical across 3 runs")
+
+        if verbose:
+            # Print per-pack stats
+            prevented = ab.raw_breach_type_count - ab.canonical_breach_count
+            if ab.raw_breach_type_count > 0:
+                rate = (prevented / ab.raw_breach_type_count) * 100
+                print(f"\n  Candidates: {ab.raw_candidate_count}")
+                print(f"  Breach-category signals: {ab.raw_breach_type_count}")
+                print(f"  Confirmed breaches: {ab.canonical_breach_count}")
+                print(f"  Downgraded to observation: {prevented}")
+                print(f"  False breach prevention: {rate:.0f}%")
+
+            status = "PASS" if pack_passed else "FAIL"
+            print(f"\n  [{status}] {p}")
+
+    # Cross-pack summary
+    if verbose and total_raw_breach_all > 0:
+        total_prevented = total_raw_breach_all - total_confirmed_breach_all
+        overall_rate = (total_prevented / total_raw_breach_all) * 100
+        print(f"\n{'='*60}")
+        print(f"CANONICALIZATION SUMMARY (all packs)")
+        print(f"{'='*60}")
+        print(f"  Total candidates: {total_candidates_all}")
+        print(f"  Breach-category signals: {total_raw_breach_all}")
+        print(f"  Confirmed breaches: {total_confirmed_breach_all}")
+        print(f"  Observations: {total_observations_all}")
+        print(f"  Dropped: {total_dropped_all}")
+        print(f"  Merged: {total_merged_all}")
+        print(f"  ─────────────────────────────────")
+        print(f"  False breach prevention rate: {overall_rate:.0f}%")
+        print(f"  (breach-category signals blocked from BREACH status)")
+
+    return all_passed
+
+
 def run_pack_golden_suite(pack: str, verbose: bool = False) -> bool:
     """
     Run golden test cases for specific packs (treasury/wealth).
@@ -678,7 +795,7 @@ def main():
     )
     parser.add_argument(
         "--suite",
-        choices=["all", "extraction", "regression", "policy", "hallucination", "gemini", "pack-goldens"],
+        choices=["all", "extraction", "regression", "policy", "hallucination", "gemini", "pack-goldens", "canonicalization"],
         default="all",
         help="Which evaluation suite to run"
     )
@@ -737,7 +854,7 @@ def main():
 
     # Determine which suites to run
     if args.suite == "all":
-        suites_to_run = ["extraction", "regression", "policy", "hallucination", "pack-goldens", "gemini"]
+        suites_to_run = ["extraction", "regression", "policy", "hallucination", "pack-goldens", "canonicalization", "gemini"]
     else:
         suites_to_run = [args.suite]
 
@@ -791,6 +908,13 @@ def main():
     if "pack-goldens" in suites_to_run:
         passed = run_pack_golden_suite(args.pack, args.verbose)
         suites_run.append(("pack-goldens", passed))
+        if not passed:
+            exit_code = 1
+
+    # Run canonicalization A/B suite (false breach prevention)
+    if "canonicalization" in suites_to_run:
+        passed = run_canonicalization_suite(args.pack, args.verbose)
+        suites_run.append(("canonicalization", passed))
         if not passed:
             exit_code = 1
 

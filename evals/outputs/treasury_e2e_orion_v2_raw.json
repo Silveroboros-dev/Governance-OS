@@ -1,0 +1,134 @@
+{
+  "document_source": "treasury_e2e_orion_v2.txt",
+  "pack": "treasury",
+  "extraction_time_s": 33.44720220565796,
+  "total_candidates": 5,
+  "candidates": [
+    {
+      "id": "E0",
+      "signal_type": "position_limit_breach",
+      "payload": {
+        "asset": "RCF utilization",
+        "current_position": "92.0%",
+        "limit": "85%",
+        "entity": "Orion Metals Trading AG",
+        "threshold_authority": "internal_policy",
+        "threshold_authorized": true,
+        "evidence_type": "internal_policy",
+        "definition_source_ref": "Internal Treasury Policy v3.2 (Registry) \u2014 excerpt (copied into pack) - RCF utilization soft limit: 85% (escalate if exceeded)",
+        "_generated_title": "POSITION_LIMIT_BREACH: RCF utilization (92.0% vs 85% limit)"
+      },
+      "confidence": 1.0,
+      "source_spans": [
+        {
+          "start_char": 640,
+          "end_char": 730,
+          "text": "Confirmed threshold breach: RCF utilization above internal limit (85%) as of 2026-03-02 EOD."
+        },
+        {
+          "start_char": 2350,
+          "end_char": 2550,
+          "text": "Facility limit: CHF 2,000,000\n- Drawn amount at EOD 2026-03-02: CHF 1,840,000\n=> Utilization = 1,840,000 / 2,000,000 = 92.0%  (breaches internal 85% limit)"
+        }
+      ]
+    },
+    {
+      "id": "E1",
+      "signal_type": "covenant_breach",
+      "payload": {
+        "covenant_name": "Minimum Unrestricted Cash",
+        "actual_ratio": "CHF 96,400",
+        "required_ratio": "CHF 100,000",
+        "lender": "AlpineBank",
+        "definition_locked": true,
+        "definition_source_ref": "Confirmed: for covenant testing, \"Unrestricted Cash\" excludes: (i) overdraft/credit facility limits, (ii) blocked/held balances, (iii) LC margin and pledged cash, (iv) pending settlement proceeds until booked (value date).",
+        "threshold_authority": "bank_confirmation",
+        "_generated_title": "COVENANT_BREACH: Minimum Unrestricted Cash (CHF 96,400 vs CHF 100,000 required)"
+      },
+      "confidence": 1.0,
+      "source_spans": [
+        {
+          "start_char": 732,
+          "end_char": 870,
+          "text": "Confirmed covenant breach: Minimum Unrestricted Cash covenant (>= CHF 100,000) breached at EOD 2026-03-02 under agreed definition."
+        },
+        {
+          "start_char": 1750,
+          "end_char": 1850,
+          "text": "Internal computed unrestricted cash @ EOD 2026-03-02: CHF 96,400  (min required 100,000)"
+        },
+        {
+          "start_char": 2750,
+          "end_char": 3100,
+          "text": "Confirmed: for covenant testing, \"Unrestricted Cash\" excludes:\n(i) overdraft/credit facility limits,\n(ii) blocked/held balances,\n(iii) LC margin and pledged cash,\n(iv) pending settlement proceeds until booked (value date)."
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "signal_type": "fx_exposure_breach",
+      "payload": {
+        "currency_pair": "EUR payables",
+        "current_exposure": "EUR 380k unhedged",
+        "limit": "40\u201370% hedge target band",
+        "direction": "short",
+        "threshold_authority": "internal_policy",
+        "threshold_authorized": false,
+        "evidence_type": "internal_policy",
+        "definition_source_ref": "FX: \"hedge target band 40\u201370% for forecast EUR payables\", NOT a hard limit (no breach semantics)",
+        "_generated_title": "FX_EXPOSURE_BREACH: EUR payables (EUR 380k unhedged vs 40\u201370% hedge target band limit, short)"
+      },
+      "confidence": 0.85,
+      "source_spans": [
+        {
+          "start_char": 4050,
+          "end_char": 4250,
+          "text": "We currently have forecast EUR payables ~EUR 520k for March.\nHedged forwards cover EUR 140k. Unhedged EUR 380k.\nNot sure if there is a \"hard limit\" \u2014 policy says hedge target band, not a breach."
+        }
+      ]
+    },
+    {
+      "id": "E3",
+      "signal_type": "bank_account_anomaly",
+      "payload": {
+        "account": "AlpineBank CH",
+        "anomaly_type": "fee_spike",
+        "amount": "CHF 4,980",
+        "_generated_title": "ACCOUNT_ANOMALY: AlpineBank CH (fee_spike, CHF 4,980)"
+      },
+      "confidence": 0.95,
+      "source_spans": [
+        {
+          "start_char": 2150,
+          "end_char": 2210,
+          "text": "Fees posted 03.02: CHF 4,980 (see details)"
+        },
+        {
+          "start_char": 3450,
+          "end_char": 3490,
+          "text": "why fees jumped to ~5k today?"
+        }
+      ]
+    },
+    {
+      "id": "E4",
+      "signal_type": "settlement_failure",
+      "payload": {
+        "counterparty": "Baltic Steel O\u00dc",
+        "amount": "CHF 58,700",
+        "failure_reason": "beneficiary_mismatch",
+        "_generated_title": "SETTLEMENT_FAILURE: Baltic Steel O\u00dc (CHF 58,700, beneficiary_mismatch)"
+      },
+      "confidence": 1.0,
+      "source_spans": [
+        {
+          "start_char": 3750,
+          "end_char": 3950,
+          "text": "Payment CHF 58,700 blocked by bank due beneficiary mismatch (\"Baltic Steel OU\" vs \"Baltic Steel O\u00dc\")."
+        }
+      ]
+    }
+  ],
+  "thinking_summary": "**Treasury Weekly Pack - Orion Metals Trading AG (W10/2026): Initial Assessment**\n\nOkay, here's what I'm seeing this week. It's March 3rd, 2026, and I'm looking at the weekly treasury pack for Orion Metals Trading AG. Several key items have popped up that need immediate attention.\n\nFirst, there's a clear RCF utilization breach. The confirmed threshold breach is quite significant: utilization is at 92%, exceeding the internal soft limit of 85%. I've checked the calculation; the drawn amount of CHF 1,840,000 against a facility limit of CHF 2,000,000 absolutely results in 92%. The policy excerpt clearly states the 85% soft limit and the need to escalate if it's exceeded. This is a `position_limit_breach`.\n\nSecond, we have a covenant breach on Minimum Unrestricted Cash. The internal computation shows CHF 96,400 at EOD March 2nd, while the required amount, as confirmed by AlpineBank, is CHF 100,000.  The covenant definition is locked and excludes overdrafts, blocked balances, LC margins, and pending settlements.  So, this is a clear `covenant_breach`.\n\nThird, we have an FX exposure situation, specifically with EUR payables. We are exposed, unhedged, to EUR 380k. There is a hedge target band of 40-70%, but the instructions are explicit that this is *not* a hard limit. I'm going to flag this as an `fx_exposure_breach`, but with `threshold_authorized: false`, because it's a target band, not a hard limit.\n\nFourth, there's an anomaly with the AlpineBank CH account. Fees posted are CHF 4,980, which is significantly higher than usual. I'm tagging this as a `bank_account_anomaly` with an `anomaly_type` of \"fee_spike\". This needs investigation to determine if it is a quarterly charge, or something else.\n\nFinally, we have a settlement failure. A payment of CHF 58,700 was blocked by the bank due to a beneficiary mismatch. The beneficiary name is \"Baltic Steel OU\" in our records versus \"Baltic Steel O\u00dc\". This is flagged as a `settlement_failure` with the reason clearly documented as \"beneficiary_mismatch\".\n\nI haven't seen anything specifically about debt maturities or counterparty credit downgrades. Market volatility isn't explicitly mentioned, so I'm omitting those signals. \"Operating liquidity ratio at 0.12, below 0.20 minimum\" is a liquidity threshold. The \"Minimum Unrestricted Cash\" is a covenant (contractual with a bank), and `covenant_breach` is the better fit. I've double checked the documents, and found no information that points to a specific shortfall of settlement rail.\n\n\n",
+  "extraction_notes": null
+}

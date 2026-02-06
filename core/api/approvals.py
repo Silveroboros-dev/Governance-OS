@@ -19,7 +19,7 @@ from core.database import get_db
 from core.models import (
     ApprovalQueue, ApprovalActionType, ApprovalStatus,
     AuditEvent, AuditEventType,
-    Signal, SignalReliability,
+    Signal, SignalReliability, CanonicalStatus,
     Policy, PolicyVersion, PolicyStatus
 )
 from core.models.signal import compute_signal_content_hash
@@ -308,7 +308,16 @@ def _execute_signal_approval(approval: ApprovalQueue, db: Session) -> UUID:
     if existing:
         return existing.id
 
-    # Create signal
+    # Map canonical_status string to enum
+    canonical_status_str = payload.get("canonical_status")
+    canonical_status = None
+    if canonical_status_str:
+        try:
+            canonical_status = CanonicalStatus(canonical_status_str)
+        except ValueError:
+            pass  # Invalid status, leave as None
+
+    # Create signal with canonicalization metadata
     signal = Signal(
         pack=payload["pack"],
         signal_type=payload["signal_type"],
@@ -316,11 +325,19 @@ def _execute_signal_approval(approval: ApprovalQueue, db: Session) -> UUID:
         source=payload["source"],
         reliability=reliability,
         observed_at=observed_at,
+        # Canonicalization output (from deterministic layer)
+        canonical_status=canonical_status,
+        severity=payload.get("canonical_severity"),
+        canonical_flags=payload.get("canonical_flags"),
         signal_metadata={
             "extracted_by": approval.proposed_by,
             "source_spans": payload.get("source_spans", []),
             "extraction_notes": payload.get("extraction_notes"),
-            "confidence": approval.confidence
+            "confidence": approval.confidence,
+            "completeness_score": payload.get("completeness_score"),
+            "missing_fields": payload.get("missing_fields"),
+            "constraint_id": payload.get("constraint_id"),
+            "dedupe_key": payload.get("dedupe_key"),
         },
         content_hash=content_hash
     )

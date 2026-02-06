@@ -181,10 +181,15 @@ gcloud run deploy govos-api --source . --region europe-west4 --project governanc
 ### MCP Server — Cloud Run (manual)
 
 ```bash
-cd mcp_server && gcloud run deploy govos-mcp --source . --region europe-west4 --project governance-os --allow-unauthenticated
+# Build from project root (Dockerfile needs core/ in context)
+gcloud builds submit --config=mcp_server/cloudbuild.yaml . --project governance-os
+
+# Deploy the built image
+gcloud run deploy govos-mcp --image gcr.io/governance-os/govos-mcp:latest --region europe-west4 --project governance-os --allow-unauthenticated
 ```
 
 - **Live URL:** `https://govos-mcp-1064412167254.europe-west4.run.app/mcp`
+- **Note:** MCP Dockerfile requires `core/` directory, so must build from project root with cloudbuild.yaml
 
 ### Key deployment rules
 

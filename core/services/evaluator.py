@@ -13,7 +13,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from core.models import Evaluation, PolicyVersion, Signal, EvaluationResult, AuditEvent, AuditEventType
+from core.models import Evaluation, PolicyVersion, Signal, EvaluationResult, AuditEvent, AuditEventType, CanonicalStatus
 from core.domain.fingerprinting import compute_evaluation_input_hash, normalize_signal_data
 from core.domain.evaluation_rules import evaluate_policy
 from core.logging import get_logger
@@ -168,6 +168,9 @@ class Evaluator:
         """
         Convert Signal ORM object to dictionary.
 
+        Includes canonicalization metadata which controls whether the signal
+        can trigger breach exceptions.
+
         Args:
             signal: Signal object
 
@@ -181,7 +184,11 @@ class Evaluator:
             "source": signal.source,
             "reliability": signal.reliability.value if hasattr(signal.reliability, 'value') else signal.reliability,
             "observed_at": signal.observed_at,
-            "metadata": signal.signal_metadata
+            "metadata": signal.signal_metadata,
+            # Canonicalization metadata (controls breach vs observation)
+            "canonical_status": signal.canonical_status.value if signal.canonical_status else None,
+            "severity": signal.severity,
+            "canonical_flags": signal.canonical_flags,
         }
 
     def _map_result(self, result_str: str) -> EvaluationResult:

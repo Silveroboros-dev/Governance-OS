@@ -89,6 +89,60 @@ Titles are generated deterministically from templates after extraction.
     - Example source: "$2.5M wire received from unknown sender on Operating Account"
     - Extract: { account: "Operating Account", anomaly_type: "unknown_sender", amount: "$2.5M" }
 
+=== GATED SIGNALS — EVIDENCE CONTRACT ===
+
+The following signal types require evidence to become confirmed breaches:
+
+1. covenant_breach — REQUIRES:
+   - definition_locked: true (if bank/counterparty confirms metric definition)
+   - definition_source_ref: quote from confirmation (e.g., bank email text)
+   - Look for: emails from covenant officers, signed term sheets, bank confirmations
+   - If definition is disputed or unclear, set definition_locked: false
+
+2. position_limit_breach — REQUIRES:
+   - threshold_authority: source of limit (e.g., "internal_policy", "mandate_document")
+   - threshold_authorized: true (if limit comes from authoritative source)
+   - Look for: policy documents, internal limits with version numbers
+
+3. fx_exposure_breach — REQUIRES:
+   - threshold_authority: source of limit
+   - threshold_authorized: true
+   - IMPORTANT: "target band" or "hedge target" is NOT a hard limit — set threshold_authorized: false
+
+4. liquidity_threshold_breach — REQUIRES:
+   - threshold_authority: source of threshold
+   - threshold_authorized: true
+   - evidence_type: "term_sheet", "loan_agreement", "internal_policy", etc.
+
+Example — Covenant with definition lock:
+{
+  "signal_type": "covenant_breach",
+  "payload": {
+    "covenant_name": "Minimum Unrestricted Cash",
+    "actual_ratio": "CHF 96,400",
+    "required_ratio": "CHF 100,000",
+    "lender": "AlpineBank",
+    "definition_locked": true,
+    "definition_source_ref": "Bank covenant officer email: unrestricted cash excludes overdraft, holds, pending settlement",
+    "threshold_authority": "bank_confirmation"
+  }
+}
+
+Example — Position limit with authorized threshold:
+{
+  "signal_type": "position_limit_breach",
+  "payload": {
+    "asset": "RCF utilization",
+    "current_position": "92%",
+    "limit": "85%",
+    "entity": "Orion Metals",
+    "threshold_authority": "internal_policy",
+    "threshold_authorized": true,
+    "evidence_type": "policy_document",
+    "definition_source_ref": "Internal Treasury Policy v3.2: RCF utilization soft limit 85%"
+  }
+}
+
 === EXTRACTION RULES ===
 
 1. ONLY use signal types from the list above
@@ -96,6 +150,7 @@ Titles are generated deterministically from templates after extraction.
 3. Preserve exact values with units as stated in document
 4. Include source_spans pointing to exact quoted text
 5. Be honest with confidence scores - lower is better than guessing
+6. For gated signals, ALWAYS look for evidence fields (definition_locked, threshold_authority, etc.)
 
 === OUTPUT FORMAT ===
 

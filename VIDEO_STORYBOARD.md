@@ -4,7 +4,16 @@
 
 ---
 
-## ACT 1: The Problem (0:00-0:15)
+## OPENING: Personal Context (0:00-0:12)
+
+**Visual:** Simple text card or headshot.
+
+**Voiceover:**
+"I spent years in treasury and wealth management before moving to technology. I always treat hackathons as a chance to learn through doing — that's why I picked a hard problem I know from the inside. Early experiments with Gemini 3 showed the frontier had moved — what wasn't feasible before suddenly was."
+
+---
+
+## ACT 1: The Problem (0:12-0:27)
 
 **Visual:** Split screen — left: a dense 6-page treasury PDF. Right: a red alert dashboard with 14 "BREACH" badges flashing.
 
@@ -33,14 +42,14 @@
 
 ---
 
-## ACT 4: The Canonicalizer — 86% False Alarm Prevention (1:00-1:30)
+## ACT 4: The Canonicalizer — Two-Thirds False Alarm Prevention (1:00-1:30)
 
 **Visual:** Start in CLI showing the JSON output — 9 candidate signals entering the Canonicalizer. Animate/highlight: 0 breaches come out. 9 observations. Then cut to the GUI approval queue showing the same signals with their canonical status badges.
 
 **Voiceover:**
 "Gemini found 9 real issues. But zero are confirmed breaches. Why? The equity and concentration signals need lookthrough data from the underlying funds — we don't have it yet. The fee discrepancy needs an authorized source document — the term sheet PDF is missing. The withdrawal request and compliance flags are events, not threshold violations — they can never be breaches by definition."
 
-"Every signal is tracked. Nothing is lost. But only verified violations earn the breach label. On our test documents, that's 86% false alarm prevention — with zero missed signals."
+"Every signal is tracked. Nothing is lost. But only verified violations earn the breach label. On our test documents, that's two-thirds false alarm prevention — with zero missed signals. Run `make evals` to verify."
 
 ---
 
@@ -73,6 +82,8 @@
 **Voiceover:**
 "Gemini 3 reads documents with transparent reasoning. A deterministic kernel validates with zero randomness. Humans decide with full context. No hallucinated breaches. No missed signals. AI that extracts, but never decides."
 
+"The system saves executive time from day one — two-thirds of false alarms are filtered before a human ever sees them. But the real value is structural. Weak policies mean more noise. Precise policies mean silence on what doesn't matter, and clear escalation on what does. The system makes the cost of bad policy visible and immediate. It doesn't just automate decisions — it motivates better governance."
+
 **End card:** Governance OS — Deterministic Policy Engine with Transparent AI
 
 ---
@@ -103,7 +114,7 @@
 The eval suite uses Gemini to validate narrative grounding — catching hallucinations
 that regex misses. This is hard to demo visually in 2 minutes. Two options:
 
-**Option A: Skip it.** The canonicalizer story (86% prevention) is stronger and
+**Option A: Skip it.** The canonicalizer story (2/3 prevention) is stronger and
 more visual. "Gemini as judge" is a testing/CI story, not a product demo story.
 
 **Option B: 5-second insert in Act 4.** Show a test output where Gemini catches

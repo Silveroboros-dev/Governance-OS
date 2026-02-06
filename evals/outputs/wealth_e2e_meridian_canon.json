@@ -11,20 +11,23 @@
   "signals": [
     {
       "source_candidate_id": "W0",
-      "signal_type": "withdrawal_request",
+      "signal_type": "mandate_breach",
       "canonical_status": "observation",
-      "severity": "medium",
+      "severity": "critical",
       "completeness_score": 1.0,
       "missing_fields": [],
       "flags": [
         "complete",
-        "event_category"
+        "lookthrough_required",
+        "lookthrough_missing",
+        "downgraded"
       ],
-      "title": "WITHDRAWAL_REQUEST: Ravenwood Trust (CHF 400,000, 7.6%)",
-      "dedupe_key": "d237e05cfd0808dd",
+      "title": "MANDATE_BREACH: Liquidity buffer (12.6% vs min 15% cash + T-bills allowed)",
+      "dedupe_key": "d8a7026757b9e5b1",
       "merged_from": [],
       "evidence_refs": [
-        "Planned withdrawal: CHF 400,000 on 2026-03-07 for property purchase deposit (cli"
+        "Liquidity buffer: min 15% cash + T-bills",
+        "Cash & T-bills:           CHF 662,000 (12.6%)   <-- liquidity buffer breach (<15"
       ]
     },
     {
@@ -40,35 +43,16 @@
         "lookthrough_missing",
         "downgraded"
       ],
-      "title": "MANDATE_BREACH: Liquidity buffer (12.6% vs min 15% cash + T-bills allowed)",
-      "dedupe_key": "b8e3fb041e7a1f78",
+      "title": "MANDATE_BREACH: Equity exposure (40.2% vs hard max 40% allowed)",
+      "dedupe_key": "1bf55006b21cb635",
       "merged_from": [],
       "evidence_refs": [
-        "Cash & T-bills:           CHF 662,000 (12.6%)   <-- liquidity buffer breach (<15"
+        "Equity exposure: target 30\u201335%, hard max 40%",
+        "Equities:                 CHF 2,120,000 (40.2%) <-- hard max breach (>40%) by a "
       ]
     },
     {
       "source_candidate_id": "W2",
-      "signal_type": "mandate_breach",
-      "canonical_status": "observation",
-      "severity": "critical",
-      "completeness_score": 1.0,
-      "missing_fields": [],
-      "flags": [
-        "complete",
-        "lookthrough_required",
-        "lookthrough_missing",
-        "downgraded"
-      ],
-      "title": "MANDATE_BREACH: Equity exposure (40.2% vs hard max 40% allowed)",
-      "dedupe_key": "a80fa0655ec4e796",
-      "merged_from": [],
-      "evidence_refs": [
-        "Equities:                 CHF 2,120,000 (40.2%) <-- hard max breach (>40%)"
-      ]
-    },
-    {
-      "source_candidate_id": "W3",
       "signal_type": "concentration_breach",
       "canonical_status": "observation",
       "severity": "high",
@@ -81,14 +65,15 @@
         "downgraded"
       ],
       "title": "CONCENTRATION_BREACH: Global Equity UCITS ETF (13.5% vs 12% limit)",
-      "dedupe_key": "397e9c90e0f03347",
+      "dedupe_key": "6323b275318eebb3",
       "merged_from": [],
       "evidence_refs": [
+        "Single fund cap: 12%",
         "1) Global Equity UCITS ETF:               CHF 710,000 (13.5%)  <-- exceeds fund "
       ]
     },
     {
-      "source_candidate_id": "W4",
+      "source_candidate_id": "W3",
       "signal_type": "lookthrough_missing",
       "canonical_status": "observation",
       "severity": "medium",
@@ -99,14 +84,53 @@
         "event_category"
       ],
       "title": "LOOKTHROUGH_MISSING: EM Equity Fund (active) (look-through)",
-      "dedupe_key": "6a927d7e721a92cf",
+      "dedupe_key": "2a30cc994ae9e72d",
       "merged_from": [],
       "evidence_refs": [
         "3) EM Equity Fund (active):              CHF 520,000 (9.9%)   <-- look-through m"
       ]
     },
     {
+      "source_candidate_id": "W4",
+      "signal_type": "settlement_pending_cash",
+      "canonical_status": "observation",
+      "severity": "medium",
+      "completeness_score": 1.0,
+      "missing_fields": [],
+      "flags": [
+        "complete",
+        "event_category"
+      ],
+      "title": "SETTLEMENT_PENDING_CASH: CHF 190,000 (included in available cash for margin)",
+      "dedupe_key": "44615d8c98bfa143",
+      "merged_from": [],
+      "evidence_refs": [
+        "Cash includes pending settlement proceeds CHF 190,000 from sale order dated 2026"
+      ]
+    },
+    {
       "source_candidate_id": "W5",
+      "signal_type": "withdrawal_request",
+      "canonical_status": "observation",
+      "severity": "medium",
+      "completeness_score": 0.6666666666666666,
+      "missing_fields": [
+        "percent_of_portfolio"
+      ],
+      "flags": [
+        "low_confidence",
+        "event_category"
+      ],
+      "title": "WITHDRAWAL_REQUEST: (missing 'percent_of_portfolio')",
+      "dedupe_key": "d237e05cfd0808dd",
+      "merged_from": [],
+      "evidence_refs": [
+        "Planned withdrawal: CHF 400,000 on 2026-03-07 for property purchase deposit (cli",
+        "Please confirm you can transfer CHF 400,000 to our notary by 2026-03-07."
+      ]
+    },
+    {
+      "source_candidate_id": "W6",
       "signal_type": "fee_discrepancy",
       "canonical_status": "observation",
       "severity": "medium",
@@ -118,29 +142,11 @@
         "authorized_threshold_missing",
         "downgraded"
       ],
-      "title": "FEE_DISCREPANCY: 0.40% charged vs 0.30% expected",
-      "dedupe_key": "bf55f9f829033f47",
+      "title": "FEE_DISCREPANCY: 0.40% p.a. charged vs 0.30% expected",
+      "dedupe_key": "a42403e10f059588",
       "merged_from": [],
       "evidence_refs": [
         "custodian invoiced 0.40% p.a. custody fee on total assets. Our term sheet says 0"
-      ]
-    },
-    {
-      "source_candidate_id": "W6",
-      "signal_type": "settlement_pending_cash",
-      "canonical_status": "observation",
-      "severity": "medium",
-      "completeness_score": 1.0,
-      "missing_fields": [],
-      "flags": [
-        "complete",
-        "event_category"
-      ],
-      "title": "SETTLEMENT_PENDING_CASH: CHF 190,000 (included in available cash)",
-      "dedupe_key": "77ea758cabd91bea",
-      "merged_from": [],
-      "evidence_refs": [
-        "Cash includes pending settlement proceeds CHF 190,000 from sale order dated 2026"
       ]
     },
     {
@@ -158,6 +164,7 @@
       "dedupe_key": "637b118f84fd10ab",
       "merged_from": [],
       "evidence_refs": [
+        "4) Structured Note \"ZEN Autocall 2025\":  CHF 210,000 (4.0%)   <-- KID referenced",
         "ZEN Autocall KID is missing in folder."
       ]
     },
@@ -172,8 +179,8 @@
         "complete",
         "event_category"
       ],
-      "title": "COMPLIANCE_FLAG: Stale suitability (Ravenwood Trust)",
-      "dedupe_key": "72eaaf7918ad610e",
+      "title": "COMPLIANCE_FLAG: Stale Suitability (Ravenwood Trust)",
+      "dedupe_key": "0bcf426cdf5622ce",
       "merged_from": [],
       "evidence_refs": [
         "Suitability questionnaire date: 2024-10-02  <-- stale vs 12-month refresh target"

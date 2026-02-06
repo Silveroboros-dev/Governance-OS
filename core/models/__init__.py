@@ -6,7 +6,7 @@ This is required for Alembic autogenerate to work correctly.
 """
 
 from core.models.policy import Policy, PolicyVersion, PolicyStatus
-from core.models.signal import Signal, SignalReliability
+from core.models.signal import Signal, SignalReliability, CanonicalStatus
 from core.models.evaluation import Evaluation, EvaluationResult
 from core.models.exception import Exception, ExceptionSeverity, ExceptionStatus
 from core.models.decision import Decision, DecisionType
@@ -25,6 +25,7 @@ __all__ = [
     # Signal
     "Signal",
     "SignalReliability",
+    "CanonicalStatus",
     # Evaluation
     "Evaluation",
     "EvaluationResult",
