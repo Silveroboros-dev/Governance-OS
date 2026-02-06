@@ -57,7 +57,15 @@ async function fetchApi<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: response.statusText }))
-    throw new ApiError(response.status, error.detail || 'API request failed', error)
+    // Handle Pydantic validation errors (detail is an array)
+    let message = 'API request failed'
+    if (Array.isArray(error.detail)) {
+      // Extract first validation error message
+      message = error.detail.map((e: any) => e.msg || e.message || JSON.stringify(e)).join('; ')
+    } else if (typeof error.detail === 'string') {
+      message = error.detail
+    }
+    throw new ApiError(response.status, message, error)
   }
 
   return response.json()
