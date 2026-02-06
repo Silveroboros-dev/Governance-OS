@@ -12,7 +12,7 @@ A policy-driven coordination layer for Corporate Treasury and Wealth Management.
 |---|---|
 | **Input** | Messy evidence (PDFs, scans, emails, bank statements) |
 | **Output** | Case = signals + conflicts + policy evaluation + exceptions + audit pack |
-| **Guarantee** | Only confirmed breaches FAIL policy; observations create review tasks |
+| **Guarantee** | FAIL only on confirmed breaches; observations generate review items outside the evaluator |
 | **Domains** | Treasury + Wealth via "packs" (config, not forks) |
 
 ---
@@ -42,16 +42,16 @@ make evals               # Semantic grounding verification
 ## How It Works
 
 ```
-Signal → Policy Evaluation → Exception → Human Decision → Evidence Pack
-           (deterministic)     (AI drafts)    (human owns)    (audit-grade)
+Evidence Pack → Signal Candidates → Canonicalize → Policy Evaluation → Exceptions → Human Decision → Audit Pack
+  (messy docs)     (AI proposes)    (deterministic)   (deterministic)  (deterministic)   (human owns)   (archived + replayable)
 ```
 
-**The AI layer (Gemini 3):**
-- **IntakeAgent**: Extracts signals from documents with source spans + confidence scores
+**The AI layer (Gemini) is a coprocessor:**
+- **IntakeAgent**: Extracts candidate signals with provenance (source spans)
 - **NarrativeAgent**: Drafts memos grounded to evidence IDs (never invents facts)
-- **PolicyDraftAgent**: Generates policy drafts from natural language (human-approved only)
+- **PolicyDraftAgent**: Proposes policy drafts (human-approved only)
 
-**All agent outputs are schema-validated and eval-gated. CI fails on any hallucination.**
+**All agent outputs are schema-validated and CI-gated with grounding + determinism checks.**
 
 ---
 
@@ -68,22 +68,20 @@ Signal → Policy Evaluation → Exception → Human Decision → Evidence Pack
 
 ---
 
-## Why Gemini (Optional Coprocessor)
+## Gemini as Coprocessor (LLM Never Decides Policy Outcomes)
 
-### 1. Context Caching (50-60% Cost Reduction)
+### 1. Context Caching (Cost Reduction)
 
 ```python
 from coprocessor.cache import get_cache_manager
 
 manager = get_cache_manager()
 manager.build_all_caches()  # Cache prompts + vocabularies
-
-# Cached tokens cost 90% less; overall savings 50-60% per request
 ```
 
-Caches auto-invalidate when policies change. No stale context.
+Cost reduction via context caching (workload-dependent). Caches auto-invalidate when policies change.
 
-### 2. Thinking Mode (Audit-Grade Transparency)
+### 2. Rationale Summaries (Reviewable Extraction Notes)
 
 ```python
 from coprocessor.agents.intake_agent import IntakeAgent
@@ -105,7 +103,7 @@ make evals  # Run full evaluation suite
 
 # What it verifies:
 # - Gemini extracts candidate signals from documents
-# - Kernel downgrades unconfirmed breaches to observations
+# - Kernel gates unconfirmed breaches to observations (pending verification)
 # - Only confirmed breaches can FAIL policy
 # - Determinism: identical output across runs (hash-verified)
 ```
@@ -127,6 +125,23 @@ result.drops      # What couldn't be extracted (with reason)
 ```
 
 Contradictions are surfaced, not silently resolved.
+
+### 5. Gemini Evals (Verifier, Not Decision-Maker)
+
+We use a Gemini-based evaluation suite as a CI verifier for coprocessor outputs.
+This is NOT policy evaluation. The governance kernel remains deterministic.
+
+```bash
+make evals-gemini  # Requires GOOGLE_API_KEY
+```
+
+**What it checks:**
+- **Grounding**: Every extracted claim is supported by quoted evidence spans
+- **Schema compliance**: Outputs match the required structures
+- **Determinism invariants**: Same input pack → same hash → same canonicalized outcome
+- **Safety semantics**: Observations never cause FAIL; FAIL only on confirmed breaches
+
+This prevents "confident but unsupported" outputs from shipping, and makes the demo replayable.
 
 ---
 
@@ -277,10 +292,11 @@ make replay PACK=treasury FROM=2025-01-01 TO=2025-03-31
 - Expanded Evals
 
 ### Gemini 3 Hackathon (Current)
-- Context Caching (50-60% savings)
-- Thinking Mode (audit transparency)
-- Semantic Eval Judge
+- Context Caching (cost reduction)
+- Rationale Summaries (reviewable extraction notes)
+- Canonicalization (Gemini proposes, kernel confirms)
 - Conflict Detection
+- Gemini Evals (CI verifier)
 
 ## Contributing
 
