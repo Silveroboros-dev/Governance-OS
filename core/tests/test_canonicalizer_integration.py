@@ -252,7 +252,7 @@ class TestLLMVariance:
               f"missing={sig.missing_fields}, score={sig.completeness_score:.2f}")
 
     def test_field_name_variant_with_correct_names_stays_breach(self):
-        """Same scenario but with correct field names → breach."""
+        """Same scenario but with correct field names + authorized threshold → breach."""
         candidates = [{
             "id": "variance_C3",
             "signal_type": "fx_exposure_breach",
@@ -261,6 +261,7 @@ class TestLLMVariance:
                 "current_exposure": 14200000,  # Correct field name
                 "limit": 10000000,             # Correct field name
                 "direction": "long",
+                "threshold_authorized": True,  # Required gate
             },
             "confidence": 0.92,
         }]

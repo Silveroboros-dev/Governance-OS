@@ -237,7 +237,7 @@ class TestW01TrueConcentrationBreach:
         assert result.dropped_count == 1 or result.breach_count == 1
 
     def test_correct_type_concentration_breach_works(self):
-        """Same signal but with correct type → breach."""
+        """Same signal but with correct type + all gates passed → breach."""
         registry = load_constraint_registry("wealth")
         candidates = [{
             "id": "w01_correct",
@@ -249,6 +249,7 @@ class TestW01TrueConcentrationBreach:
                 "current_value": "0.176",
                 "client_id": "fund_oakridge_pcf_iii",
                 "lookthrough_available": True,
+                "threshold_authorized": True,  # Required gate
             },
             "confidence": 0.85,
         }]
