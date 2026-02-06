@@ -31,6 +31,42 @@ from core.schemas.approval import (
 router = APIRouter(prefix="/approvals", tags=["approvals"])
 
 
+# NOTE: Static routes MUST come before parameterized routes (/{approval_id})
+# Otherwise FastAPI will try to parse "stats" as a UUID
+
+@router.get("/stats/summary")
+def get_approval_stats(db: Session = Depends(get_db)):
+    """Get summary statistics for the approval queue."""
+    pending_count = db.query(ApprovalQueue).filter(
+        ApprovalQueue.status == ApprovalStatus.PENDING
+    ).count()
+
+    approved_count = db.query(ApprovalQueue).filter(
+        ApprovalQueue.status == ApprovalStatus.APPROVED
+    ).count()
+
+    rejected_count = db.query(ApprovalQueue).filter(
+        ApprovalQueue.status == ApprovalStatus.REJECTED
+    ).count()
+
+    # Count by action type (pending only)
+    pending_by_type = {}
+    for action_type in ApprovalActionType:
+        count = db.query(ApprovalQueue).filter(
+            ApprovalQueue.status == ApprovalStatus.PENDING,
+            ApprovalQueue.action_type == action_type
+        ).count()
+        if count > 0:
+            pending_by_type[action_type.value] = count
+
+    return {
+        "pending": pending_count,
+        "approved": approved_count,
+        "rejected": rejected_count,
+        "pending_by_type": pending_by_type
+    }
+
+
 @router.get("", response_model=ApprovalListResponse)
 def list_approvals(
     status: Optional[str] = Query(None, description="Filter by status: pending, approved, rejected"),
@@ -220,39 +256,6 @@ def reject_approval(
     db.refresh(approval)
 
     return _approval_to_response(approval)
-
-
-@router.get("/stats/summary")
-def get_approval_stats(db: Session = Depends(get_db)):
-    """Get summary statistics for the approval queue."""
-    pending_count = db.query(ApprovalQueue).filter(
-        ApprovalQueue.status == ApprovalStatus.PENDING
-    ).count()
-
-    approved_count = db.query(ApprovalQueue).filter(
-        ApprovalQueue.status == ApprovalStatus.APPROVED
-    ).count()
-
-    rejected_count = db.query(ApprovalQueue).filter(
-        ApprovalQueue.status == ApprovalStatus.REJECTED
-    ).count()
-
-    # Count by action type (pending only)
-    pending_by_type = {}
-    for action_type in ApprovalActionType:
-        count = db.query(ApprovalQueue).filter(
-            ApprovalQueue.status == ApprovalStatus.PENDING,
-            ApprovalQueue.action_type == action_type
-        ).count()
-        if count > 0:
-            pending_by_type[action_type.value] = count
-
-    return {
-        "pending": pending_count,
-        "approved": approved_count,
-        "rejected": rejected_count,
-        "pending_by_type": pending_by_type
-    }
 
 
 # Helper functions

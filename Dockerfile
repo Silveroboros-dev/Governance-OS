@@ -29,5 +29,5 @@ ENV PYTHONPATH=/app
 ENV PORT=8080
 EXPOSE 8080
 
-# Production command (no reload)
-CMD exec uvicorn core.main:app --host 0.0.0.0 --port $PORT
+# Production command: run migrations then start server
+CMD alembic upgrade head && exec uvicorn core.main:app --host 0.0.0.0 --port $PORT
