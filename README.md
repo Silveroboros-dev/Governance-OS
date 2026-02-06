@@ -101,7 +101,7 @@ Compliance officers can review *why* each signal was extracted.
 ### 3. Semantic Grounding Verification (CI-Gated)
 
 ```bash
-make evals-gemini  # Verifies all claims grounded to evidence
+make evals  # Verifies all claims grounded to evidence
 
 # Catches what regex can't:
 # - Wrong numbers ("$50M" when evidence says "$45M")
