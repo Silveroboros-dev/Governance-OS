@@ -29,5 +29,5 @@ ENV MCP_PORT=8080
 # Cloud Run expects port 8080
 EXPOSE 8080
 
-# Run MCP server
-CMD ["python", "-m", "mcp_server.server"]
+# Run MCP server via __main__.py (avoids RuntimeWarning about module import order)
+CMD ["python", "-m", "mcp_server"]
