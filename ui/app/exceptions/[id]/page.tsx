@@ -145,7 +145,8 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
     uncertainties.push(`Evaluation confidence: ${(exception.evaluation.details.confidence * 100).toFixed(0)}%`)
   }
 
-  const canSubmit = selectedOption && rationale.trim().length > 0 && userEmail
+  const rationaleMinLength = 10
+  const canSubmit = selectedOption && rationale.trim().length >= rationaleMinLength && userEmail
 
   return (
     <TooltipProvider>
@@ -310,8 +311,12 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
                   onChange={(e) => setRationale(e.target.value)}
                   className="flex-1 resize-none min-h-[100px]"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {rationale.length > 0 ? `${rationale.length} characters` : 'Required for audit trail'}
+                <p className={`text-xs mt-1 ${rationale.length > 0 && rationale.length < rationaleMinLength ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                  {rationale.length > 0
+                    ? rationale.length < rationaleMinLength
+                      ? `${rationale.length}/${rationaleMinLength} characters (minimum ${rationaleMinLength})`
+                      : `${rationale.length} characters`
+                    : `Required for audit trail (min ${rationaleMinLength} chars)`}
                 </p>
               </div>
 
@@ -337,7 +342,7 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
 
               {!canSubmit && (
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  {!userEmail ? 'Set your email in header' : !selectedOption ? 'Select an option' : 'Enter rationale'} to continue
+                  {!userEmail ? 'Set your email in header' : !selectedOption ? 'Select an option' : rationale.trim().length < rationaleMinLength ? `Enter rationale (min ${rationaleMinLength} chars)` : ''} to continue
                 </p>
               )}
             </div>
