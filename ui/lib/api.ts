@@ -12,6 +12,7 @@ import type {
   PolicyWithVersion,
   PolicyListParams,
   Signal,
+  SignalStats,
   CreateSignalRequest,
   Evaluation,
   TriggerEvaluationRequest,
@@ -150,6 +151,10 @@ export const signalApi = {
       method: 'POST',
       body: JSON.stringify(data),
     })
+  },
+
+  stats: async (pack: string): Promise<SignalStats> => {
+    return fetchApi<SignalStats>(`/signals/stats/summary?pack=${pack}`)
   },
 }
 

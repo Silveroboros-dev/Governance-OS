@@ -36,6 +36,8 @@ export interface PolicyWithVersion extends Policy {
 }
 
 // Signal Types
+export type CanonicalStatus = "breach" | "observation" | null
+
 export interface Signal {
   id: string
   pack: string
@@ -46,6 +48,18 @@ export interface Signal {
   observed_at: string
   ingested_at: string
   metadata?: Record<string, any>
+  // Canonicalization output - shows what happened to the signal
+  canonical_status?: CanonicalStatus
+  severity?: string
+}
+
+export interface SignalStats {
+  pack: string
+  total_signals: number
+  breaches: number
+  observations: number
+  uncategorized: number
+  summary: string
 }
 
 // Evaluation Types

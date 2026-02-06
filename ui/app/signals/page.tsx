@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Activity, Clock, Database, Filter } from 'lucide-react'
+import { Activity, Clock, Database, Filter, AlertTriangle, CheckCircle, Eye } from 'lucide-react'
 import { api } from '@/lib/api'
 import { usePack } from '@/lib/pack-context'
-import type { Signal } from '@/lib/types'
+import type { Signal, SignalStats } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -25,12 +25,39 @@ function getReliabilityColor(reliability: string): string {
   }
 }
 
+function getCanonicalStatusBadge(status: string | null | undefined) {
+  switch (status) {
+    case 'breach':
+      return (
+        <Badge className="bg-red-500 text-white flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          BREACH
+        </Badge>
+      )
+    case 'observation':
+      return (
+        <Badge className="bg-amber-500 text-white flex items-center gap-1">
+          <Eye className="h-3 w-3" />
+          OBSERVATION
+        </Badge>
+      )
+    default:
+      return (
+        <Badge variant="outline" className="text-muted-foreground">
+          Uncategorized
+        </Badge>
+      )
+  }
+}
+
 export default function SignalsPage() {
   const { pack } = usePack()
   const [signals, setSignals] = useState<Signal[]>([])
+  const [stats, setStats] = useState<SignalStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [signalTypeFilter, setSignalTypeFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
   // Get unique signal types for filter
   const signalTypes = Array.from(new Set(signals.map(s => s.signal_type))).sort()
@@ -40,9 +67,14 @@ export default function SignalsPage() {
       try {
         setLoading(true)
         setError(null)
-        const data = await api.signals.list({ pack, limit: 100 })
-        setSignals(data)
+        const [signalsData, statsData] = await Promise.all([
+          api.signals.list({ pack, limit: 100 }),
+          api.signals.stats(pack)
+        ])
+        setSignals(signalsData)
+        setStats(statsData)
         setSignalTypeFilter('all') // Reset filter when pack changes
+        setStatusFilter('all')
       } catch (err) {
         setError('Failed to load signals')
         console.error(err)
@@ -54,10 +86,15 @@ export default function SignalsPage() {
     fetchSignals()
   }, [pack])
 
-  // Filter signals by type
-  const filteredSignals = signalTypeFilter === 'all'
-    ? signals
-    : signals.filter(s => s.signal_type === signalTypeFilter)
+  // Filter signals by type and status
+  const filteredSignals = signals.filter(s => {
+    const matchesType = signalTypeFilter === 'all' || s.signal_type === signalTypeFilter
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'breach' && s.canonical_status === 'breach') ||
+      (statusFilter === 'observation' && s.canonical_status === 'observation') ||
+      (statusFilter === 'uncategorized' && !s.canonical_status)
+    return matchesType && matchesStatus
+  })
 
   if (loading) {
     return (
@@ -101,27 +138,94 @@ export default function SignalsPage() {
           </div>
         </div>
 
+        {/* Stats Summary - Key for demo */}
+        {stats && (
+          <Card className="bg-muted/50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{stats.summary}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    <span className="text-sm"><strong>{stats.breaches}</strong> breaches</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm"><strong>{stats.observations}</strong> observations</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm"><strong>{stats.uncategorized}</strong> uncategorized</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Filters */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 space-y-4">
+            {/* Status Filter */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2 mr-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Filter:</span>
+                <span className="text-sm text-muted-foreground">Status:</span>
               </div>
               <Button
-                variant={signalTypeFilter === 'all' ? 'default' : 'outline'}
+                variant={statusFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('all')}
+              >
+                All
+              </Button>
+              <Button
+                variant={statusFilter === 'breach' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('breach')}
+                className={statusFilter === 'breach' ? 'bg-red-500 hover:bg-red-600' : ''}
+              >
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Breaches ({stats?.breaches || 0})
+              </Button>
+              <Button
+                variant={statusFilter === 'observation' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('observation')}
+                className={statusFilter === 'observation' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                Observations ({stats?.observations || 0})
+              </Button>
+              <Button
+                variant={statusFilter === 'uncategorized' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('uncategorized')}
+              >
+                Uncategorized ({stats?.uncategorized || 0})
+              </Button>
+            </div>
+
+            {/* Type Filter */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 mr-2">
+                <span className="text-sm text-muted-foreground">Type:</span>
+              </div>
+              <Button
+                variant={signalTypeFilter === 'all' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setSignalTypeFilter('all')}
               >
-                All ({signals.length})
+                All types
               </Button>
-              {signalTypes.map(type => {
+              {signalTypes.slice(0, 6).map(type => {
                 const count = signals.filter(s => s.signal_type === type).length
                 return (
                   <Button
                     key={type}
-                    variant={signalTypeFilter === type ? 'default' : 'outline'}
+                    variant={signalTypeFilter === type ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => setSignalTypeFilter(type)}
                   >
@@ -158,9 +262,12 @@ export default function SignalsPage() {
                         <span>{formatDate(signal.observed_at)}</span>
                       </CardDescription>
                     </div>
-                    <Badge className={getReliabilityColor(signal.reliability)}>
-                      {signal.reliability}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {getCanonicalStatusBadge(signal.canonical_status)}
+                      <Badge className={getReliabilityColor(signal.reliability)}>
+                        {signal.reliability}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
