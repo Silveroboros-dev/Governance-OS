@@ -98,18 +98,19 @@ print(result.thinking_summary)
 
 Compliance officers can review *why* each signal was extracted.
 
-### 3. Semantic Grounding Verification (CI-Gated)
+### 3. Canonicalization (Gemini Proposes, Kernel Confirms)
 
 ```bash
-make evals  # Verifies all claims grounded to evidence
+make evals  # Run full evaluation suite
 
-# Catches what regex can't:
-# - Wrong numbers ("$50M" when evidence says "$45M")
-# - Unsupported causal claims
-# - Fabricated evidence references
+# What it verifies:
+# - Gemini extracts candidate signals from documents
+# - Kernel downgrades unconfirmed breaches to observations
+# - Only confirmed breaches can FAIL policy
+# - Determinism: identical output across runs (hash-verified)
 ```
 
-Two-stage pipeline: fast regex first, then semantic verification in CI.
+Gemini proposes breaches; the governance kernel filters hallucinations.
 
 ### 4. Conflict Detection (When Sources Disagree)
 
