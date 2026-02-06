@@ -6,16 +6,14 @@ A policy-driven coordination layer for Corporate Treasury and Wealth Management.
 
 **Core principle:** AI is a coprocessor, not a decision-maker. The kernel is deterministic and replayable.
 
----
+### What This Actually Does
 
-## Gemini 3 Features
-
-| Feature | What It Does | Benefit |
-|---------|--------------|---------|
-| **Context Caching** | Caches agent prompts + vocabularies | 50-60% cost reduction at scale |
-| **Thinking Mode** | Exposes reasoning chain for extractions | Audit-grade AI transparency |
-| **Semantic Eval Judge** | Gemini validates grounding to evidence | All claims grounded (CI-verified) |
-| **Native JSON + Conflicts** | Detects when sources disagree | Surfaces contradictions for review |
+| | |
+|---|---|
+| **Input** | Messy evidence (PDFs, scans, emails, bank statements) |
+| **Output** | Case = signals + conflicts + policy evaluation + exceptions + audit pack |
+| **Guarantee** | Only confirmed breaches FAIL policy; observations create review tasks |
+| **Domains** | Treasury + Wealth via "packs" (config, not forks) |
 
 ---
 
@@ -28,11 +26,11 @@ cd Governance-OS
 docker compose up -d
 
 # Run the demos
-make demo-safety-auto    # Watch AI hallucinations get BLOCKED
-make demo-thinking-auto  # See Gemini's reasoning chain exposed
+make demo-safety-auto    # Governance kernel blocks hallucinated breaches
+make demo-thinking-auto  # Auditable extraction rationale (non-decisional)
 
 # Run evaluations (CI gate)
-make evals               # Zero tolerance for unsupported claims
+make evals               # Semantic grounding verification
 ```
 
 **Live endpoints:**
@@ -57,7 +55,20 @@ Signal → Policy Evaluation → Exception → Human Decision → Evidence Pack
 
 ---
 
-## Gemini 3 Integration Details
+## AI Safety Boundaries (Non-Negotiable)
+
+| Allowed | Not Allowed |
+|---------|-------------|
+| Extract candidate signals (with provenance) | Policy evaluation |
+| Draft memos (grounded to evidence) | Severity/escalation decisions |
+| Generate policy drafts (human-approved) | "Recommended option" in UI |
+| Surface conflicts between sources | Silent writes without audit |
+
+**The kernel is deterministic. LLMs are optional coprocessors.**
+
+---
+
+## Why Gemini (Optional Coprocessor)
 
 ### 1. Context Caching (50-60% Cost Reduction)
 
@@ -87,10 +98,10 @@ print(result.thinking_summary)
 
 Compliance officers can review *why* each signal was extracted.
 
-### 3. Semantic Eval Judge (Zero Hallucinations)
+### 3. Semantic Grounding Verification (CI-Gated)
 
 ```bash
-make evals-gemini  # Gemini validates narrative grounding
+make evals-gemini  # Verifies all claims grounded to evidence
 
 # Catches what regex can't:
 # - Wrong numbers ("$50M" when evidence says "$45M")
@@ -98,7 +109,7 @@ make evals-gemini  # Gemini validates narrative grounding
 # - Fabricated evidence references
 ```
 
-Two-stage pipeline: fast regex first, then Gemini semantic verification.
+Two-stage pipeline: fast regex first, then semantic verification in CI.
 
 ### 4. Conflict Detection (When Sources Disagree)
 
@@ -115,19 +126,6 @@ result.drops      # What couldn't be extracted (with reason)
 ```
 
 Contradictions are surfaced, not silently resolved.
-
----
-
-## AI Safety Boundaries (Non-Negotiable)
-
-| Allowed | Not Allowed |
-|---------|-------------|
-| Extract candidate signals (with provenance) | Policy evaluation |
-| Draft memos (grounded to evidence) | Severity/escalation decisions |
-| Generate policy drafts (human-approved) | "Recommended option" in UI |
-| Surface conflicts between sources | Silent writes without audit |
-
-**The kernel is deterministic. LLMs are optional coprocessors.**
 
 ---
 
