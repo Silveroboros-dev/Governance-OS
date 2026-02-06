@@ -287,3 +287,109 @@ class EvidenceGenerator:
             }
             for event in events
         ]
+
+    def format_for_narrative_agent(self, evidence_pack: EvidencePack) -> Dict[str, Any]:
+        """
+        Format evidence pack for NarrativeAgent consumption.
+
+        Converts the internal evidence structure to the format expected by
+        NarrativeAgent, with evidence_items array where each item has an
+        evidence_id for claim grounding.
+
+        Args:
+            evidence_pack: EvidencePack object
+
+        Returns:
+            Dict in NarrativeAgent format with evidence_items array
+        """
+        evidence = evidence_pack.evidence
+        evidence_items = []
+
+        # Add signals
+        for signal in evidence.get("signals", []):
+            evidence_items.append({
+                "evidence_id": f"sig_{signal['id'][:8]}",
+                "type": "signal",
+                "data": {
+                    "signal_type": signal["signal_type"],
+                    "payload": signal["payload"],
+                    "source": signal["source"],
+                    "reliability": signal["reliability"],
+                    "observed_at": signal["observed_at"]
+                }
+            })
+
+        # Add exception context
+        exc = evidence.get("exception", {})
+        if exc:
+            evidence_items.append({
+                "evidence_id": f"exc_{exc['id'][:8]}",
+                "type": "exception_context",
+                "data": {
+                    "title": exc["title"],
+                    "severity": exc["severity"],
+                    "context": exc["context"],
+                    "raised_at": exc["raised_at"],
+                    "resolved_at": exc.get("resolved_at")
+                }
+            })
+
+        # Add evaluation
+        eval_data = evidence.get("evaluation", {})
+        if eval_data:
+            evidence_items.append({
+                "evidence_id": f"eval_{eval_data['id'][:8]}",
+                "type": "evaluation",
+                "data": {
+                    "result": eval_data["result"],
+                    "details": eval_data["details"],
+                    "evaluated_at": eval_data["evaluated_at"],
+                    "input_hash": eval_data["input_hash"]
+                }
+            })
+
+        # Add chosen option
+        decision = evidence.get("decision", {})
+        options = exc.get("options", [])
+        chosen_option_id = decision.get("chosen_option_id")
+        chosen_option = next((o for o in options if o.get("id") == chosen_option_id), None)
+        if chosen_option:
+            evidence_items.append({
+                "evidence_id": f"opt_{chosen_option_id}",
+                "type": "chosen_option",
+                "data": {
+                    "option_id": chosen_option_id,
+                    "label": chosen_option.get("label", ""),
+                    "description": chosen_option.get("description", ""),
+                    "rationale": decision.get("rationale"),
+                    "assumptions": decision.get("assumptions")
+                }
+            })
+
+        # Add policy
+        policy = evidence.get("policy", {})
+        if policy:
+            evidence_items.append({
+                "evidence_id": f"pol_{policy['id'][:8]}",
+                "type": "policy",
+                "data": {
+                    "name": policy["name"],
+                    "pack": policy["pack"],
+                    "description": policy["description"],
+                    "version_number": policy.get("version", {}).get("version_number"),
+                    "rule_definition": policy.get("version", {}).get("rule_definition")
+                }
+            })
+
+        return {
+            "evidence_pack_id": str(evidence_pack.id),
+            "generated_at": evidence_pack.generated_at.isoformat(),
+            "decision": {
+                "id": decision.get("id"),
+                "decided_at": decision.get("decided_at"),
+                "decided_by": decision.get("decided_by"),
+                "rationale": decision.get("rationale"),
+                "assumptions": decision.get("assumptions")
+            },
+            "evidence_items": evidence_items
+        }

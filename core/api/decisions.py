@@ -21,20 +21,55 @@ router = APIRouter(prefix="/decisions", tags=["decisions"])
 
 def generate_evidence_pack_background(decision_id: UUID) -> None:
     """
-    Background task to generate evidence pack.
+    Background task to generate evidence pack and narrative memo.
 
     Uses a new database session since background tasks run after response.
     This is the async evidence generation to avoid blocking the API response.
+
+    After evidence pack is generated, NarrativeAgent drafts a grounded memo
+    if GOOGLE_API_KEY is available.
     """
+    import os
+    import logging
+
     db = SessionLocal()
     try:
         decision = db.query(Decision).filter(Decision.id == decision_id).first()
         if decision:
             evidence_gen = EvidenceGenerator(db)
-            evidence_gen.generate_pack(decision)
+            evidence_pack = evidence_gen.generate_pack(decision)
+
+            # Determine pack from policy chain
+            pack = "treasury"  # default
+            try:
+                pack = decision.exception.evaluation.policy_version.policy.pack
+            except (AttributeError, TypeError):
+                logging.warning(f"Could not determine pack for decision {decision_id}, using default")
+
+            # Generate narrative memo if API key available
+            if os.environ.get("GOOGLE_API_KEY"):
+                try:
+                    from coprocessor.agents.narrative_agent import NarrativeAgent
+
+                    agent = NarrativeAgent()
+                    evidence_for_agent = evidence_gen.format_for_narrative_agent(evidence_pack)
+                    memo = agent.draft_memo_sync(
+                        decision_id=str(decision_id),
+                        evidence_pack=evidence_for_agent,
+                        template="decision_brief",
+                        length="standard",
+                        pack=pack
+                    )
+                    evidence_pack.narrative_memo = memo.model_dump()
+                    db.commit()
+                    logging.info(f"Narrative memo generated for decision {decision_id}")
+                except Exception as e:
+                    logging.warning(f"Narrative generation failed for decision {decision_id}: {e}")
+                    # Don't fail - evidence pack is still valid without narrative
+            else:
+                logging.info(f"GOOGLE_API_KEY not set, skipping narrative for decision {decision_id}")
     except Exception as e:
         # Log error but don't fail - decision is already recorded
-        import logging
         logging.error(f"Background evidence pack generation failed for decision {decision_id}: {e}")
     finally:
         db.close()

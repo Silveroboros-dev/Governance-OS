@@ -41,6 +41,10 @@ class EvidencePack(Base):
 
     generated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
+    # NarrativeAgent output: grounded memo explaining the decision
+    # Generated automatically after evidence pack, nullable if generation fails
+    narrative_memo = Column(JSONB, nullable=True)
+
     # Relationships
     decision = relationship("Decision", foreign_keys="[EvidencePack.decision_id]")
 

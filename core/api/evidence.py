@@ -13,7 +13,7 @@ from uuid import UUID
 from core.database import get_db
 from core.models import EvidencePack
 from core.services import EvidenceGenerator
-from core.schemas.evidence import EvidencePackResponse
+from core.schemas.evidence import EvidencePackResponse, NarrativeMemoResponse
 
 router = APIRouter(prefix="/evidence", tags=["evidence"])
 
@@ -52,6 +52,43 @@ def get_evidence_pack(
         pack = generator.generate_pack(decision)
 
     return pack
+
+
+@router.get("/{decision_id}/narrative", response_model=NarrativeMemoResponse)
+def get_narrative(
+    decision_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get narrative memo for a decision.
+
+    Returns the AI-generated narrative memo that explains the decision
+    in human-readable form, grounded to evidence.
+
+    Returns 404 if narrative hasn't been generated yet (background task pending)
+    or if evidence pack doesn't exist.
+    """
+    try:
+        dec_uuid = UUID(decision_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    pack = (
+        db.query(EvidencePack)
+        .filter(EvidencePack.decision_id == dec_uuid)
+        .first()
+    )
+
+    if not pack:
+        raise HTTPException(status_code=404, detail="Evidence pack not found")
+
+    if not pack.narrative_memo:
+        raise HTTPException(
+            status_code=404,
+            detail="Narrative memo not yet generated. Check back shortly."
+        )
+
+    return pack.narrative_memo
 
 
 @router.get("/{decision_id}/export")
