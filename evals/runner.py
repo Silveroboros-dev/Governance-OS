@@ -615,8 +615,12 @@ def run_canonicalization_suite(pack: str, verbose: bool = False) -> bool:
             all_passed = False
             if verbose:
                 print(f"  [FAIL] Determinism: outputs differ across 3 runs")
+                for i, h in enumerate(det["hashes"], 1):
+                    print(f"         Run {i}: {h[:16]}...")
         elif verbose:
             print(f"  [PASS] Determinism: identical across 3 runs")
+            # Show the hash to prove runs actually happened
+            print(f"         Hash: {det['hashes'][0][:16]}... (verified 3x)")
 
         if verbose:
             # Print per-pack stats
