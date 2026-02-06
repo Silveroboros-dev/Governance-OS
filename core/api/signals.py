@@ -9,13 +9,58 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from core.database import get_db
-from core.models import Signal, SignalReliability, AuditEvent, AuditEventType
+from core.models import Signal, SignalReliability, AuditEvent, AuditEventType, CanonicalStatus
 from core.models.signal import compute_signal_content_hash
 from core.schemas.signal import SignalCreate, SignalResponse, SignalCreateResponse
 from core.validation import SignalValidator, ValidationError, get_signal_validator
 from core.services import PolicyEngine, Evaluator, ExceptionEngine
 
 router = APIRouter(prefix="/signals", tags=["signals"])
+
+
+# NOTE: Static routes MUST come before parameterized routes (/{signal_id})
+
+@router.get("/stats/summary")
+def get_signal_stats(
+    pack: str = Query(..., description="Pack name (treasury or wealth)"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get signal statistics by canonical status.
+
+    Shows how many signals became breaches vs observations vs passed policy.
+    Useful for demo: "Not all signals trigger exceptions."
+    """
+    from core.api.dependencies import validate_pack
+    validate_pack(pack)
+
+    # Count by canonical status
+    total = db.query(Signal).filter(Signal.pack == pack).count()
+
+    breaches = db.query(Signal).filter(
+        Signal.pack == pack,
+        Signal.canonical_status == CanonicalStatus.BREACH
+    ).count()
+
+    observations = db.query(Signal).filter(
+        Signal.pack == pack,
+        Signal.canonical_status == CanonicalStatus.OBSERVATION
+    ).count()
+
+    # Signals without canonical_status (legacy or not yet canonicalized)
+    uncategorized = db.query(Signal).filter(
+        Signal.pack == pack,
+        Signal.canonical_status == None
+    ).count()
+
+    return {
+        "pack": pack,
+        "total_signals": total,
+        "breaches": breaches,
+        "observations": observations,
+        "uncategorized": uncategorized,
+        "summary": f"{breaches} breaches triggered exceptions, {observations} gated to observations (pending verification)"
+    }
 
 
 @router.post("", response_model=SignalCreateResponse, status_code=201)

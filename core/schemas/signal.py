@@ -40,6 +40,9 @@ class SignalResponse(BaseModel):
         serialization_alias="metadata"
     )
     content_hash: Optional[str] = None
+    # Canonicalization output - shows what happened to the signal
+    canonical_status: Optional[str] = None  # breach, observation, or null
+    severity: Optional[str] = None  # high, medium, low, or null
 
     class Config:
         from_attributes = True
