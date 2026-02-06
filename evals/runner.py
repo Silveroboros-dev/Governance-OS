@@ -618,40 +618,32 @@ def run_canonicalization_suite(pack: str, verbose: bool = False) -> bool:
                 for i, h in enumerate(det["hashes"], 1):
                     print(f"         Run {i}: {h[:16]}...")
         elif verbose:
-            print(f"  [PASS] Determinism: identical across 3 runs")
+            print(f"  [PASS] Determinism: identical across 3 runs (no cache, full execution)")
             # Show the hash to prove runs actually happened
             print(f"         Hash: {det['hashes'][0][:16]}... (verified 3x)")
 
         if verbose:
             # Print per-pack stats
-            prevented = ab.raw_breach_type_count - ab.canonical_breach_count
+            downgraded = ab.raw_breach_type_count - ab.canonical_breach_count
             if ab.raw_breach_type_count > 0:
-                rate = (prevented / ab.raw_breach_type_count) * 100
-                print(f"\n  Candidates: {ab.raw_candidate_count}")
-                print(f"  Breach-category signals: {ab.raw_breach_type_count}")
+                print(f"\n  Gemini proposed: {ab.raw_breach_type_count} potential breaches")
                 print(f"  Confirmed breaches: {ab.canonical_breach_count}")
-                print(f"  Downgraded to observation: {prevented}")
-                print(f"  False breach prevention: {rate:.0f}%")
+                print(f"  Downgraded to observations: {downgraded} (pending evidence)")
 
             status = "PASS" if pack_passed else "FAIL"
             print(f"\n  [{status}] {p}")
 
     # Cross-pack summary
     if verbose and total_raw_breach_all > 0:
-        total_prevented = total_raw_breach_all - total_confirmed_breach_all
-        overall_rate = (total_prevented / total_raw_breach_all) * 100
+        total_downgraded = total_raw_breach_all - total_confirmed_breach_all
         print(f"\n{'='*60}")
-        print(f"CANONICALIZATION SUMMARY (all packs)")
+        print(f"SUMMARY: Gemini proposes, Governance OS confirms")
         print(f"{'='*60}")
-        print(f"  Total candidates: {total_candidates_all}")
-        print(f"  Breach-category signals: {total_raw_breach_all}")
+        print(f"  Gemini proposed: {total_raw_breach_all} potential breaches")
         print(f"  Confirmed breaches: {total_confirmed_breach_all}")
-        print(f"  Observations: {total_observations_all}")
-        print(f"  Dropped: {total_dropped_all}")
-        print(f"  Merged: {total_merged_all}")
+        print(f"  Downgraded to observations: {total_downgraded} (pending evidence)")
         print(f"  ─────────────────────────────────")
-        print(f"  False breach prevention rate: {overall_rate:.0f}%")
-        print(f"  (breach-category signals blocked from BREACH status)")
+        print(f"  Only confirmed breaches escalate to humans.")
 
     return all_passed
 
