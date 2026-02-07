@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, FormEvent, useCallback } from 'react'
 import { Loader2, FileText, CheckCircle, AlertTriangle, ArrowRight, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -44,6 +45,7 @@ export default function IngestPage() {
     if (userEmail && !emailInput) {
       setEmailInput(userEmail)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userEmail])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -101,6 +103,20 @@ export default function IngestPage() {
 
   const isProcessing = status === 'processing'
   const charCount = documentText.length
+
+  // Warn user if they try to navigate away during processing
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isProcessing) {
+        e.preventDefault()
+        e.returnValue = 'Document is still being processed. Are you sure you want to leave?'
+        return e.returnValue
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isProcessing])
 
   return (
     <div className="container mx-auto px-4 py-4">
@@ -190,7 +206,7 @@ export default function IngestPage() {
               {isProcessing && (
                 <div className="flex items-center gap-2 p-2 bg-muted rounded">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="text-sm">Analyzing document (10-30s)...</span>
+                  <span className="text-sm">Analyzing document (10-30s)... <span className="text-muted-foreground">Please do not navigate away.</span></span>
                 </div>
               )}
 

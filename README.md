@@ -25,6 +25,9 @@ git clone https://github.com/Silveroboros-dev/Governance-OS.git
 cd Governance-OS
 docker compose up -d
 
+# Policies auto-seed on first run. To add sample data for demos:
+docker compose exec backend python -m core.scripts.seed_fixtures --all
+
 # Run the demos
 make demo-safety-auto    # Governance kernel blocks hallucinated breaches
 make demo-thinking-auto  # Auditable extraction rationale (non-decisional)

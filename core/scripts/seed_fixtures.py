@@ -338,6 +338,7 @@ def print_usage():
     print("  --evaluate      Trigger evaluations after seeding (default)")
     print("  --no-evaluate   Skip evaluation triggering")
     print("  --force-update  Update existing policy rules to match templates")
+    print("  --policies-only Seed only policies (no signals or evaluations)")
     print()
     print("Available packs and scenarios:")
     for pack_name, config in PACK_CONFIGS.items():
@@ -366,6 +367,7 @@ def main():
     target_pack = None  # None means all packs
     run_evaluate = True  # Default: trigger evaluations after seeding
     force_update = False  # If True, update existing policy rules
+    policies_only = False  # If True, only seed policies (no signals)
 
     if "--help" in args or "-h" in args:
         print_usage()
@@ -389,6 +391,10 @@ def main():
             run_evaluate = True
         elif arg == "--force-update":
             force_update = True
+        elif arg == "--policies-only":
+            policies_only = True
+            use_basic = False
+            run_evaluate = False
 
     # Create database session
     db = SessionLocal()

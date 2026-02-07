@@ -22,11 +22,15 @@ COPY packs/ /app/packs/
 COPY coprocessor/ /app/coprocessor/
 COPY alembic.ini /app/
 
+# Copy and prepare entrypoint script
+COPY core/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 # Set Python path to include app directory
 ENV PYTHONPATH=/app
 
 # Expose port
 EXPOSE 8000
 
-# Default command (will be overridden by docker-compose)
-CMD ["uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Use entrypoint script (auto-seeds policies on first run)
+ENTRYPOINT ["/app/entrypoint.sh"]
