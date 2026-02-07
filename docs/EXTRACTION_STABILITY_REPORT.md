@@ -4,6 +4,7 @@
 **Model:** gemini-3-flash-preview (Gemini 3 Flash), temperature=0.1
 **Method:** 10 extraction runs per document pack, same prompt and config each run
 **Documents:** Orion Treasury Pack, Meridian Wealth Pack (deliberately unstructured — see below)
+**Test Script:** [`evals/dispersion_test.py`](../evals/dispersion_test.py)
 
 ---
 
