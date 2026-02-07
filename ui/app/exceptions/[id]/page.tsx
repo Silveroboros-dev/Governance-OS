@@ -91,7 +91,7 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
   // Loading state
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="flex items-center justify-center bg-background" style={{ height: 'calc(100vh - 121px)' }}>
         <p className="text-muted-foreground">Loading...</p>
       </div>
     )
@@ -100,7 +100,7 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
   // Error state
   if (error || !exception) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="flex items-center justify-center bg-background" style={{ height: 'calc(100vh - 121px)' }}>
         <div className="text-center space-y-4">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
           <p className="text-lg font-medium">{error || 'Exception not found'}</p>
@@ -113,7 +113,7 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
   // Already resolved
   if (exception.status !== 'open') {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="flex items-center justify-center bg-background" style={{ height: 'calc(100vh - 121px)' }}>
         <div className="text-center space-y-4">
           <Shield className="h-12 w-12 text-green-600 mx-auto" />
           <p className="text-lg font-medium">Exception Already Resolved</p>
@@ -150,18 +150,19 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
 
   return (
     <TooltipProvider>
-      <div className="h-screen flex flex-col bg-background overflow-hidden">
-        {/* Header - Fixed */}
-        <header className="flex-none border-b px-6 py-3 bg-card">
+      {/* Use calc to account for global header (~64px) and footer (~57px) */}
+      <div className="flex flex-col bg-background overflow-hidden" style={{ height: 'calc(100vh - 121px)' }}>
+        {/* Header - Compact */}
+        <header className="flex-none border-b px-4 py-2 bg-card">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Badge className={getSeverityColor(exception.severity)} variant="outline">
                 {exception.severity.toUpperCase()}
               </Badge>
-              <h1 className="text-lg font-semibold truncate max-w-xl">{exception.title}</h1>
+              <h1 className="text-base font-semibold truncate max-w-md">{exception.title}</h1>
             </div>
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
               <span>{formatDate(exception.raised_at)}</span>
               <Button variant="ghost" size="sm" onClick={() => router.back()}>
                 Cancel
@@ -171,18 +172,18 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
         </header>
 
         {/* Main Content - Three Column Layout */}
-        <main className="flex-1 flex min-h-0">
+        <main className="flex-1 flex min-h-0 overflow-hidden">
           {/* Left Column: Context */}
-          <section className="w-1/3 border-r p-4 flex flex-col min-h-0">
+          <section className="w-1/3 border-r p-3 flex flex-col min-h-0 overflow-y-auto">
             {/* Policy */}
             {exception.policy && (
-              <div className="flex-none mb-4">
-                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              <div className="flex-none mb-3">
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                   Impacted Policy
                 </h2>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="font-medium">{exception.policy.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                <div className="bg-muted/50 rounded p-2">
+                  <p className="font-medium text-sm">{exception.policy.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     v{exception.policy.version_number} · {exception.policy.pack}
                   </p>
                 </div>
@@ -190,35 +191,34 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
             )}
 
             {/* What Changed */}
-            <div className="flex-none mb-4">
-              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+            <div className="flex-none mb-3">
+              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                 What Changed
               </h2>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {signalFacts.length > 0 ? (
-                  signalFacts.slice(0, 3).map((fact, idx) => (
-                    <div key={idx} className="bg-muted/50 rounded-lg p-3 text-sm">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium capitalize">{fact.type}</span>
-                        <Badge variant="outline" className="text-xs">
+                  signalFacts.slice(0, 2).map((fact, idx) => (
+                    <div key={idx} className="bg-muted/50 rounded p-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium capitalize text-xs">{fact.type}</span>
+                        <Badge variant="outline" className="text-xs py-0">
                           {fact.reliability}
                         </Badge>
                       </div>
-                      <div className="text-xs text-muted-foreground space-y-0.5">
+                      <div className="text-xs text-muted-foreground">
                         {Object.entries(fact)
                           .filter(([k]) => !['type', 'source', 'reliability'].includes(k))
-                          .slice(0, 3)
+                          .slice(0, 2)
                           .map(([key, value]) => (
-                            <div key={key}>
-                              <span className="capitalize">{key.replace(/_/g, ' ')}:</span>{' '}
-                              <span className="font-mono">{String(value)}</span>
-                            </div>
+                            <span key={key} className="mr-2">
+                              {key.replace(/_/g, ' ')}: <span className="font-mono">{String(value)}</span>
+                            </span>
                           ))}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">No signal data available</p>
+                  <p className="text-xs text-muted-foreground">No signal data available</p>
                 )}
               </div>
             </div>
@@ -226,12 +226,12 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
             {/* Uncertainty - First Class */}
             {uncertainties.length > 0 && (
               <div className="flex-none">
-                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3 text-amber-500" />
                   Uncertainty
                 </h2>
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-                  <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded p-2">
+                  <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-0.5">
                     {uncertainties.map((u, idx) => (
                       <li key={idx}>• {u}</li>
                     ))}
@@ -242,8 +242,8 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
           </section>
 
           {/* Center Column: Options */}
-          <section className="w-1/3 p-4 flex flex-col min-h-0">
-            <h2 className="flex-none text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          <section className="w-1/3 p-3 flex flex-col min-h-0">
+            <h2 className="flex-none text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               Decision Options
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -260,14 +260,14 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
             <RadioGroup
               value={selectedOption}
               onValueChange={setSelectedOption}
-              className="flex-1 overflow-y-auto space-y-2 pr-1"
+              className="flex-1 overflow-y-auto space-y-1"
             >
               {exception.options.map((option: ExceptionOption) => (
                 <label
                   key={option.id}
-                  className={`block p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`block p-2 border-2 rounded cursor-pointer transition-all ${
                     selectedOption === option.id
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                      ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-muted-foreground/50'
                   }`}
                 >
@@ -275,16 +275,13 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
                     <RadioGroupItem value={option.id} id={option.id} className="mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm">{option.label}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{option.description}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
                       {option.implications && option.implications.length > 0 && (
-                        <ul className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {option.implications.slice(0, 2).map((imp, idx) => (
-                            <li key={idx} className="flex items-start gap-1">
-                              <span className="text-muted-foreground/50">→</span>
-                              <span>{imp}</span>
-                            </li>
+                            <span key={idx} className="mr-1">→ {imp}</span>
                           ))}
-                        </ul>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -294,35 +291,35 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
           </section>
 
           {/* Right Column: Decision Capture */}
-          <section className="w-1/3 p-4 flex flex-col min-h-0 bg-muted/30">
-            <h2 className="flex-none text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          <section className="w-1/3 p-3 flex flex-col min-h-0 bg-muted/30">
+            <h2 className="flex-none text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               Your Decision
             </h2>
 
             <div className="flex-1 flex flex-col min-h-0">
               {/* Rationale - Required */}
-              <div className="flex-1 flex flex-col min-h-0 mb-4">
-                <label className="text-sm font-medium mb-2">
+              <div className="flex-1 flex flex-col min-h-0 mb-2">
+                <label className="text-xs font-medium mb-1">
                   Rationale <span className="text-destructive">*</span>
                 </label>
                 <Textarea
-                  placeholder="Why are you choosing this option? What factors influenced your decision?"
+                  placeholder="Why are you choosing this option?"
                   value={rationale}
                   onChange={(e) => setRationale(e.target.value)}
-                  className="flex-1 resize-none min-h-[100px]"
+                  className="flex-1 resize-none min-h-[60px] text-sm"
                 />
-                <p className={`text-xs mt-1 ${rationale.length > 0 && rationale.length < rationaleMinLength ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                <p className={`text-xs mt-0.5 ${rationale.length > 0 && rationale.length < rationaleMinLength ? 'text-amber-600' : 'text-muted-foreground'}`}>
                   {rationale.length > 0
                     ? rationale.length < rationaleMinLength
-                      ? `${rationale.length}/${rationaleMinLength} characters (minimum ${rationaleMinLength})`
-                      : `${rationale.length} characters`
-                    : `Required for audit trail (min ${rationaleMinLength} chars)`}
+                      ? `${rationale.length}/${rationaleMinLength} chars`
+                      : `${rationale.length} chars`
+                    : `Min ${rationaleMinLength} chars`}
                 </p>
               </div>
 
               {/* Selected Option Summary */}
               {selectedOption && (
-                <div className="flex-none bg-background rounded-lg p-3 mb-4 border">
+                <div className="flex-none bg-background rounded p-2 mb-2 border">
                   <p className="text-xs text-muted-foreground">Selected:</p>
                   <p className="font-medium text-sm">
                     {exception.options.find(o => o.id === selectedOption)?.label}
@@ -335,14 +332,13 @@ export default function ExceptionDecisionPage({ params }: { params: { id: string
                 onClick={handleSubmit}
                 disabled={!canSubmit || submitting}
                 className="flex-none w-full"
-                size="lg"
               >
                 {submitting ? 'Recording...' : 'Commit Decision'}
               </Button>
 
               {!canSubmit && (
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  {!userEmail ? 'Set your email in header' : !selectedOption ? 'Select an option' : rationale.trim().length < rationaleMinLength ? `Enter rationale (min ${rationaleMinLength} chars)` : ''} to continue
+                <p className="text-xs text-muted-foreground text-center mt-1">
+                  {!userEmail ? 'Set email in header' : !selectedOption ? 'Select option' : rationale.trim().length < rationaleMinLength ? `Enter rationale` : ''}
                 </p>
               )}
             </div>
