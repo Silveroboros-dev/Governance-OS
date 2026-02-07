@@ -7,7 +7,7 @@ Designed for hackathon video recording. Short, visual, scannable at a glance.
 
 Three acts in ~90 seconds of terminal time:
   ACT 1: Gemini reads a document and shows its reasoning (Thinking Mode)
-  ACT 2: Canonicalizer filters 14 signals → 5 real breaches (2/3 prevention)
+  ACT 2: Canonicalizer filters 15 signals → 4 real breaches (73% prevention)
   ACT 3: Safety layer blocks AI from making recommendations
 
 Run:
@@ -78,14 +78,14 @@ def act1_thinking():
     print(f"  {C.DIM}┌─────────────────────────────────────────────────────┐{C._}")
     print(f"  {C.DIM}│  DAILY TREASURY REPORT — Orion Metals Trading AG   │{C._}")
     print(f"  {C.DIM}│                                                     │{C._}")
-    print(f"  {C.DIM}│  Unrestricted cash:  CHF 86,400                    │{C._}")
+    print(f"  {C.DIM}│  Unrestricted cash:  CHF 96,400                    │{C._}")
     print(f"  {C.DIM}│  Covenant minimum:   CHF 100,000  ← {C.R}BREACH{C.DIM}         │{C._}")
     print(f"  {C.DIM}│                                                     │{C._}")
-    print(f"  {C.DIM}│  EUR payables due:   EUR 410,000                    │{C._}")
-    print(f"  {C.DIM}│  EUR hedge in place: EUR 150,000  ← {C.R}UNHEDGED{C.DIM}       │{C._}")
+    print(f"  {C.DIM}│  RCF utilization:    92.0%                          │{C._}")
+    print(f"  {C.DIM}│  Internal limit:     85%         ← {C.R}BREACH{C.DIM}         │{C._}")
     print(f"  {C.DIM}│                                                     │{C._}")
     print(f"  {C.DIM}│  Payment hold:       CHF 41,500  (name mismatch)   │{C._}")
-    print(f"  {C.DIM}│  Covenant definition: \"unrestricted cash\" disputed  │{C._}")
+    print(f"  {C.DIM}│  Lender: AlpineBank  (covenant terms confirmed)     │{C._}")
     print(f"  {C.DIM}└─────────────────────────────────────────────────────┘{C._}")
 
     pause(2)
@@ -96,12 +96,12 @@ def act1_thinking():
 
     thoughts = [
         "Scanning for threshold violations...",
-        "Cash CHF 86,400 < covenant CHF 100,000 → liquidity breach",
-        "But: 'unrestricted cash' definition disputed in footnote",
-        "  → covenant_breach needs definition_lock before confirming",
+        "Cash CHF 96,400 < covenant CHF 100,000 → covenant breach",
+        "Lender AlpineBank confirmed definition of 'unrestricted cash'",
+        "  → covenant_breach confirmed (definition locked by bank)",
         "",
-        "EUR payables EUR 410k, hedge EUR 150k → EUR 260k unhedged",
-        "  → fx_exposure_breach (clear threshold, no ambiguity)",
+        "RCF utilization 92.0% > internal limit 85%",
+        "  → position_limit_breach (clear threshold, authorized)",
         "",
         "Payment hold CHF 41,500 = settlement failure (event, not breach)",
         "  → cannot be a threshold violation by definition",
@@ -128,8 +128,8 @@ def act1_thinking():
 def act2_canonicalizer():
     header("ACT 2  ·  The Canonicalizer (AI Proposes, Kernel Disposes)")
 
-    print(f"  {C.W}Gemini found 14 signals across two financial packs.{C._}")
-    print(f"  {C.W}Without validation, ALL 14 would be flagged as breaches.{C._}")
+    print(f"  {C.W}Gemini found 15 signals across two packs (Treasury + Wealth).{C._}")
+    print(f"  {C.W}Without validation, ALL 15 would be flagged as breaches.{C._}")
     print(f"  {C.W}The Canonicalizer applies deterministic rules:{C._}")
     print()
 
@@ -138,20 +138,25 @@ def act2_canonicalizer():
 
     signals = [
         # (name, what happened, final status)
-        ("Equity 40.2% > 40% cap", "needs lookthrough data", "obs"),
-        ("Fund concentration 13.5%", "needs lookthrough data", "obs"),
-        ("Liquidity 12.6% < 15%", "lookthrough + date mismatch", "obs"),
-        ("Fee 0.40% vs 0.30%", "needs authorized term sheet", "obs"),
-        ("Covenant cash < minimum", "definition disputed", "obs"),
-        ("Stale suitability (15mo)", "event — can't be breach", "obs"),
-        ("Missing KID document", "event — can't be breach", "obs"),
-        ("Withdrawal CHF 400k", "event — can't be breach", "obs"),
-        ("Payment hold CHF 41.5k", "event — can't be breach", "obs"),
-        ("Pending settlement", "event — can't be breach", "obs"),
-        ("Mandate conflict (crypto)", "event — can't be breach", "obs"),
-        ("Classification dispute", "event — can't be breach", "obs"),
-        ("FX EUR 410k unhedged", "confirmed — clear threshold", "BREACH"),
-        ("Liquidity CHF 86k < 100k", "confirmed — clear threshold", "BREACH"),
+        # TREASURY (Orion) — 3 observations
+        ("FX EUR 1.2M unhedged", "hedge target band, not hard limit", "obs"),
+        ("Settlement fail CHF 58.7k", "event — beneficiary mismatch", "obs"),
+        ("Fee spike CHF 4,980", "event — bank account anomaly", "obs"),
+        # WEALTH (Meridian) — 8 observations
+        ("Fund 12.7% > 12% cap", "lookthrough not available", "obs"),
+        ("Equity 42.1% > 40% max", "classification disputed", "obs"),
+        ("Liquidity 13.6% < 15% min", "value date alignment required", "obs"),
+        ("EM Fund lookthrough", "missing constituents data", "obs"),
+        ("Settlement CHF 220k", "event — pending cash", "obs"),
+        ("Withdrawal CHF 500k", "event — client request", "obs"),
+        ("Missing KID (ZEN Autocall)", "event — PRIIPs blocker", "obs"),
+        ("Stale suitability (15mo)", "event — questionnaire expired", "obs"),
+        # TREASURY (Orion) — 2 breaches
+        ("RCF 92% > 85% limit", "confirmed — authorized threshold", "BREACH"),
+        ("Covenant CHF 96k < 100k", "confirmed — definition locked", "BREACH"),
+        # WEALTH (Meridian) — 2 breaches
+        ("Alpina 8.4% > 7% issuer cap", "confirmed — IPS locked", "BREACH"),
+        ("Custody fee 0.45% vs 0.30%", "confirmed — fee schedule", "BREACH"),
     ]
 
     for name, reason, status in signals:
@@ -167,12 +172,12 @@ def act2_canonicalizer():
 
     # The headline numbers
     print(f"  {C.BOLD}{'─' * 55}{C._}")
-    bar("Breach-category signals:", 14, 14, C.W)
-    bar("False breaches prevented:", 9, 14, C.G)
-    bar("Confirmed breaches:", 5, 14, C.R)
+    bar("Breach-category signals:", 15, 15, C.W)
+    bar("False breaches prevented:", 11, 15, C.G)
+    bar("Confirmed breaches:", 4, 15, C.R)
     print(f"  {C.BOLD}{'─' * 55}{C._}")
     print()
-    print(f"  {C.BOLD}{C.G}2/3 false alarm prevention  ·  0 missed signals{C._}")
+    print(f"  {C.BOLD}{C.G}73% false alarm prevention  ·  0 missed signals{C._}")
     print(f"  {C.DIM}  Same inputs → same outputs. Deterministic. Replayable.{C._}")
 
     pause(2)

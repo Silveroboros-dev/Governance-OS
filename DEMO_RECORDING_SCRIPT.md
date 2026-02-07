@@ -73,17 +73,17 @@ Do one full dry run. Make sure the CLI demo runs cleanly and all UI pages load w
 ### ACT 1 — The Problem (0:12 – 0:30)
 
 **Screen:** Split visual — left side: a dense financial PDF (screenshot of a treasury report).
-Right side: a red dashboard mockup showing 14 "BREACH" alerts flashing.
+Right side: a red dashboard mockup showing 15 "BREACH" alerts flashing.
 
 > You can use a simple slide for this, or show the dashboard with seeded data.
 
 **Voiceover:**
-> "A wealth manager gets a weekly portfolio pack. An AI reads it and flags 14 breaches.
-> The problem? Nine of them are wrong. In regulated finance, false alarms are as dangerous
+> "A wealth manager gets a weekly portfolio pack. An AI reads it and flags 15 breaches.
+> The problem? Eleven of them are wrong. In regulated finance, false alarms are as dangerous
 > as missed ones — they erode trust and eventually get ignored."
 
 **On-screen text overlay (appears at 0:25):**
-> `The Problem: 64% of AI-flagged breaches are false positives`
+> `The Problem: 73% of AI-flagged breaches are false positives`
 
 ---
 
@@ -138,28 +138,28 @@ python demo_video.py --auto
 ### ACT 4 — The Canonicalizer (1:20 – 1:55)
 
 **Screen:** Terminal continues — ACT 2 of demo_video.py runs automatically.
-Shows 14 signals filtering down to 5 confirmed breaches.
+Shows 15 signals filtering down to 4 confirmed breaches.
 
 **Voiceover (speak as signals scroll through):**
-> "Gemini found 14 issues across two financial packs.
-> Without validation, all 14 would be flagged as breaches."
+> "Gemini found 15 issues across two financial packs — Treasury and Wealth.
+> Without validation, all 15 would be flagged as breaches."
 >
 > *(pause as signals appear one by one with BREACH / obs labels)*
 >
 > "The Canonicalizer applies deterministic rules.
-> Equity and concentration signals need lookthrough data from underlying funds — we don't have it yet.
-> The fee discrepancy needs an authorized source document.
-> Settlement events can never be breaches by definition."
+> Fund concentration needs lookthrough data — we don't have it yet.
+> Equity exposure has a disputed classification.
+> Settlement events and withdrawal requests can never be breaches by definition."
 >
 > *(pause as summary bars appear)*
 >
-> "14 breach candidates enter. 5 confirmed breaches exit.
-> Two-thirds false alarm prevention. Zero missed signals.
+> "15 breach candidates enter. 4 confirmed breaches exit.
+> 73% false alarm prevention. Zero missed signals.
 > Same inputs, same outputs. Deterministic. Replayable.
 > Run `make evals` to verify."
 
 **On-screen text overlay (when summary bars appear):**
-> `2/3 false alarm prevention · 0 missed signals · Fully reproducible`
+> `73% false alarm prevention · 0 missed signals · Fully reproducible`
 
 ---
 
@@ -244,11 +244,11 @@ Since you're doing both voiceover and on-screen text, here are the key text over
 | Timestamp | Overlay Text |
 |-----------|-------------|
 | 0:00-0:12 | GOVERNANCE OS — Deterministic Policy Engine with Transparent AI |
-| 0:25 | The Problem: 64% of AI-flagged breaches are false positives |
+| 0:25 | The Problem: 73% of AI-flagged breaches are false positives |
 | 0:35 | AI proposes. The kernel disposes. Humans decide. |
 | 0:50 | Gemini 3 Thinking Mode |
 | 1:15 | Every extraction is auditable |
-| 1:45 | 2/3 false alarm prevention · 0 missed signals |
+| 1:45 | 73% false alarm prevention · 0 missed signals |
 | 2:15 | Immutable evidence pack · Full audit trail |
 | 2:25 | Context Caching: 50-60% cost reduction |
 | 2:40 | AI that extracts, but never decides. |
