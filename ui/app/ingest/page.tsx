@@ -103,74 +103,68 @@ export default function IngestPage() {
   const charCount = documentText.length
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <FileText className="h-8 w-8" />
-            Submit Document
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Paste document content to extract structured signals for the{' '}
-            <span className="font-medium text-foreground">{pack}</span> pack
-          </p>
+    <div className="container mx-auto px-4 py-4">
+      <div className="max-w-4xl mx-auto space-y-4">
+        {/* Header - Compact */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <FileText className="h-6 w-6" />
+              Submit Document
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Extract signals for <span className="font-medium text-foreground">{pack}</span> pack
+            </p>
+          </div>
         </div>
 
         {/* Form Card */}
         <Card>
-          <CardHeader>
-            <CardTitle>Document Input</CardTitle>
-            <CardDescription>
-              AI will analyze the document and extract signals. All extractions go to the approval queue for your review.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Your Email (required) */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Your Email <span className="text-destructive">*</span></Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="you@company.com"
-                  disabled={isProcessing || status === 'success'}
-                  maxLength={255}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used for decision attribution and audit trail
-                </p>
+          <CardContent className="pt-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Top row: Email + Source side by side */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Your Email (required) */}
+                <div className="space-y-1">
+                  <Label htmlFor="email" className="text-xs">Your Email <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="you@company.com"
+                    disabled={isProcessing || status === 'success'}
+                    maxLength={255}
+                    required
+                    className="h-9"
+                  />
+                </div>
+
+                {/* Document Source (optional) */}
+                <div className="space-y-1">
+                  <Label htmlFor="source" className="text-xs">Document Source (optional)</Label>
+                  <Input
+                    id="source"
+                    value={documentSource}
+                    onChange={(e) => setDocumentSource(e.target.value)}
+                    placeholder="e.g., Q4 Board Meeting, CFO Email"
+                    disabled={isProcessing || status === 'success'}
+                    maxLength={500}
+                    className="h-9"
+                  />
+                </div>
               </div>
 
-              {/* Document Source (optional) */}
-              <div className="space-y-2">
-                <Label htmlFor="source">Document Source (optional)</Label>
-                <Input
-                  id="source"
-                  value={documentSource}
-                  onChange={(e) => setDocumentSource(e.target.value)}
-                  placeholder="e.g., Q4 Board Meeting, CFO Email, Risk Report"
-                  disabled={isProcessing || status === 'success'}
-                  maxLength={500}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Helps identify the origin of extracted signals
-                </p>
-              </div>
-
-              {/* Document Textarea */}
-              <div className="space-y-2">
-                <Label htmlFor="document">Document Content</Label>
+              {/* Document Textarea - Reduced height */}
+              <div className="space-y-1">
+                <Label htmlFor="document" className="text-xs">Document Content</Label>
                 <Textarea
                   id="document"
                   value={documentText}
                   onChange={(e) => setDocumentText(e.target.value)}
                   placeholder="Paste your document here (memos, reports, correspondence, meeting notes, etc.)..."
                   className={cn(
-                    "min-h-[300px] font-mono text-sm resize-y",
+                    "min-h-[180px] font-mono text-sm resize-y",
                     error && status === 'error' && "border-destructive"
                   )}
                   disabled={isProcessing || status === 'success'}
@@ -178,7 +172,7 @@ export default function IngestPage() {
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className={cn(charCount < 50 && charCount > 0 && "text-amber-600")}>
-                    {charCount < 50 ? `${50 - charCount} more characters needed` : 'Ready to process'}
+                    {charCount < 50 ? `${50 - charCount} more chars needed` : 'Ready'}
                   </span>
                   <span>{charCount.toLocaleString()} / 50,000</span>
                 </div>
@@ -186,22 +180,17 @@ export default function IngestPage() {
 
               {/* Error Display */}
               {error && status === 'error' && (
-                <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-4 text-destructive">
-                  <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                <div className="flex items-center gap-2 rounded bg-destructive/15 p-2 text-destructive">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                   <p className="text-sm">{error}</p>
                 </div>
               )}
 
               {/* Processing Indicator */}
               {isProcessing && (
-                <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <div>
-                    <p className="font-medium">Analyzing document...</p>
-                    <p className="text-sm text-muted-foreground">
-                      AI extraction may take 10-30 seconds
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-sm">Analyzing document (10-30s)...</span>
                 </div>
               )}
 
@@ -211,7 +200,6 @@ export default function IngestPage() {
                   type="submit"
                   disabled={isProcessing || charCount < 50}
                   className="w-full"
-                  size="lg"
                 >
                   {isProcessing ? (
                     <>
