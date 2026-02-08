@@ -318,6 +318,86 @@ class TestDeduplication:
         assert len(kept) == 1
         assert kept[0].completeness_score > 0.5
 
+    @pytest.mark.critical
+    def test_breach_not_suppressed_by_higher_confidence_observation(self):
+        """
+        REGRESSION TEST: Breach must NEVER be suppressed by a higher-confidence observation.
+
+        Scenario:
+        - C1: observation (missing gates) with confidence 0.93
+        - C2: breach (gates passed) with confidence 0.91
+
+        Expected: Final batch must contain 1 breach, not 0.
+        The breach must win despite lower confidence because status priority
+        (BREACH > OBSERVATION) must come before confidence in dedupe ranking.
+        """
+        candidates = [
+            {
+                "id": "C1",
+                "signal_type": "position_limit_breach",
+                # Missing 'limit' field → will be downgraded to OBSERVATION
+                "payload": {"asset": "BTC", "current_position": "150"},
+                "confidence": 0.93,  # Higher confidence
+            },
+            {
+                "id": "C2",
+                "signal_type": "position_limit_breach",
+                # Complete → will be BREACH
+                "payload": {"asset": "BTC", "current_position": "155", "limit": "100"},
+                "confidence": 0.91,  # Lower confidence
+            },
+        ]
+        result = canonicalize(candidates, "treasury")
+
+        # CRITICAL: The breach must survive
+        assert result.breach_count == 1, (
+            f"Breach was suppressed! Got breach_count={result.breach_count}, "
+            f"observation_count={result.observation_count}, merged_count={result.merged_count}"
+        )
+
+        # The observation should be merged away, not the breach
+        breaches = [s for s in result.signals if s.canonical_status == CanonicalStatus.BREACH]
+        assert len(breaches) == 1
+        assert breaches[0].source_candidate_id == "C2"
+
+        # Verify the merged signal was the observation, not the breach
+        merged = [s for s in result.signals if s.canonical_status == CanonicalStatus.MERGED]
+        assert len(merged) == 1
+        assert merged[0].source_candidate_id == "C1"
+
+    @pytest.mark.critical
+    def test_breach_wins_over_observation_regardless_of_completeness(self):
+        """
+        Breach must win even if observation has higher completeness score.
+
+        This tests a scenario where:
+        - Observation has high completeness but missing a gate requirement
+        - Breach has lower completeness but passes all gates
+        """
+        candidates = [
+            {
+                "id": "C1",
+                "signal_type": "position_limit_breach",
+                # High completeness but missing threshold → observation
+                "payload": {"asset": "BTC", "current_position": "150", "duration_hours": 48},
+                "confidence": 0.95,
+            },
+            {
+                "id": "C2",
+                "signal_type": "position_limit_breach",
+                # Lower completeness but has limit → breach
+                "payload": {"asset": "BTC", "current_position": "155", "limit": "100"},
+                "confidence": 0.85,
+            },
+        ]
+        result = canonicalize(candidates, "treasury")
+
+        # Breach must survive
+        assert result.breach_count == 1
+        breaches = [s for s in result.signals if s.canonical_status == CanonicalStatus.BREACH]
+        assert len(breaches) == 1
+        assert breaches[0].source_candidate_id == "C2"
+
 
 # =============================================================================
 # Severity Tests

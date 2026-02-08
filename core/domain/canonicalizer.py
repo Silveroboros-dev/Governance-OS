@@ -387,14 +387,34 @@ def _canonicalize_single(
     )
 
 
+def _status_priority(status: CanonicalStatus) -> int:
+    """
+    Return priority rank for canonical status in dedupe selection.
+
+    Higher value = higher priority (kept over lower priority).
+    BREACH must always win over OBSERVATION to prevent breach suppression.
+    """
+    return {
+        CanonicalStatus.BREACH: 3,
+        CanonicalStatus.OBSERVATION: 2,
+        CanonicalStatus.DROPPED: 1,
+        CanonicalStatus.MERGED: 0,
+    }.get(status, 0)
+
+
 def _deduplicate(signals: List[CanonicalSignal]) -> List[CanonicalSignal]:
     """
     Deduplicate canonical signals by dedupe_key.
 
     When multiple signals have the same dedupe_key:
-    - Keep the one with highest completeness_score
+    - Keep the one with highest status priority (BREACH > OBSERVATION > DROPPED)
+    - Then by completeness_score
+    - Then by confidence
     - Mark others as MERGED
     - Track merged_from IDs
+
+    CRITICAL: Status priority comes FIRST to prevent breach suppression.
+    A lower-confidence breach must always win over a higher-confidence observation.
     """
     if not signals:
         return signals
@@ -412,10 +432,15 @@ def _deduplicate(signals: List[CanonicalSignal]) -> List[CanonicalSignal]:
         if len(indices) <= 1:
             continue
 
-        # Sort by completeness_score descending, then by confidence descending
+        # Sort by: status priority DESC, then completeness_score DESC, then confidence DESC
+        # Status priority ensures BREACH always wins over OBSERVATION
         sorted_indices = sorted(
             indices,
-            key=lambda i: (signals[i].completeness_score, signals[i].confidence),
+            key=lambda i: (
+                _status_priority(signals[i].canonical_status),
+                signals[i].completeness_score,
+                signals[i].confidence
+            ),
             reverse=True,
         )
 
