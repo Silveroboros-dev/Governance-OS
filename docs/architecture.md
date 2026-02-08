@@ -40,7 +40,7 @@
 
   DATA FLOW:
   ┌────────────────────────────────────────────────────────────────────────────────┐
-  │  Gemini extracts 14 candidates → Kernel outputs 5 confirmed breaches;         │
+  │  Gemini extracts 14 candidates → Kernel outputs 4 confirmed breaches;         │
   │  remaining candidates are downgraded/merged/dropped → Only breaches escalate  │
   └────────────────────────────────────────────────────────────────────────────────┘
 
