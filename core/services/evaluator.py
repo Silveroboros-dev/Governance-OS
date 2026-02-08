@@ -42,7 +42,8 @@ class Evaluator:
         self,
         policy_version: PolicyVersion,
         signals: List[Signal],
-        replay_namespace: str = "production"
+        replay_namespace: str = "production",
+        dry_run: bool = False
     ) -> Evaluation:
         """
         Execute deterministic policy evaluation.
@@ -56,9 +57,10 @@ class Evaluator:
             policy_version: PolicyVersion to evaluate
             signals: List of Signal objects
             replay_namespace: Namespace for replay scenarios (default: "production")
+            dry_run: If True, do not persist evaluation to database (for replay isolation)
 
         Returns:
-            Evaluation object
+            Evaluation object (not persisted if dry_run=True)
 
         Example:
             >>> evaluator = Evaluator(db)
@@ -122,14 +124,20 @@ class Evaluator:
         result_enum = self._map_result(result_str)
 
         # Step 5: Create evaluation record
+        from datetime import datetime, timezone
         evaluation = Evaluation(
             policy_version_id=policy_version.id,
             signal_ids=[s.id for s in signals],
             result=result_enum,
             details=details,
             input_hash=input_hash,
-            replay_namespace=replay_namespace
+            replay_namespace=replay_namespace,
+            evaluated_at=datetime.now(timezone.utc)  # Set explicitly for dry_run
         )
+
+        # In dry_run mode, skip persistence (for replay isolation)
+        if dry_run:
+            return evaluation
 
         self.db.add(evaluation)
         self.db.flush()  # Get evaluation ID

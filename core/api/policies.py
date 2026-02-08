@@ -59,7 +59,8 @@ def list_policies(
                     active_version = version
                     break
 
-        # If status filter is specified, only include if active_version matches
+        # If status filter is specified, check if ANY version matches the status
+        # (not just the active version - e.g., to find policies with drafts)
         if status:
             status_map = {
                 "draft": PolicyStatus.DRAFT,
@@ -68,7 +69,11 @@ def list_policies(
             }
             status_enum = status_map.get(status.lower())
             if status_enum:
-                if active_version is None or active_version.status != status_enum:
+                # Check if any version of this policy has the requested status
+                has_matching_version = any(
+                    v.status == status_enum for v in policy.versions
+                )
+                if not has_matching_version:
                     continue
 
         policy_dict = {

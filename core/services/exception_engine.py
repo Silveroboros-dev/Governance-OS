@@ -64,7 +64,8 @@ class ExceptionEngine:
     def generate_exception(
         self,
         evaluation: Evaluation,
-        policy_version: PolicyVersion
+        policy_version: PolicyVersion,
+        dry_run: bool = False
     ) -> Optional[Exception]:
         """
         Generate exception from evaluation if needed.
@@ -78,9 +79,10 @@ class ExceptionEngine:
         Args:
             evaluation: Evaluation that may trigger exception
             policy_version: PolicyVersion that was evaluated
+            dry_run: If True, do not persist exception to database (for replay isolation)
 
         Returns:
-            Exception object or None
+            Exception object or None (not persisted if dry_run=True)
 
         Example:
             >>> exception = engine.generate_exception(evaluation, policy)
@@ -147,6 +149,10 @@ class ExceptionEngine:
             context=context,
             options=options
         )
+
+        # In dry_run mode, skip persistence (for replay isolation)
+        if dry_run:
+            return exception
 
         self.db.add(exception)
         self.db.flush()  # Get exception ID

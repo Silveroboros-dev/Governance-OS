@@ -67,11 +67,10 @@ def register_write_tools(mcp: FastMCP):
         Returns:
             Dict with approval_id and status
         """
+        from core.models import ApprovalQueue, ApprovalActionType, ApprovalStatus
+
+        db = get_db_session()
         try:
-            from core.models import ApprovalQueue, ApprovalActionType, ApprovalStatus
-
-            db = get_db_session()
-
             # Validate confidence
             if not 0.0 <= confidence <= 1.0:
                 return {"error": f"Confidence must be between 0.0 and 1.0, got {confidence}"}
@@ -98,7 +97,7 @@ def register_write_tools(mcp: FastMCP):
             db.commit()
             db.refresh(approval)
 
-            result = {
+            return {
                 "approval_id": str(approval.id),
                 "status": "pending",
                 "message": f"Signal proposal created. Awaiting human approval.",
@@ -106,11 +105,10 @@ def register_write_tools(mcp: FastMCP):
                 "requires_verification": confidence < 0.7
             }
 
-            db.close()
-            return result
-
         except Exception as e:
             return {"error": str(e)}
+        finally:
+            db.close()
 
     @mcp.tool()
     def propose_policy_draft(
@@ -146,11 +144,10 @@ def register_write_tools(mcp: FastMCP):
         Returns:
             Dict with approval_id and status
         """
+        from core.models import ApprovalQueue, ApprovalActionType
+
+        db = get_db_session()
         try:
-            from core.models import ApprovalQueue, ApprovalActionType
-
-            db = get_db_session()
-
             # Create approval queue entry
             approval = ApprovalQueue(
                 action_type=ApprovalActionType.POLICY_DRAFT,
@@ -174,18 +171,17 @@ def register_write_tools(mcp: FastMCP):
             db.commit()
             db.refresh(approval)
 
-            result = {
+            return {
                 "approval_id": str(approval.id),
                 "status": "pending",
                 "message": f"Policy draft created. Awaiting human approval.",
                 "is_update": policy_id is not None
             }
 
-            db.close()
-            return result
-
         except Exception as e:
             return {"error": str(e)}
+        finally:
+            db.close()
 
     @mcp.tool()
     def add_exception_context(
@@ -214,11 +210,10 @@ def register_write_tools(mcp: FastMCP):
         Returns:
             Dict with success status
         """
+        from core.models import Exception as DBException
+
+        db = get_db_session()
         try:
-            from core.models import Exception as DBException
-
-            db = get_db_session()
-
             exception = db.query(DBException).filter(DBException.id == exception_id).first()
             if not exception:
                 return {"error": f"Exception not found: {exception_id}"}
@@ -236,18 +231,17 @@ def register_write_tools(mcp: FastMCP):
 
             db.commit()
 
-            result = {
+            return {
                 "success": True,
                 "exception_id": exception_id,
                 "context_key": context_key,
                 "message": f"Context added to exception"
             }
 
-            db.close()
-            return result
-
         except Exception as e:
             return {"error": str(e)}
+        finally:
+            db.close()
 
     @mcp.tool()
     def dismiss_exception(
@@ -271,11 +265,10 @@ def register_write_tools(mcp: FastMCP):
         Returns:
             Dict with approval_id and status
         """
+        from core.models import ApprovalQueue, ApprovalActionType, Exception as DBException
+
+        db = get_db_session()
         try:
-            from core.models import ApprovalQueue, ApprovalActionType, Exception as DBException
-
-            db = get_db_session()
-
             # Verify exception exists and is open
             exception = db.query(DBException).filter(DBException.id == exception_id).first()
             if not exception:
@@ -301,18 +294,17 @@ def register_write_tools(mcp: FastMCP):
             db.commit()
             db.refresh(approval)
 
-            result = {
+            return {
                 "approval_id": str(approval.id),
                 "status": "pending",
                 "message": f"Dismissal proposal created. Awaiting human approval.",
                 "exception_title": exception.title
             }
 
-            db.close()
-            return result
-
         except Exception as e:
             return {"error": str(e)}
+        finally:
+            db.close()
 
     @mcp.tool()
     def propose_decision(
@@ -337,11 +329,10 @@ def register_write_tools(mcp: FastMCP):
         Returns:
             Dict with analysis added status
         """
+        from core.models import Exception as DBException
+
+        db = get_db_session()
         try:
-            from core.models import Exception as DBException
-
-            db = get_db_session()
-
             exception = db.query(DBException).filter(DBException.id == exception_id).first()
             if not exception:
                 return {"error": f"Exception not found: {exception_id}"}
@@ -359,18 +350,17 @@ def register_write_tools(mcp: FastMCP):
 
             db.commit()
 
-            result = {
+            return {
                 "success": True,
                 "exception_id": exception_id,
                 "message": "Decision context added. Human must make the actual decision.",
                 "warning": "DO NOT use this to recommend options. Options must be presented symmetrically."
             }
 
-            db.close()
-            return result
-
         except Exception as e:
             return {"error": str(e)}
+        finally:
+            db.close()
 
     return [
         propose_signal,

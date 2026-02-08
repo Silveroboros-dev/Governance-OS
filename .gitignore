@@ -86,3 +86,8 @@ tmp/
 temp/
 .cache/
 
+# =========================
+# Claude Code config (local only)
+# =========================
+CLAUDE.md
+

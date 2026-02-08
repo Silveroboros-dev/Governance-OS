@@ -27,6 +27,47 @@ from core.schemas.trace import (
 router = APIRouter(prefix="/traces", tags=["traces"])
 
 
+@router.get("/stats/summary")
+def get_trace_stats(db: Session = Depends(get_db)):
+    """
+    Get summary statistics for agent traces.
+
+    NOTE: This route MUST be defined before /{trace_id} to avoid route shadowing.
+    """
+    running_count = db.query(AgentTrace).filter(
+        AgentTrace.status == AgentTraceStatus.RUNNING
+    ).count()
+
+    completed_count = db.query(AgentTrace).filter(
+        AgentTrace.status == AgentTraceStatus.COMPLETED
+    ).count()
+
+    failed_count = db.query(AgentTrace).filter(
+        AgentTrace.status == AgentTraceStatus.FAILED
+    ).count()
+
+    # Count by agent type
+    by_type = {}
+    for agent_type in AgentType:
+        count = db.query(AgentTrace).filter(
+            AgentTrace.agent_type == agent_type
+        ).count()
+        by_type[agent_type.value] = count
+
+    # Average duration for completed traces
+    avg_duration = db.query(func.avg(AgentTrace.total_duration_ms)).filter(
+        AgentTrace.status == AgentTraceStatus.COMPLETED
+    ).scalar()
+
+    return {
+        "running": running_count,
+        "completed": completed_count,
+        "failed": failed_count,
+        "by_agent_type": by_type,
+        "average_duration_ms": int(avg_duration) if avg_duration else None
+    }
+
+
 @router.get("", response_model=TraceListResponse)
 def list_traces(
     agent_type: Optional[str] = Query(None, description="Filter by agent type: intake, narrative, policy_draft"),
@@ -246,43 +287,6 @@ def add_tool_call(
     db.refresh(trace)
 
     return _trace_to_response(trace)
-
-
-@router.get("/stats/summary")
-def get_trace_stats(db: Session = Depends(get_db)):
-    """Get summary statistics for agent traces."""
-    running_count = db.query(AgentTrace).filter(
-        AgentTrace.status == AgentTraceStatus.RUNNING
-    ).count()
-
-    completed_count = db.query(AgentTrace).filter(
-        AgentTrace.status == AgentTraceStatus.COMPLETED
-    ).count()
-
-    failed_count = db.query(AgentTrace).filter(
-        AgentTrace.status == AgentTraceStatus.FAILED
-    ).count()
-
-    # Count by agent type
-    by_type = {}
-    for agent_type in AgentType:
-        count = db.query(AgentTrace).filter(
-            AgentTrace.agent_type == agent_type
-        ).count()
-        by_type[agent_type.value] = count
-
-    # Average duration for completed traces
-    avg_duration = db.query(func.avg(AgentTrace.total_duration_ms)).filter(
-        AgentTrace.status == AgentTraceStatus.COMPLETED
-    ).scalar()
-
-    return {
-        "running": running_count,
-        "completed": completed_count,
-        "failed": failed_count,
-        "by_agent_type": by_type,
-        "average_duration_ms": int(avg_duration) if avg_duration else None
-    }
 
 
 # Helper functions

@@ -166,10 +166,10 @@ def get_open_exceptions(
     Returns:
         List of exception summaries with id, title, severity, raised_at, context.
     """
-    try:
-        from core.models import Exception as DBException
+    from core.models import Exception as DBException
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         query = db.query(DBException).filter(DBException.status == "open")
 
         if severity:
@@ -197,11 +197,12 @@ def get_open_exceptions(
                 "policy_name": policy_name,
             })
 
-        db.close()
         return exceptions
 
     except Exception as e:
         return [{"error": str(e)}]
+    finally:
+        db.close()
 
 
 @mcp.tool()
@@ -219,10 +220,10 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
         - Contributing signals
         - Related evaluation details
     """
-    try:
-        from core.models import Exception as DBException, Signal, Evaluation
+    from core.models import Exception as DBException, Signal, Evaluation
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         exc = db.query(DBException).filter(DBException.id == exception_id).first()
 
         if not exc:
@@ -270,7 +271,7 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
                     "version_number": pv.version_number,
                 }
 
-        result = {
+        return {
             "id": str(exc.id),
             "title": exc.title,
             "severity": exc.severity.value if hasattr(exc.severity, 'value') else exc.severity,
@@ -284,11 +285,10 @@ def get_exception_detail(exception_id: str) -> Dict[str, Any]:
             "policy": policy_info,
         }
 
-        db.close()
-        return result
-
     except Exception as e:
         return {"error": str(e)}
+    finally:
+        db.close()
 
 
 # ============================================================================
@@ -312,10 +312,10 @@ def get_policies(
     Returns:
         List of policies with id, name, description, current version.
     """
-    try:
-        from core.models import Policy, PolicyVersion
+    from core.models import Policy, PolicyVersion
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         query = db.query(Policy)
 
         if pack:
@@ -367,11 +367,12 @@ def get_policies(
 
             policies.append(policy_data)
 
-        db.close()
         return policies
 
     except Exception as e:
         return [{"error": str(e)}]
+    finally:
+        db.close()
 
 
 @mcp.tool()
@@ -385,10 +386,10 @@ def get_policy_detail(policy_id: str) -> Dict[str, Any]:
     Returns:
         Complete policy details including current rule definition.
     """
-    try:
-        from core.models import Policy, PolicyVersion
+    from core.models import Policy, PolicyVersion
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         policy = db.query(Policy).filter(Policy.id == policy_id).first()
 
         if not policy:
@@ -418,11 +419,12 @@ def get_policy_detail(policy_id: str) -> Dict[str, Any]:
                 "changelog": current_version.changelog,
             }
 
-        db.close()
         return result
 
     except Exception as e:
         return {"error": str(e)}
+    finally:
+        db.close()
 
 
 # ============================================================================
@@ -449,13 +451,13 @@ def get_evidence_pack(decision_id: str) -> Dict[str, Any]:
         - Evaluation details
         - Audit trail
     """
-    try:
-        from core.models import (
-            Decision, Exception as DBException,
-            Policy, PolicyVersion, Signal, Evaluation, AuditEvent
-        )
+    from core.models import (
+        Decision, Exception as DBException,
+        Policy, PolicyVersion, Signal, Evaluation, AuditEvent
+    )
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         decision = db.query(Decision).filter(Decision.id == decision_id).first()
 
         if not decision:
@@ -589,11 +591,12 @@ def get_evidence_pack(decision_id: str) -> Dict[str, Any]:
             for event in audit_events
         ]
 
-        db.close()
         return evidence
 
     except Exception as e:
         return {"error": str(e)}
+    finally:
+        db.close()
 
 
 @mcp.tool()
@@ -617,10 +620,10 @@ def search_decisions(
     Returns:
         List of decision summaries.
     """
-    try:
-        from core.models import Decision, Exception as DBException
+    from core.models import Decision, Exception as DBException
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         query = db.query(Decision)
 
         if from_date:
@@ -649,11 +652,12 @@ def search_decisions(
                 } if exc else None,
             })
 
-        db.close()
         return decisions
 
     except Exception as e:
         return [{"error": str(e)}]
+    finally:
+        db.close()
 
 
 # ============================================================================
@@ -677,10 +681,10 @@ def get_recent_signals(
     Returns:
         List of recent signals with payloads.
     """
-    try:
-        from core.models import Signal
+    from core.models import Signal
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         query = db.query(Signal)
 
         if signal_type:
@@ -703,11 +707,12 @@ def get_recent_signals(
                 "reliability": sig.reliability.value if hasattr(sig.reliability, 'value') else sig.reliability,
             })
 
-        db.close()
         return signals
 
     except Exception as e:
         return [{"error": str(e)}]
+    finally:
+        db.close()
 
 
 # ============================================================================

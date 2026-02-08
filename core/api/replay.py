@@ -97,7 +97,10 @@ def run_replay(
     if not signals:
         raise HTTPException(status_code=400, detail="No signals found for the specified criteria")
 
-    # Run evaluation
+    # Run evaluation in isolated replay namespace (NOT production)
+    # This ensures replay never mutates production data
+    replay_namespace = f"replay:{uuid4()}"
+
     evaluator = Evaluator(db)
     exception_engine = ExceptionEngine(db)
 
@@ -108,15 +111,15 @@ def run_replay(
     evaluations = []
 
     for signal in signals:
-        # Evaluate this signal against the policy
-        evaluation = evaluator.evaluate(policy_version, [signal])
+        # Evaluate this signal against the policy (dry_run=True ensures no DB writes)
+        evaluation = evaluator.evaluate(policy_version, [signal], replay_namespace=replay_namespace, dry_run=True)
 
         if evaluation.result.value == "pass":
             pass_count += 1
         elif evaluation.result.value == "fail":
             fail_count += 1
-            # Check if this would raise an exception
-            exception = exception_engine.generate_exception(evaluation, policy_version)
+            # Check if this would raise an exception (dry_run=True ensures no DB writes)
+            exception = exception_engine.generate_exception(evaluation, policy_version, dry_run=True)
             if exception:
                 exceptions_raised.append({
                     "title": exception.title,

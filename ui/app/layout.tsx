@@ -23,6 +23,10 @@ export default function RootLayout({
         <PackProvider>
           <UserProvider>
             <div className="min-h-screen flex flex-col">
+              {/* Demo Mode Banner - No Authentication */}
+              <div className="bg-amber-500 text-amber-950 text-center py-1.5 text-sm font-medium">
+                DEMO MODE - No Authentication. Reviewer identity is self-reported.
+              </div>
               <Header />
               <main className="flex-1">
                 {children}
