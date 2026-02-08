@@ -1,8 +1,4 @@
 {
-  "document_source": "wealth_e2e_stonebridge.txt",
-  "pack": "wealth",
-  "extraction_time_s": 30.000962018966675,
-  "total_candidates": 9,
   "candidates": [
     {
       "id": "W0",
@@ -209,6 +205,5 @@
       ]
     }
   ],
-  "thinking_summary": "**Comprehensive Portfolio Review: Stonebridge Family Office (2026-03-03)**\n\nAlright, here's the situation with the Stonebridge Family Office. I've got a comprehensive review to conduct, considering a discretionary balanced mandate. The key data points have been collected, and I'm seeing a handful of critical items that need immediate attention.\n\nFirst, I observe that the portfolio, as per the data extracted from the source, shows multiple breaches of investment constraints. Namely, Alpina Energy AG is exceeding the 7% single issuer cap at 8.4%\u2014a clear *concentration_breach*. The Global Equity UCITS ETF is also a problem, breaching the 12% single fund cap at 12.7%, another *concentration_breach*. I'll need to flag that because look-through isn't available. Also, the overall equity exposure, sitting at 42.1% (PMS) versus a mandate of 40%, represents a *mandate_breach*. The discrepancy between the PMS and custodian data requires further analysis to ascertain if the difference is a classification issue around the \"Eiger Yield Certificate.\"\n\nNext, a critical *fee_discrepancy* is apparent. The custodian invoice shows a 0.45% annual fee, yet the signed fee schedule clearly states 0.30% for custody. This is an immediate discrepancy that needs clarification.\n\nBeyond these breaches, there is a *withdrawal_request* from the client for CHF 500,000, which is approximately 8.3% of the portfolio. This withdrawal needs to be factored into any liquidity calculations. In addition, there is a CHF 220,000 pending settlement affecting the *settlement_pending_cash* impacting liquidity buffer and that needs to be factored into available cash for margin/liquidity calculations.\n\nI also see some data gaps. There is a *lookthrough_missing* signal on the EM Active Fund, indicating I can't verify compliance with single-country caps. Furthermore, I have two distinct *compliance_flag* issues. One is a missing KID for the ZEN Autocall 2025, which represents a product governance or PRIIPs regulation concern. The second is an issue of *stale_suitability*. The client's suitability questionnaire was last updated on 2024-09-15, which makes this an internal policy (12-month refresh) lapse.\n\nIn short, my analysis reveals a portfolio exhibiting breaches of concentration limits, a deviation from the mandated equity exposure, fee discrepancies, liquidity considerations, a missing KID, and a suitability lapse. I must produce a report to the appropriate parties that provides an in-depth analysis of these issues. I need to make recommendations that align with the client's best interests.\n\n\n",
-  "extraction_notes": null
+  "pack": "wealth"
 }

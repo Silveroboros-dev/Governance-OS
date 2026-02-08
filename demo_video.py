@@ -7,7 +7,7 @@ Designed for hackathon video recording. Short, visual, scannable at a glance.
 
 Three acts in ~90 seconds of terminal time:
   ACT 1: Gemini reads a document and shows its reasoning (Thinking Mode)
-  ACT 2: Canonicalizer filters 15 signals → 4 real breaches (73% prevention)
+  ACT 2: Canonicalizer filters 14 signals → 4 real breaches (71% prevention)
   ACT 3: Safety layer blocks AI from making recommendations
 
 Run:
@@ -84,7 +84,7 @@ def act1_thinking():
     print(f"  {C.DIM}│  RCF utilization:    92.0%                          │{C._}")
     print(f"  {C.DIM}│  Internal limit:     85%         ← {C.R}BREACH{C.DIM}         │{C._}")
     print(f"  {C.DIM}│                                                     │{C._}")
-    print(f"  {C.DIM}│  Payment hold:       CHF 41,500  (name mismatch)   │{C._}")
+    print(f"  {C.DIM}│  Payment hold:       CHF 58,700  (name mismatch)   │{C._}")
     print(f"  {C.DIM}│  Lender: AlpineBank  (covenant terms confirmed)     │{C._}")
     print(f"  {C.DIM}└─────────────────────────────────────────────────────┘{C._}")
 
@@ -103,7 +103,7 @@ def act1_thinking():
         "RCF utilization 92.0% > internal limit 85%",
         "  → position_limit_breach (clear threshold, authorized)",
         "",
-        "Payment hold CHF 41,500 = settlement failure (event, not breach)",
+        "Payment hold CHF 58,700 = settlement failure (event, not breach)",
         "  → cannot be a threshold violation by definition",
     ]
 
@@ -128,8 +128,8 @@ def act1_thinking():
 def act2_canonicalizer():
     header("ACT 2  ·  The Canonicalizer (AI Proposes, Kernel Disposes)")
 
-    print(f"  {C.W}Gemini found 15 signals across two packs (Treasury + Wealth).{C._}")
-    print(f"  {C.W}Without validation, ALL 15 would be flagged as breaches.{C._}")
+    print(f"  {C.W}Gemini found 14 signals across two packs (Treasury + Wealth).{C._}")
+    print(f"  {C.W}Without validation, ALL 14 would be flagged as breaches.{C._}")
     print(f"  {C.W}The Canonicalizer applies deterministic rules:{C._}")
     print()
 
@@ -138,23 +138,22 @@ def act2_canonicalizer():
 
     signals = [
         # (name, what happened, final status)
-        # TREASURY (Orion) — 3 observations
-        ("FX EUR 1.2M unhedged", "hedge target band, not hard limit", "obs"),
+        # TREASURY (Orion v2) — 3 observations
+        ("FX EUR 380k unhedged", "hedge target band, not hard limit", "obs"),
         ("Settlement fail CHF 58.7k", "event — beneficiary mismatch", "obs"),
         ("Fee spike CHF 4,980", "event — bank account anomaly", "obs"),
-        # WEALTH (Meridian) — 8 observations
+        # WEALTH (Stonebridge) — 7 observations
         ("Fund 12.7% > 12% cap", "lookthrough not available", "obs"),
         ("Equity 42.1% > 40% max", "classification disputed", "obs"),
-        ("Liquidity 13.6% < 15% min", "value date alignment required", "obs"),
         ("EM Fund lookthrough", "missing constituents data", "obs"),
         ("Settlement CHF 220k", "event — pending cash", "obs"),
         ("Withdrawal CHF 500k", "event — client request", "obs"),
         ("Missing KID (ZEN Autocall)", "event — PRIIPs blocker", "obs"),
-        ("Stale suitability (15mo)", "event — questionnaire expired", "obs"),
-        # TREASURY (Orion) — 2 breaches
+        ("Stale suitability (18mo)", "event — questionnaire expired", "obs"),
+        # TREASURY (Orion v2) — 2 breaches
         ("RCF 92% > 85% limit", "confirmed — authorized threshold", "BREACH"),
         ("Covenant CHF 96k < 100k", "confirmed — definition locked", "BREACH"),
-        # WEALTH (Meridian) — 2 breaches
+        # WEALTH (Stonebridge) — 2 breaches
         ("Alpina 8.4% > 7% issuer cap", "confirmed — IPS locked", "BREACH"),
         ("Custody fee 0.45% vs 0.30%", "confirmed — fee schedule", "BREACH"),
     ]
@@ -172,12 +171,12 @@ def act2_canonicalizer():
 
     # The headline numbers
     print(f"  {C.BOLD}{'─' * 55}{C._}")
-    bar("Breach-category signals:", 15, 15, C.W)
-    bar("False breaches prevented:", 11, 15, C.G)
-    bar("Confirmed breaches:", 4, 15, C.R)
+    bar("Breach-category signals:", 14, 14, C.W)
+    bar("False breaches prevented:", 10, 14, C.G)
+    bar("Confirmed breaches:", 4, 14, C.R)
     print(f"  {C.BOLD}{'─' * 55}{C._}")
     print()
-    print(f"  {C.BOLD}{C.G}73% false alarm prevention  ·  0 missed signals{C._}")
+    print(f"  {C.BOLD}{C.G}71% false alarm prevention  ·  0 missed signals{C._}")
     print(f"  {C.DIM}  Same inputs → same outputs. Deterministic. Replayable.{C._}")
 
     pause(2)

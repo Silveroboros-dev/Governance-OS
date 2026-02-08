@@ -142,16 +142,4 @@ Custodian invoice snippet (email attachment text):
 - Compliance: "Missing KID is a blocker; track as observation with required evidence."
 - Note: Suitability questionnaire date in CRM is 2024-09-15 (stale > 12 months).
 
-====================================================================
-7) Expected detections (ground truth expectations for system check)
-====================================================================
-- Threshold BREACH: issuer_cap_breach — Alpina Energy ~8.4% > 7.0% (authorized threshold is in IPS excerpt; no look-through needed)
-- Threshold OBSERVATION (gated): equity_max_breach — PMS shows 42.1% > 40% but classification dispute (certificate equity vs structured)
-- Threshold OBSERVATION (gated): fund_concentration — ETF 12.7% > 12% but registry requires look-through for fund constraints; constituents missing
-- Event OBSERVATION: withdrawal_request CHF 500k by 2026-03-12
-- Event OBSERVATION: settlement_pending_cash CHF 220k (value date mismatch noted)
-- Blocker OBSERVATION: missing KID for ZEN Autocall (and possibly Eiger Certificate)
-- Threshold BREACH: fee_discrepancy — invoice 0.45% vs signed 0.30% (authorized threshold evidence present)
-- Event OBSERVATION: suitability_stale (2024-09-15)
 
-(End Pack — Wealth)

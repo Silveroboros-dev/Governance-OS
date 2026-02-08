@@ -3,28 +3,15 @@
   "observation_count": 3,
   "dropped_count": 0,
   "merged_count": 0,
-  "event_count": 2,
-  "threshold_breach_count": 2,
-  "threshold_observation_count": 1,
-  "definition_lock_blocked_count": 0,
-  "authorized_threshold_blocked_count": 1,
   "signals": [
     {
       "source_candidate_id": "E0",
       "signal_type": "position_limit_breach",
       "canonical_status": "breach",
       "severity": "high",
-      "completeness_score": 1.0,
-      "missing_fields": [],
+      "title": "POSITION_LIMIT_BREACH: RCF utilization (92.0% vs 85% limit)",
       "flags": [
         "complete"
-      ],
-      "title": "POSITION_LIMIT_BREACH: RCF utilization (92.0% vs 85% limit)",
-      "dedupe_key": "ea27a3a481c92c46",
-      "merged_from": [],
-      "evidence_refs": [
-        "Confirmed threshold breach: RCF utilization above internal limit (85%) as of 202",
-        "Facility limit: CHF 2,000,000\n- Drawn amount at EOD 2026-03-02: CHF 1,840,000\n=>"
       ]
     },
     {
@@ -32,19 +19,10 @@
       "signal_type": "covenant_breach",
       "canonical_status": "breach",
       "severity": "critical",
-      "completeness_score": 1.0,
-      "missing_fields": [],
+      "title": "COVENANT_BREACH: Minimum Unrestricted Cash (CHF 96,400 vs CHF 100,000 required)",
       "flags": [
         "complete",
         "definition_lock_required"
-      ],
-      "title": "COVENANT_BREACH: Minimum Unrestricted Cash (CHF 96,400 vs CHF 100,000 required)",
-      "dedupe_key": "1f6569b929d58210",
-      "merged_from": [],
-      "evidence_refs": [
-        "Confirmed covenant breach: Minimum Unrestricted Cash covenant (>= CHF 100,000) b",
-        "Internal computed unrestricted cash @ EOD 2026-03-02: CHF 96,400  (min required ",
-        "Confirmed: for covenant testing, \"Unrestricted Cash\" excludes:\n(i) overdraft/cre"
       ]
     },
     {
@@ -52,19 +30,12 @@
       "signal_type": "fx_exposure_breach",
       "canonical_status": "observation",
       "severity": "high",
-      "completeness_score": 1.0,
-      "missing_fields": [],
+      "title": "FX_EXPOSURE_BREACH: EUR payables (EUR 380k unhedged vs 40\u201370% hedge target band limit, short)",
       "flags": [
         "complete",
         "authorized_threshold_required",
         "authorized_threshold_missing",
         "downgraded"
-      ],
-      "title": "FX_EXPOSURE_BREACH: EUR payables (EUR 380k unhedged vs 40\u201370% hedge target band limit, short)",
-      "dedupe_key": "5995f371800c7f0d",
-      "merged_from": [],
-      "evidence_refs": [
-        "We currently have forecast EUR payables ~EUR 520k for March.\nHedged forwards cov"
       ]
     },
     {
@@ -72,18 +43,10 @@
       "signal_type": "bank_account_anomaly",
       "canonical_status": "observation",
       "severity": "medium",
-      "completeness_score": 1.0,
-      "missing_fields": [],
+      "title": "ACCOUNT_ANOMALY: AlpineBank CH (fee_spike, CHF 4,980)",
       "flags": [
         "complete",
         "event_category"
-      ],
-      "title": "ACCOUNT_ANOMALY: AlpineBank CH (fee_spike, CHF 4,980)",
-      "dedupe_key": "f61b5ee5289b21f3",
-      "merged_from": [],
-      "evidence_refs": [
-        "Fees posted 03.02: CHF 4,980 (see details)",
-        "why fees jumped to ~5k today?"
       ]
     },
     {
@@ -91,17 +54,10 @@
       "signal_type": "settlement_failure",
       "canonical_status": "observation",
       "severity": "high",
-      "completeness_score": 1.0,
-      "missing_fields": [],
+      "title": "SETTLEMENT_FAILURE: Baltic Steel O\u00dc (CHF 58,700, beneficiary_mismatch)",
       "flags": [
         "complete",
         "event_category"
-      ],
-      "title": "SETTLEMENT_FAILURE: Baltic Steel O\u00dc (CHF 58,700, beneficiary_mismatch)",
-      "dedupe_key": "0b3daa4cc6bad554",
-      "merged_from": [],
-      "evidence_refs": [
-        "Payment CHF 58,700 blocked by bank due beneficiary mismatch (\"Baltic Steel OU\" v"
       ]
     }
   ]

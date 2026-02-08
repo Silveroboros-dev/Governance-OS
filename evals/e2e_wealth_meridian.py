@@ -1,25 +1,31 @@
 """
-End-to-End Test: Meridian Private Wealth — Ravenwood Trust Pack
+End-to-End Test: Stonebridge Family Office — Wealth Pack
 
 Pipeline: Document → IntakeAgent (Gemini 3) → Canonicalizer → Results
 
-Expected signals from the document (section 6):
-1. Liquidity buffer breach/at-risk: 12.6% vs 15% min (PMS) — but custodian shows 15.3%
-2. Equity exposure breach: 40.2% vs 40% max (PMS) — classification dispute
-3. Fund concentration breach: Global Equity UCITS ETF 13.5% vs 12% cap
-4. Lookthrough missing: EM fund exposure vs single-country cap
-5. Missing required doc: PRIIPs/KID for ZEN Autocall (product governance blocker)
-6. Fee discrepancy: 0.40% charged vs 0.30% expected
-7. Suitability stale (process risk — 15 months vs 12-month target)
-8. Client request: crypto exposure (mandate conflict)
-9. Withdrawal request: CHF 400k (liquidity planning)
+Expected signals from the document:
+1. concentration_breach: Alpina Energy AG 8.4% > 7% issuer cap
+   - SHOULD be BREACH — authorized threshold in IPS, lookthrough available for direct holding
+2. fee_discrepancy: 0.45% charged vs 0.30% expected
+   - SHOULD be BREACH — signed fee schedule provides authorized threshold
+3. concentration_breach (fund): Global Equity UCITS ETF 12.7% > 12% cap
+   - SHOULD be OBSERVATION — requires lookthrough (fund), not available
+4. mandate_breach: Equity 42.1% > 40% max
+   - SHOULD be OBSERVATION — requires lookthrough, classification dispute
+5. withdrawal_request: CHF 500k by March 12
+   - SHOULD be OBSERVATION — event category
+6. settlement_pending_cash: CHF 220k pending
+   - SHOULD be OBSERVATION — event category
+7. lookthrough_missing: EM Active Fund
+   - SHOULD be OBSERVATION — event category
+8. compliance_flag: Missing KID (ZEN Autocall), stale suitability
+   - SHOULD be OBSERVATION — event category
 
 Key challenges:
-- Mixed valuation dates (Feb 20 vs Feb 24)
-- Classification mismatch (certificate = equity in PMS, structured at custodian)
-- Pending settlement in custodian cash but not PMS
-- Rich wealth vocabulary (12 signal types available)
-- Lookthrough gating on concentration_breach and mandate_breach
+- Mixed valuation dates (Feb 28 vs Mar 02)
+- Classification mismatch (Eiger certificate = equity in PMS, structured at custodian)
+- Lookthrough available for direct holdings, missing for funds
+- Authorized threshold present for issuer cap and fee schedule
 """
 
 import json
@@ -42,8 +48,8 @@ from core.domain.canonicalizer import (
 
 
 def load_document() -> str:
-    """Load the Meridian wealth management pack document."""
-    doc_path = Path(__file__).parent / "datasets" / "wealth_e2e_meridian.txt"
+    """Load the Stonebridge wealth management pack document."""
+    doc_path = Path(__file__).parent / "datasets" / "wealth_e2e_stonebridge.txt"
     return doc_path.read_text()
 
 
@@ -61,11 +67,11 @@ def run_intake_agent(document_text: str, api_key: Optional[str] = None):
     result = agent.extract_signals_sync(
         content=document_text,
         pack="wealth",
-        document_source="evals/datasets/wealth_e2e_meridian.txt",
+        document_source="evals/datasets/wealth_e2e_stonebridge.txt",
         document_metadata={
-            "client": "Ravenwood Trust",
+            "client": "Stonebridge Family Office",
             "firm": "Meridian Private Wealth SA",
-            "created": "2026-02-25",
+            "created": "2026-03-03",
             "type": "wealth_management_pack",
         },
     )
@@ -99,55 +105,47 @@ def extraction_to_candidate_dicts(result) -> List[Dict[str, Any]]:
 # =============================================================================
 
 EXPECTED_SIGNALS = {
-    "mandate_breach": {
-        "description": "Equity 40.2% > 40% max, Liquidity 12.6% < 15% min",
-        "should_extract": True,
-        "expected_canon_status": "observation",
-        "reason": "mandate_breach requires lookthrough; classification dispute (Helvetia) means equity % uncertain; "
-                  "value date mismatch (Feb 20 vs 24) means liquidity % uncertain",
-    },
     "concentration_breach": {
-        "description": "Global Equity UCITS ETF 13.5% > 12% single fund cap",
+        "description": "Alpina Energy AG 8.4% > 7% issuer cap (BREACH); Fund 12.7% > 12% (observation)",
         "should_extract": True,
-        "expected_canon_status": "observation",
-        "reason": "concentration_breach requires lookthrough per wealth constraint registry",
-    },
-    "lookthrough_missing": {
-        "description": "EM Equity Fund — single-country cap cannot be verified without country breakdown",
-        "should_extract": True,
-        "expected_canon_status": "any",
-        "reason": "lookthrough_missing is an event-category signal, not breach",
+        "expected_canon_status": "breach",  # At least one should be BREACH (Alpina direct holding)
+        "reason": "Alpina is direct holding with authorized threshold in IPS; fund requires lookthrough",
     },
     "fee_discrepancy": {
-        "description": "0.40% p.a. invoiced vs 0.30% term sheet",
+        "description": "0.45% p.a. invoiced vs 0.30% signed fee schedule",
+        "should_extract": True,
+        "expected_canon_status": "breach",  # signed fee schedule = authorized threshold
+        "reason": "Signed fee schedule provides authorized threshold evidence",
+    },
+    "mandate_breach": {
+        "description": "Equity 42.1% > 40% max",
         "should_extract": True,
         "expected_canon_status": "observation",
-        "reason": "Threshold + authorized_threshold gate: needs evidence_type=term_sheet to confirm threshold. "
-                  "Without authorized source, fee dispute stays observation until verified.",
-    },
-    "settlement_pending_cash": {
-        "description": "CHF 190k pending settlement in custodian cash",
-        "should_extract": True,
-        "expected_canon_status": "any",
-        "reason": "Event-category signal; pending settlement affects liquidity calculation",
+        "reason": "mandate_breach requires lookthrough; classification dispute means equity % uncertain",
     },
     "withdrawal_request": {
-        "description": "CHF 400k withdrawal by March 7",
+        "description": "CHF 500k withdrawal by March 12",
         "should_extract": True,
-        "expected_canon_status": "any",
-        "reason": "Event-category; withdrawal_request in vocabulary. ~7.6% of portfolio",
+        "expected_canon_status": "observation",  # event category
+        "reason": "Event-category signal; ~8.3% of portfolio",
+    },
+    "settlement_pending_cash": {
+        "description": "CHF 220k pending settlement",
+        "should_extract": True,
+        "expected_canon_status": "observation",  # event category
+        "reason": "Event-category signal; affects liquidity calculation",
+    },
+    "lookthrough_missing": {
+        "description": "EM Active Fund — country breakdown not available",
+        "should_extract": True,
+        "expected_canon_status": "observation",  # event category
+        "reason": "Event-category signal; single-country cap cannot be verified",
     },
     "compliance_flag": {
-        "description": "Missing KID for ZEN Autocall, stale suitability, crypto mandate conflict",
-        "should_extract": "maybe",
-        "expected_canon_status": "any",
-        "reason": "Multiple compliance issues could map here; also suitability_drift for stale assessment",
-    },
-    "suitability_drift": {
-        "description": "Suitability 15 months old vs 12-month target; equity overweight",
-        "should_extract": "maybe",
-        "expected_canon_status": "any",
-        "reason": "Could capture both stale assessment and equity drift",
+        "description": "Missing KID (ZEN Autocall), stale suitability (>12 months)",
+        "should_extract": True,
+        "expected_canon_status": "observation",  # event category
+        "reason": "Event-category; product governance blocker",
     },
 }
 
@@ -165,7 +163,7 @@ def print_section(title: str):
 def analyze_results(extraction_result, canon_result, candidate_dicts):
     """Analyze and report on e2e results."""
 
-    print_header("E2E RESULTS: Meridian Wealth — Ravenwood Trust")
+    print_header("E2E RESULTS: Stonebridge Family Office")
 
     # ── Phase 1: IntakeAgent Extraction ──
     print_section("PHASE 1: IntakeAgent Extraction (Gemini 3)")
@@ -319,45 +317,39 @@ def analyze_results(extraction_result, canon_result, candidate_dicts):
 
     gaps = []
 
-    # Check lookthrough gating effectiveness
-    mandate_signals = [s for s in canon_result.signals
+    # Check Alpina concentration_breach is BREACH (direct holding with authorized threshold)
+    alpina_breach = [s for s in canon_result.signals
+                     if s.signal_type == "concentration_breach"
+                     and s.canonical_status == CanonicalStatus.BREACH
+                     and "alpina" in s.title.lower()]
+    if not alpina_breach:
+        gaps.append("Alpina concentration_breach not a BREACH — should be BREACH (direct holding, authorized threshold)")
+
+    # Check fee_discrepancy is BREACH (signed fee schedule = authorized threshold)
+    fee_signals = [s for s in canon_result.signals
+                   if s.signal_type == "fee_discrepancy"
+                   and s.canonical_status == CanonicalStatus.BREACH]
+    if not fee_signals:
+        fee_any = [s for s in canon_result.signals if s.signal_type == "fee_discrepancy"]
+        if fee_any:
+            gaps.append(f"fee_discrepancy is {fee_any[0].canonical_status.value}, expected BREACH (signed fee schedule)")
+        else:
+            gaps.append("fee_discrepancy not extracted — LLM missed 0.45% vs 0.30%")
+
+    # Check mandate_breach stays as observation (requires lookthrough)
+    mandate_breach = [s for s in canon_result.signals
                       if s.signal_type == "mandate_breach"
                       and s.canonical_status == CanonicalStatus.BREACH]
-    if mandate_signals:
-        gaps.append("mandate_breach passed as BREACH despite lookthrough requirement — "
-                    "payload may include lookthrough_available=True incorrectly")
+    if mandate_breach:
+        gaps.append("mandate_breach passed as BREACH despite lookthrough requirement")
 
-    concentration_breach_signals = [s for s in canon_result.signals
-                                    if s.signal_type == "concentration_breach"
-                                    and s.canonical_status == CanonicalStatus.BREACH]
-    if concentration_breach_signals:
-        gaps.append("concentration_breach passed as BREACH despite lookthrough requirement")
-
-    # Check fee_discrepancy extraction
-    if "fee_discrepancy" not in extracted_types:
-        gaps.append("Fee discrepancy (0.40% vs 0.30%) not extracted — LLM missed it")
-
-    # Check withdrawal_request extraction
-    if "withdrawal_request" not in extracted_types:
-        gaps.append("Withdrawal request (CHF 400k) not extracted — LLM missed it")
-
-    # Check suitability
-    has_suitability = "suitability_drift" in extracted_types or "compliance_flag" in extracted_types
-    if not has_suitability:
-        gaps.append("Stale suitability (15m vs 12m target) not captured in any signal type")
-
-    # Check KID missing
-    kid_captured = any("kid" in str(c.payload).lower() or "priips" in str(c.payload).lower()
-                      for c in extraction_result.candidates)
-    if not kid_captured:
-        gaps.append("Missing KID/PRIIPs for ZEN Autocall not captured")
-
-    # Cross-type dedup for equity breach
-    equity_related = [c for c in extraction_result.candidates
-                     if "equity" in str(c.payload).lower() or "40" in str(c.payload).lower()]
-    if len(equity_related) > 1:
-        gaps.append(f"Multiple signals about equity exposure ({len(equity_related)}) — "
-                    f"cross-type dedup opportunity")
+    # Check fund concentration stays as observation
+    fund_breach = [s for s in canon_result.signals
+                   if s.signal_type == "concentration_breach"
+                   and s.canonical_status == CanonicalStatus.BREACH
+                   and "fund" in s.title.lower() or "etf" in s.title.lower()]
+    if fund_breach:
+        gaps.append("Fund concentration_breach passed as BREACH despite lookthrough requirement")
 
     if gaps:
         for i, gap in enumerate(gaps, 1):
@@ -386,10 +378,10 @@ def main():
         print("Set it with: export GOOGLE_API_KEY=your-key-here")
         sys.exit(1)
 
-    print_header("E2E TEST: Meridian Wealth — Ravenwood Trust Pack")
+    print_header("E2E TEST: Stonebridge Family Office Pack")
     print(f"  Pipeline: Document → IntakeAgent (Gemini 3) → Canonicalizer")
     print(f"  Pack: wealth")
-    print(f"  Document: evals/datasets/wealth_e2e_meridian.txt")
+    print(f"  Document: evals/datasets/wealth_e2e_stonebridge.txt")
 
     document_text = load_document()
     print(f"  Document length: {len(document_text)} chars")
@@ -421,7 +413,7 @@ def main():
     raw_output_path.mkdir(exist_ok=True)
 
     raw_data = {
-        "document_source": "wealth_e2e_meridian.txt",
+        "document_source": "wealth_e2e_stonebridge.txt",
         "pack": "wealth",
         "extraction_time_s": extraction_time,
         "total_candidates": extraction_result.total_candidates,
@@ -430,9 +422,9 @@ def main():
         "extraction_notes": extraction_result.extraction_notes,
     }
 
-    with open(raw_output_path / "wealth_e2e_meridian_raw.json", "w") as f:
+    with open(raw_output_path / "wealth_e2e_stonebridge_raw.json", "w") as f:
         json.dump(raw_data, f, indent=2, default=str)
-    print(f"  Raw extraction saved to evals/outputs/wealth_e2e_meridian_raw.json")
+    print(f"  Raw extraction saved to evals/outputs/wealth_e2e_stonebridge_raw.json")
 
     canon_result = canonicalize(candidate_dicts, "wealth")
 
@@ -468,9 +460,9 @@ def main():
         ],
     }
 
-    with open(raw_output_path / "wealth_e2e_meridian_canon.json", "w") as f:
+    with open(raw_output_path / "wealth_e2e_stonebridge_canon.json", "w") as f:
         json.dump(canon_data, f, indent=2)
-    print(f"  Canonical results saved to evals/outputs/wealth_e2e_meridian_canon.json")
+    print(f"  Canonical results saved to evals/outputs/wealth_e2e_stonebridge_canon.json")
 
     return results
 

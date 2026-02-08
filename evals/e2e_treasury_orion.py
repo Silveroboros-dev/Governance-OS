@@ -1,27 +1,26 @@
 """
-End-to-End Test: Orion Metals Treasury Weekly Pack
+End-to-End Test: Orion Metals Treasury Weekly Pack (v2)
 
 Pipeline: Document → IntakeAgent (Gemini 3) → Canonicalizer → Results
 
-Expected signals from the document (section 7):
-1. covenant_breach / at-risk: unrestricted cash CHF 86.4k vs CHF 100k min
-   - SHOULD survive but definition dispute + value_date conflict → observation, not breach
-2. liquidity_threshold_breach: tight liquidity, CHF 86.4k vs 100k
-   - May overlap with covenant — canonicalizer should dedup or separate
-3. fx_exposure_breach: EUR payables ~410k, only 150k hedged
-   - Missing "limit" field → likely observation
-4. bank_account_anomaly or settlement_failure: CHF 41.5k hold, beneficiary mismatch
-   - Blocked payment — may map to settlement_failure or bank_account_anomaly
-5. cash_forecast_variance: possible, given conflicting balances
-6. Missing docs: term sheet + covenant definition memo referenced but absent
-   - NOT a signal type in registry — should be dropped or noted
+Expected signals from the document:
+1. position_limit_breach: RCF utilization 92% > 85% internal limit
+   - SHOULD be BREACH — authorized threshold present in policy
+2. covenant_breach: unrestricted cash CHF 96.4k vs CHF 100k min
+   - SHOULD be BREACH — definition lock confirmed by bank email
+3. fx_exposure_breach: EUR payables ~520k, only 140k hedged
+   - SHOULD be OBSERVATION — no hard limit, just target band
+4. settlement_failure: CHF 58.7k blocked, beneficiary mismatch
+   - SHOULD be OBSERVATION — event category
+5. bank_account_anomaly: fee spike CHF 4,980
+   - SHOULD be OBSERVATION — event category
 
 Key challenges for the pipeline:
-- Conflicting value dates (Feb 22/24/25)
-- Definition dispute: "available" vs "unrestricted" vs "book" balance
-- OCR artifacts
-- Pending settlements included inconsistently
-- Missing attachments
+- Conflicting balances: "available" vs "book" vs "unrestricted"
+- Definition lock present for covenant (should enable BREACH)
+- Authorized threshold present for RCF (should enable BREACH)
+- FX has target band, not hard limit (should stay OBSERVATION)
+- Events: settlement, fee anomaly (must remain OBSERVATION)
 """
 
 import json
@@ -44,8 +43,8 @@ from core.domain.canonicalizer import (
 
 
 def load_document() -> str:
-    """Load the Orion treasury weekly pack document."""
-    doc_path = Path(__file__).parent / "datasets" / "treasury_e2e_orion.txt"
+    """Load the Orion treasury weekly pack document (v2)."""
+    doc_path = Path(__file__).parent / "datasets" / "treasury_e2e_orion_v2.txt"
     return doc_path.read_text()
 
 
@@ -67,11 +66,11 @@ def run_intake_agent(document_text: str, api_key: Optional[str] = None) -> Dict[
     result = agent.extract_signals_sync(
         content=document_text,
         pack="treasury",
-        document_source="evals/datasets/treasury_e2e_orion.txt",
+        document_source="evals/datasets/treasury_e2e_orion_v2.txt",
         document_metadata={
             "entity": "Orion Metals Trading AG",
-            "week": "W09/2026",
-            "compiled": "2026-02-25",
+            "week": "W10/2026",
+            "compiled": "2026-03-03",
             "type": "treasury_weekly_pack",
         },
     )
@@ -105,41 +104,35 @@ def extraction_to_candidate_dicts(result) -> List[Dict[str, Any]]:
 # =============================================================================
 
 EXPECTED_SIGNALS = {
-    "covenant_breach": {
-        "description": "Unrestricted cash CHF 86.4k vs CHF 100k minimum covenant",
+    "position_limit_breach": {
+        "description": "RCF utilization 92% > 85% internal limit",
         "should_extract": True,
-        "expected_canon_status": "observation",  # definition dispute + value_date issues
-        "reason": "Definition dispute (available vs unrestricted), conflicting value dates, missing term sheet",
+        "expected_canon_status": "breach",  # authorized threshold present
+        "reason": "RCF limit 85% is documented in Internal Treasury Policy v3.2",
     },
-    "liquidity_threshold_breach": {
-        "description": "Unrestricted cash below 100k threshold",
+    "covenant_breach": {
+        "description": "Unrestricted cash CHF 96.4k vs CHF 100k minimum covenant",
         "should_extract": True,
-        "expected_canon_status": "any",  # could be breach or observation depending on fields
-        "reason": "CHF 86.4k internal metric vs 100k minimum",
+        "expected_canon_status": "breach",  # definition lock confirmed by bank
+        "reason": "Definition locked by AlpineBank Covenant Officer email 2026-03-02",
     },
     "fx_exposure_breach": {
-        "description": "EUR payables ~410k, only 150k hedged, 260k unhedged",
+        "description": "EUR payables ~520k, only 140k hedged, 380k unhedged",
         "should_extract": True,
-        "expected_canon_status": "observation",  # likely missing 'limit' field
-        "reason": "No explicit FX limit stated, just unhedged exposure flagged",
-    },
-    "bank_account_anomaly": {
-        "description": "CHF 41.5k hold due to beneficiary name mismatch",
-        "should_extract": "maybe",  # could also be settlement_failure
-        "expected_canon_status": "any",
-        "reason": "Blocked payment due to compliance hold — could be anomaly or settlement_failure",
+        "expected_canon_status": "observation",  # target band, not hard limit
+        "reason": "Policy says 'hedge target band 40-70%', NOT a hard limit",
     },
     "settlement_failure": {
-        "description": "Payment to Baltic Steel OÜ blocked — beneficiary mismatch",
-        "should_extract": "maybe",  # alternative to bank_account_anomaly
-        "expected_canon_status": "any",
-        "reason": "Invoice entity mismatch blocking payment",
+        "description": "Payment CHF 58.7k to Baltic Steel OÜ blocked — beneficiary mismatch",
+        "should_extract": True,
+        "expected_canon_status": "observation",  # event category
+        "reason": "Event-category signal — blocked payment, not a threshold breach",
     },
-    "cash_forecast_variance": {
-        "description": "Conflicting cash balances across sources",
-        "should_extract": "maybe",
-        "expected_canon_status": "observation",
-        "reason": "Internal 86.4k vs bank available 118.9k vs book 77.5k",
+    "bank_account_anomaly": {
+        "description": "Fee spike CHF 4,980 posted",
+        "should_extract": True,
+        "expected_canon_status": "observation",  # event category
+        "reason": "Event-category signal — fee anomaly requiring investigation",
     },
 }
 
@@ -161,7 +154,7 @@ def analyze_results(
 ):
     """Analyze and report on e2e results."""
 
-    print_header("E2E RESULTS: Orion Metals Treasury Weekly Pack")
+    print_header("E2E RESULTS: Orion Metals Treasury Weekly Pack (v2)")
 
     # ── Phase 1: IntakeAgent Extraction ──
     print_section("PHASE 1: IntakeAgent Extraction (Gemini 3)")
@@ -307,28 +300,30 @@ def analyze_results(
 
     gaps = []
 
-    # Check if definition dispute is captured
+    # Check RCF position_limit_breach extraction and status
+    rcf_signals = [s for s in canon_result.signals
+                   if s.signal_type == "position_limit_breach"
+                   and s.canonical_status != CanonicalStatus.MERGED]
+    if not rcf_signals:
+        gaps.append("RCF position_limit_breach not extracted — should be BREACH with 92% > 85%")
+    elif rcf_signals[0].canonical_status != CanonicalStatus.BREACH:
+        gaps.append(f"RCF position_limit_breach is {rcf_signals[0].canonical_status.value}, expected BREACH")
+
+    # Check covenant_breach extraction and status (should be BREACH with definition lock)
     covenant_signals = [s for s in canon_result.signals
                        if s.signal_type == "covenant_breach"
                        and s.canonical_status != CanonicalStatus.MERGED]
-    if covenant_signals:
-        for cs in covenant_signals:
-            if cs.canonical_status == CanonicalStatus.BREACH:
-                gaps.append("DEFINITION_DISPUTE not preventing breach — covenant should be observation due to conflicting definitions")
-    else:
-        gaps.append("No covenant signal extracted — LLM may not be mapping to covenant_breach type")
+    if not covenant_signals:
+        gaps.append("covenant_breach not extracted — should be BREACH with definition lock")
+    elif covenant_signals[0].canonical_status != CanonicalStatus.BREACH:
+        gaps.append(f"covenant_breach is {covenant_signals[0].canonical_status.value}, expected BREACH (definition lock present)")
 
-    # Check dedup
-    if canon_result.merged_count == 0 and total_raw > len(set(c.signal_type for c in extraction_result.candidates)):
-        gaps.append("No dedup occurred despite potential overlapping signals (covenant + liquidity)")
-
-    # Check for missing document handling
-    has_missing_doc_signal = any(
-        "missing" in str(c.payload).lower() and "doc" in str(c.payload).lower()
-        for c in extraction_result.candidates
-    )
-    if not has_missing_doc_signal:
-        gaps.append("Missing document references (term sheet, covenant memo) not captured as signals — no signal type for this")
+    # Check FX stays as observation (target band, not hard limit)
+    fx_signals = [s for s in canon_result.signals
+                  if s.signal_type == "fx_exposure_breach"
+                  and s.canonical_status != CanonicalStatus.MERGED]
+    if fx_signals and fx_signals[0].canonical_status == CanonicalStatus.BREACH:
+        gaps.append("fx_exposure_breach is BREACH but should be OBSERVATION (target band, not hard limit)")
 
     if gaps:
         for i, gap in enumerate(gaps, 1):
@@ -359,10 +354,10 @@ def main():
         print("\nTo get a key: https://aistudio.google.com/apikey")
         sys.exit(1)
 
-    print_header("E2E TEST: Orion Metals Treasury Weekly Pack")
+    print_header("E2E TEST: Orion Metals Treasury Weekly Pack (v2)")
     print(f"  Pipeline: Document → IntakeAgent (Gemini 3) → Canonicalizer")
     print(f"  Pack: treasury")
-    print(f"  Document: evals/datasets/treasury_e2e_orion.txt")
+    print(f"  Document: evals/datasets/treasury_e2e_orion_v2.txt")
 
     # Load document
     document_text = load_document()
@@ -395,7 +390,7 @@ def main():
     raw_output_path.mkdir(exist_ok=True)
 
     raw_data = {
-        "document_source": "treasury_e2e_orion.txt",
+        "document_source": "treasury_e2e_orion_v2.txt",
         "pack": "treasury",
         "extraction_time_s": extraction_time,
         "total_candidates": extraction_result.total_candidates,
@@ -404,9 +399,9 @@ def main():
         "extraction_notes": extraction_result.extraction_notes,
     }
 
-    with open(raw_output_path / "treasury_e2e_orion_raw.json", "w") as f:
+    with open(raw_output_path / "treasury_e2e_orion_v2_raw.json", "w") as f:
         json.dump(raw_data, f, indent=2, default=str)
-    print(f"  Raw extraction saved to evals/outputs/treasury_e2e_orion_raw.json")
+    print(f"  Raw extraction saved to evals/outputs/treasury_e2e_orion_v2_raw.json")
 
     canon_result = canonicalize(candidate_dicts, "treasury")
 
@@ -442,9 +437,9 @@ def main():
         ],
     }
 
-    with open(raw_output_path / "treasury_e2e_orion_canon.json", "w") as f:
+    with open(raw_output_path / "treasury_e2e_orion_v2_canon.json", "w") as f:
         json.dump(canon_data, f, indent=2)
-    print(f"  Canonical results saved to evals/outputs/treasury_e2e_orion_canon.json")
+    print(f"  Canonical results saved to evals/outputs/treasury_e2e_orion_v2_canon.json")
 
     return results
 

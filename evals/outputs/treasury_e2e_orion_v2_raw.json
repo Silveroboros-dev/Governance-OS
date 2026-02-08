@@ -1,8 +1,4 @@
 {
-  "document_source": "treasury_e2e_orion_v2.txt",
-  "pack": "treasury",
-  "extraction_time_s": 33.44720220565796,
-  "total_candidates": 5,
   "candidates": [
     {
       "id": "E0",
@@ -129,6 +125,5 @@
       ]
     }
   ],
-  "thinking_summary": "**Treasury Weekly Pack - Orion Metals Trading AG (W10/2026): Initial Assessment**\n\nOkay, here's what I'm seeing this week. It's March 3rd, 2026, and I'm looking at the weekly treasury pack for Orion Metals Trading AG. Several key items have popped up that need immediate attention.\n\nFirst, there's a clear RCF utilization breach. The confirmed threshold breach is quite significant: utilization is at 92%, exceeding the internal soft limit of 85%. I've checked the calculation; the drawn amount of CHF 1,840,000 against a facility limit of CHF 2,000,000 absolutely results in 92%. The policy excerpt clearly states the 85% soft limit and the need to escalate if it's exceeded. This is a `position_limit_breach`.\n\nSecond, we have a covenant breach on Minimum Unrestricted Cash. The internal computation shows CHF 96,400 at EOD March 2nd, while the required amount, as confirmed by AlpineBank, is CHF 100,000.  The covenant definition is locked and excludes overdrafts, blocked balances, LC margins, and pending settlements.  So, this is a clear `covenant_breach`.\n\nThird, we have an FX exposure situation, specifically with EUR payables. We are exposed, unhedged, to EUR 380k. There is a hedge target band of 40-70%, but the instructions are explicit that this is *not* a hard limit. I'm going to flag this as an `fx_exposure_breach`, but with `threshold_authorized: false`, because it's a target band, not a hard limit.\n\nFourth, there's an anomaly with the AlpineBank CH account. Fees posted are CHF 4,980, which is significantly higher than usual. I'm tagging this as a `bank_account_anomaly` with an `anomaly_type` of \"fee_spike\". This needs investigation to determine if it is a quarterly charge, or something else.\n\nFinally, we have a settlement failure. A payment of CHF 58,700 was blocked by the bank due to a beneficiary mismatch. The beneficiary name is \"Baltic Steel OU\" in our records versus \"Baltic Steel O\u00dc\". This is flagged as a `settlement_failure` with the reason clearly documented as \"beneficiary_mismatch\".\n\nI haven't seen anything specifically about debt maturities or counterparty credit downgrades. Market volatility isn't explicitly mentioned, so I'm omitting those signals. \"Operating liquidity ratio at 0.12, below 0.20 minimum\" is a liquidity threshold. The \"Minimum Unrestricted Cash\" is a covenant (contractual with a bank), and `covenant_breach` is the better fit. I've double checked the documents, and found no information that points to a specific shortfall of settlement rail.\n\n\n",
-  "extraction_notes": null
+  "pack": "treasury"
 }
